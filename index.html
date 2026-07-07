@@ -1,0 +1,2392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Local A/B Test Significance Calculator</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --ink: #162033;
+      --muted: #64748b;
+      --line: #dbe3ef;
+      --soft: #eef4ff;
+      --good-bg: #e9f8ef;
+      --good-ink: #116932;
+      --bad-bg: #fff0f0;
+      --bad-ink: #9b1c1c;
+      --warn-bg: #fff8e6;
+      --warn-ink: #815900;
+      --accent: #3157d5;
+      --accent-2: #173a9f;
+      --shadow: 0 14px 34px rgba(24, 36, 66, .09);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(49, 87, 213, .15), transparent 34rem),
+        linear-gradient(180deg, #fff, var(--bg) 24rem);
+      line-height: 1.45;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 54px;
+    }
+
+    header {
+      display: grid;
+      gap: 12px;
+      margin: 8px 0 26px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: -.035em;
+      line-height: 1.05;
+    }
+
+    .subhead {
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    @media (max-width: 940px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(219,227,239,.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-pad { padding: 18px; }
+
+    .card h2, .card h3 {
+      margin: 0;
+      letter-spacing: -.015em;
+    }
+
+    .card h2 { font-size: 20px; }
+    .card h3 { font-size: 17px; }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 520px) {
+      .two { grid-template-columns: 1fr; }
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: 13px;
+      color: #334155;
+      font-weight: 650;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cad6e5;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font: 600 14px var(--sans);
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(49, 87, 213, .75);
+      box-shadow: 0 0 0 4px rgba(49, 87, 213, .10);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: -2px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 15px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+      box-shadow: 0 8px 20px rgba(49, 87, 213, .22);
+    }
+
+    button:hover { background: var(--accent-2); transform: translateY(-1px); }
+    button.secondary {
+      background: #eff4ff;
+      color: #2443a8;
+      box-shadow: none;
+      border: 1px solid #d7e3ff;
+    }
+    button.secondary:hover { background: #e4edff; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 13px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .status.good { color: var(--good-ink); background: var(--good-bg); }
+    .status.bad { color: var(--bad-ink); background: var(--bad-bg); }
+    .status.warn { color: var(--warn-ink); background: var(--warn-bg); }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .results-top, .panel-head, .power-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .top-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+    @media (max-width: 1120px) {
+      .top-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .top-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 520px) {
+      .metric-grid, .top-metrics { grid-template-columns: 1fr; }
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #fff, #fbfdff);
+      min-height: 98px;
+    }
+
+    .metric .k, .mini-k {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .055em;
+    }
+
+    .metric .v {
+      margin-top: 7px;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -.03em;
+      line-height: 1.08;
+      overflow-wrap: anywhere;
+    }
+
+    .metric .s {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .compare {
+      display: grid;
+      gap: 12px;
+      margin: 14px 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 92px;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    @media (max-width: 620px) {
+      .bar-row { grid-template-columns: 1fr; gap: 5px; }
+    }
+
+    .bar-track {
+      height: 13px;
+      border-radius: 999px;
+      background: #e8eef7;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #7d95e7, #3157d5);
+      width: 0%;
+      transition: width .3s ease;
+    }
+
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 680px;
+    }
+
+    th, td {
+      padding: 12px 13px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: #f7faff;
+      color: #334155;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .055em;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    td.num { font-family: var(--mono); text-align: right; }
+
+    .steps {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    @media (max-width: 620px) {
+      .step { grid-template-columns: 1fr; }
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--soft);
+      color: #2443a8;
+      font-weight: 950;
+    }
+
+    .step-title {
+      font-size: 15px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .formula {
+      font-family: var(--mono);
+      font-size: 13px;
+      background: #f8fafc;
+      border: 1px solid #e5edf7;
+      border-radius: 12px;
+      padding: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .note {
+      border-left: 4px solid #3157d5;
+      background: #f2f6ff;
+      padding: 12px 13px;
+      border-radius: 12px;
+      color: #26406f;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .interpretation-card {
+      border: 1px solid #dbe5f6;
+      border-left: 5px solid #3157d5;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f8fbff, #f2f6ff);
+      padding: 14px 15px;
+      margin: 0 0 16px;
+      color: #24324a;
+    }
+
+    .interpretation-card.good {
+      border-left-color: #1f8f48;
+      background: linear-gradient(180deg, #f7fff9, #eaf8ef);
+    }
+
+    .interpretation-card.warn {
+      border-left-color: #d89800;
+      background: linear-gradient(180deg, #fffdfa, #fff8e6);
+    }
+
+    .interpretation-card.bad {
+      border-left-color: #b91c1c;
+      background: linear-gradient(180deg, #fffafa, #fff0f0);
+    }
+
+    .interpretation-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 950;
+      letter-spacing: -.01em;
+      margin-bottom: 5px;
+    }
+
+    .interpretation-body {
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .interpretation-body strong { color: #162033; }
+
+    .warn-note {
+      border-left-color: #d89800;
+      background: var(--warn-bg);
+      color: var(--warn-ink);
+    }
+
+    .panel {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #fff, #fbfdff);
+    }
+
+    .compact-table { margin-top: 10px; }
+
+    .error-box {
+      display: none;
+      background: var(--bad-bg);
+      border: 1px solid rgba(155, 28, 28, .25);
+      color: var(--bad-ink);
+      padding: 12px 13px;
+      border-radius: 14px;
+      font-weight: 750;
+      margin-bottom: 12px;
+    }
+
+    .url-box {
+      resize: vertical;
+      min-height: 72px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #24324a;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px 14px;
+      background: #fff;
+      margin-top: 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .planner-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 820px) {
+      .planner-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 520px) {
+      .planner-grid { grid-template-columns: 1fr; }
+    }
+
+    .foot {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid #dbe5f6;
+      background: #f8fbff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .inline-control { min-width: 150px; }
+    .muted { color: var(--muted); }
+    .mono { font-family: var(--mono); }
+    .small { font-size: 12px; }
+    .hidden { display: none !important; }
+
+
+    .forecast-hero {
+      margin-top: 12px;
+      border: 1px solid #cddaff;
+      background: linear-gradient(180deg, #f8fbff, #eef4ff);
+      border-radius: 18px;
+      padding: 18px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .forecast-hero .hero-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .forecast-hero .hero-value {
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.02;
+      font-weight: 950;
+      letter-spacing: -.045em;
+      color: #173a9f;
+      overflow-wrap: anywhere;
+    }
+
+    .forecast-hero .hero-sub {
+      color: #334155;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .machine-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .machine-grid { grid-template-columns: 1fr; }
+    }
+
+    .machine-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fbfdff;
+      padding: 12px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .machine-id {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #2443a8;
+      overflow-wrap: anywhere;
+    }
+
+    .machine-value {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+
+    .code-block {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: #f8fafc;
+      border: 1px solid #e5edf7;
+      border-radius: 12px;
+      padding: 10px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+
+
+
+    .ci-visual {
+      margin-top: 12px;
+      border: 1px solid #dbe5f6;
+      border-radius: 16px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    .ci-visual-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .ci-visual-title {
+      margin-top: 3px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+    }
+
+    .ci-visual-summary {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .ci-visual-note {
+      margin-top: 10px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 650;
+      background: #ffffff;
+      border: 1px solid #e5edf7;
+      border-radius: 12px;
+      padding: 9px 10px;
+    }
+
+    .ci-axis {
+      position: relative;
+      height: 74px;
+      border-radius: 16px;
+      background:
+        linear-gradient(90deg, rgba(100,116,139,.16) 1px, transparent 1px) 0 0 / 25% 100%,
+        linear-gradient(180deg, #f7faff, #eef4ff);
+      border: 1px solid #d9e4f6;
+      overflow: hidden;
+    }
+
+    .ci-axis-midline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: rgba(100,116,139,.28);
+      transform: translateY(-50%);
+    }
+
+    .ci-zero-line {
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: #162033;
+      opacity: .74;
+      transform: translateX(-1px);
+      z-index: 3;
+    }
+
+    .ci-zero-line span {
+      position: absolute;
+      top: -2px;
+      left: 7px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: rgba(22,32,51,.9);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .ci-interval {
+      position: absolute;
+      top: 50%;
+      height: 13px;
+      border-radius: 999px;
+      background: #3157d5;
+      transform: translateY(-50%);
+      box-shadow: 0 6px 14px rgba(49,87,213,.18);
+      z-index: 2;
+    }
+
+    .ci-dot {
+      position: absolute;
+      top: 50%;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 4px solid #fff;
+      background: #173a9f;
+      box-shadow: 0 7px 16px rgba(24,36,66,.26);
+      transform: translate(-50%, -50%);
+      z-index: 4;
+    }
+
+    .ci-bound {
+      position: absolute;
+      top: 50%;
+      width: 2px;
+      height: 26px;
+      background: #3157d5;
+      transform: translate(-1px, -50%);
+      z-index: 3;
+    }
+
+    .ci-scale {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .ci-scale span:nth-child(2) { text-align: center; color: #162033; font-weight: 900; }
+    .ci-scale span:last-child { text-align: right; }
+
+    .ci-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-top: 10px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-swatch {
+      width: 18px;
+      height: 8px;
+      border-radius: 999px;
+      background: #3157d5;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      background: #173a9f;
+    }
+
+    .legend-zero {
+      width: 3px;
+      height: 16px;
+      border-radius: 999px;
+      background: #162033;
+    }
+
+    .ci-visual.ci-crosses .ci-interval { background: #d89800; box-shadow: 0 6px 14px rgba(216,152,0,.18); }
+    .ci-visual.ci-crosses .ci-bound { background: #d89800; }
+    .ci-visual.ci-crosses .legend-swatch { background: #d89800; }
+    .ci-visual.ci-positive .ci-interval { background: #116932; box-shadow: 0 6px 14px rgba(17,105,50,.16); }
+    .ci-visual.ci-positive .ci-bound { background: #116932; }
+    .ci-visual.ci-positive .legend-swatch { background: #116932; }
+    .ci-visual.ci-negative .ci-interval { background: #9b1c1c; box-shadow: 0 6px 14px rgba(155,28,28,.16); }
+    .ci-visual.ci-negative .ci-bound { background: #9b1c1c; }
+    .ci-visual.ci-negative .legend-swatch { background: #9b1c1c; }
+    .field-label-inline { display: inline; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>A/B Test Significance Calculator</h1>
+      <div class="subhead">
+        Enter conversions and Audience Reach for control and experiment. The calculator runs a pooled two-proportion z-test, supports one-sided or two-sided testing, and shows step-by-step math, confidence intervals, power, and reach-growth timing.
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-pad">
+          <div class="section-title">
+            <h2>Inputs</h2>
+            <span class="pill">Control vs Experiment</span>
+          </div>
+
+          <div id="errorBox" class="error-box"></div>
+
+          <div class="form-grid">
+            <label>
+              Experiment use case
+              <select id="experimentType">
+                <option value="UA" selected>User Acquisition (UA)</option>
+                <option value="RE">Re-engagement (RE)</option>
+              </select>
+              <span class="hint">Changes the conversion-field labels. Audience Reach is the denominator for both use cases.</span>
+            </label>
+
+            <div class="two">
+              <label>
+                Control label
+                <input id="controlLabel" type="text" value="control" />
+              </label>
+              <label>
+                Experiment label
+                <input id="experimentLabel" type="text" value="experiment" />
+              </label>
+            </div>
+
+            <div id="reConversionNames" class="hidden">
+              <label>
+                Label for A event
+                <input id="controlConversionName" type="text" value="A - Event" />
+                <span class="hint">RE conversion fields display as Control Attrib. [label] and Experiment Attrib. [label].</span>
+              </label>
+              <input id="experimentConversionName" type="hidden" value="A - Event" />
+            </div>
+
+            <div class="two">
+              <label>
+                <span id="controlConversionFieldLabel" class="field-label-inline">Control Attributed Installs</span>
+                <input id="controlConversions" type="number" min="0" step="1" value="107" />
+              </label>
+              <label>
+                <span id="controlAudienceFieldLabel" class="field-label-inline">Control Audience Reach</span>
+                <input id="controlTrials" type="number" min="1" step="1" value="126968" />
+              </label>
+            </div>
+
+            <div class="two">
+              <label>
+                <span id="experimentConversionFieldLabel" class="field-label-inline">Experiment Attributed Installs</span>
+                <input id="experimentConversions" type="number" min="0" step="1" value="466" />
+              </label>
+              <label>
+                <span id="experimentAudienceFieldLabel" class="field-label-inline">Experiment Audience Reach</span>
+                <input id="experimentTrials" type="number" min="1" step="1" value="580356" />
+              </label>
+            </div>
+
+            <div class="two">
+              <label>
+                Confidence level
+                <select id="confidenceLevel">
+                  <option value="0.80">80%</option>
+                  <option value="0.85">85%</option>
+                  <option value="0.90">90%</option>
+                  <option value="0.95" selected>95%</option>
+                  <option value="0.99">99%</option>
+                </select>
+                <span class="hint">95% is a solid default for decision-grade UA lift reads; 90% can be used for directional learning.</span>
+              </label>
+              <label>
+                Power %
+                <select id="powerTarget">
+                  <option value="0.70">70%</option>
+                  <option value="0.75">75%</option>
+                  <option value="0.80" selected>80%</option>
+                  <option value="0.85">85%</option>
+                  <option value="0.90">90%</option>
+                  <option value="0.95">95%</option>
+                </select>
+                <span class="hint">80% is the usual media-test default; higher power requires more reach.</span>
+              </label>
+            </div>
+
+            <div class="two">
+              <label>
+                Hypothesis / tail
+                <select id="tail">
+                  <option value="greater" selected>One-sided: Experiment > Control</option>
+                  <option value="less">One-sided: Experiment < Control</option>
+                  <option value="two">Two-sided: Experiment != Control</option>
+                </select>
+              </label>
+              <label>
+                Decimal precision
+                <select id="precision">
+                  <option value="2">2 decimals</option>
+                  <option value="3" selected>3 decimals</option>
+                  <option value="4">4 decimals</option>
+                  <option value="5">5 decimals</option>
+                  <option value="6">6 decimals</option>
+                </select>
+              </label>
+            </div>
+
+            <input id="comparisons" type="hidden" value="1" />
+
+            <div class="button-row">
+              <button id="resetBtn" class="secondary" type="button">Reset example</button>
+              <button id="copyUrlBtn" type="button">Copy prefilled URL</button>
+              <button id="copySummaryBtn" class="secondary" type="button">Copy summary</button>
+            </div>
+
+            <label>
+              Prefilled URL
+              <textarea id="shareUrl" class="url-box" readonly></textarea>
+              <span class="hint">Works with local files using the hash after <span class="mono">#</span>. You can also edit the URL directly.</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-pad">
+          <div class="results-top">
+            <div>
+              <h2>Results</h2>
+              <div class="muted small" id="testDescription">Pooled two-proportion z-test</div>
+            </div>
+            <div id="significanceStatus" class="status warn"><span class="dot"></span><span>Not calculated</span></div>
+          </div>
+
+          <div class="metric-grid top-metrics">
+            <div class="metric">
+              <div class="k">Control rate</div>
+              <div class="v" id="controlRate">--</div>
+              <div class="s" id="controlSmall">--</div>
+            </div>
+            <div class="metric">
+              <div class="k">Experiment rate</div>
+              <div class="v" id="experimentRate">--</div>
+              <div class="s" id="experimentSmall">--</div>
+            </div>
+            <div class="metric">
+              <div class="k">Lift</div>
+              <div class="v" id="liftMetric">--</div>
+              <div class="s" id="diffMetric">--</div>
+            </div>
+            <div class="metric">
+              <div class="k">P-value</div>
+              <div class="v" id="pValueMetric">--</div>
+              <div class="s" id="pValueSmall">Decision p-value</div>
+            </div>
+            <div class="metric">
+              <div class="k">Calculated confidence %</div>
+              <div class="v" id="calculatedConfidenceMetric">--</div>
+              <div class="s" id="confidenceMetric">1 - p-value</div>
+            </div>
+            <div class="metric">
+              <div class="k">Observed power</div>
+              <div class="v" id="topObservedPowerMetric">--</div>
+              <div class="s" id="topObservedPowerSmall">Target power</div>
+            </div>
+          </div>
+
+          <div class="interpretation-card warn" id="interpretationCard">
+            <div class="interpretation-title" id="interpretationTitle">Interpretation</div>
+            <div class="interpretation-body" id="interpretationBody">Enter inputs to calculate the result.</div>
+          </div>
+
+          <div class="compare">
+            <div class="bar-row">
+              <div id="controlBarLabel">Control</div>
+              <div class="bar-track"><div id="controlBar" class="bar-fill"></div></div>
+              <div class="mono" id="controlBarRate">--</div>
+            </div>
+            <div class="bar-row">
+              <div id="experimentBarLabel">Experiment</div>
+              <div class="bar-track"><div id="experimentBar" class="bar-fill"></div></div>
+              <div class="mono" id="experimentBarRate">--</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th class="num">Value</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="summaryRows"></tbody>
+            </table>
+          </div>
+
+          <div class="panel" id="confidenceIntervalPanel">
+            <div class="panel-head">
+              <div>
+                <h3>Confidence Interval for the Difference</h3>
+                <div class="muted small" id="ciPanelSubtitle">Interval estimates for experiment rate minus control rate.</div>
+              </div>
+              <span class="pill" id="ciPill">--</span>
+            </div>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="k">Difference CI</div>
+                <div class="v" id="differenceCiMetric">--</div>
+                <div class="s" id="differenceCiSmall">Experiment - control</div>
+              </div>
+              <div class="metric">
+                <div class="k">Control CI</div>
+                <div class="v" id="controlCiMetric">--</div>
+                <div class="s" id="controlCiSmall">Control rate interval</div>
+              </div>
+              <div class="metric">
+                <div class="k">Experiment CI</div>
+                <div class="v" id="experimentCiMetric">--</div>
+                <div class="s" id="experimentCiSmall">Experiment rate interval</div>
+              </div>
+            </div>
+            <div class="ci-visual" id="ciVisual" aria-label="Confidence interval visual">
+              <div class="ci-visual-head">
+                <div>
+                  <div class="mini-k">Visual interval check</div>
+                  <div class="ci-visual-title" id="ciVisualTitle">Does the interval include 0 lift?</div>
+                </div>
+                <span class="pill" id="ciVisualStatus">--</span>
+              </div>
+              <div class="ci-axis" id="ciAxis">
+                <div class="ci-axis-midline"></div>
+                <div class="ci-zero-line" id="ciZeroLine"><span>0 lift</span></div>
+                <div class="ci-interval" id="ciIntervalBar"></div>
+                <div class="ci-bound" id="ciLowBound"></div>
+                <div class="ci-bound" id="ciHighBound"></div>
+                <div class="ci-dot" id="ciObservedDot"></div>
+              </div>
+              <div class="ci-scale">
+                <span id="ciAxisMin">--</span>
+                <span id="ciAxisZeroLabel">0 lift</span>
+                <span id="ciAxisMax">--</span>
+              </div>
+              <div class="ci-visual-summary mono" id="ciVisualLabel">--</div>
+              <div class="ci-legend">
+                <span class="legend-item"><span class="legend-swatch"></span>Confidence interval</span>
+                <span class="legend-item"><span class="legend-dot"></span>Observed lift</span>
+                <span class="legend-item"><span class="legend-zero"></span>0 lift / no difference</span>
+              </div>
+              <div class="ci-visual-note" id="ciVisualNote">The graphic shows whether the full interval sits above, below, or across the 0-lift line.</div>
+            </div>
+            <div class="note" id="ciCallout"></div>
+            <div class="note" id="confidenceMeaningNote"></div>
+          </div>
+
+          <div class="note" id="directionNote"></div>
+
+          <div class="panel" id="powerPanel">
+            <div class="power-head">
+              <div>
+                <h3>Statistical Power for This Effect</h3>
+                <div class="muted small">Post-hoc view based on the observed absolute effect size.</div>
+              </div>
+              <span class="pill" id="powerTargetDisplay">Target power: 80%</span>
+              <div id="powerStatus" class="status warn"><span class="dot"></span><span>Underpowered</span></div>
+            </div>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="k">Observed power</div>
+                <div class="v" id="observedPowerMetric">--</div>
+                <div class="s">Chance to detect an effect this large with the current sample.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="requiredNLabel">Required n / arm @ 80%</div>
+                <div class="v" id="requiredNMetric">--</div>
+                <div class="s" id="requiredNSmall">Equal-size arms; current confidence and tail.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Smaller arm today</div>
+                <div class="v" id="smallerArmMetric">--</div>
+                <div class="s">Uses the smaller of control and experiment Audience Reach.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Additional n / smaller arm</div>
+                <div class="v" id="remainingNMetric">--</div>
+                <div class="s">Extra Audience Reach needed in the limiting arm.</div>
+              </div>
+            </div>
+            <div class="note" id="powerRiskNote"></div>
+            <div class="note" id="powerCallout"></div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Power metric</th>
+                    <th class="num">Value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="powerRows"></tbody>
+              </table>
+            </div>
+
+            <details open>
+              <summary id="reachForecastSummary">Reach growth forecast: time to 80% power</summary>
+              <div class="planner-grid">
+                <label>
+                  Reach growth estimate unit
+                  <select id="reachGrowthUnit">
+                    <option value="day" selected>Daily</option>
+                    <option value="week">Weekly</option>
+                    <option value="month">Monthly</option>
+                  </select>
+                  <span class="hint">Choose whether the reach-growth inputs below are per day, week, or month.</span>
+                </label>
+                <label>
+                  Forecast target power
+                  <select id="forecastPowerTarget">
+                    <option value="0.70">70%</option>
+                    <option value="0.75">75%</option>
+                    <option value="0.80" selected>80%</option>
+                    <option value="0.85">85%</option>
+                    <option value="0.90">90%</option>
+                    <option value="0.95">95%</option>
+                  </select>
+                  <span class="hint">Used only for the reach-growth timing estimate.</span>
+                </label>
+                <label>
+                  <span id="controlReachGrowthLabel">Control new Audience Reach per day</span>
+                  <input id="controlDailyReach" type="number" min="0" step="1" placeholder="e.g. 25000" />
+                  <span class="hint" id="controlReachGrowthHint">Average incremental unique reach added per day in control.</span>
+                </label>
+                <label>
+                  <span id="experimentReachGrowthLabel">Experiment new Audience Reach per day</span>
+                  <input id="experimentDailyReach" type="number" min="0" step="1" placeholder="blank = use control" />
+                  <span class="hint" id="experimentReachGrowthHint">Enter this if experiment delivery grows differently from control.</span>
+                </label>
+              </div>
+              <div class="forecast-hero" id="reachForecastHero">
+                <div class="hero-label">Estimated time to requested power</div>
+                <div class="hero-value" id="reachForecastHeroValue">--</div>
+                <div class="hero-sub" id="reachForecastHeroSub">Enter reach growth to estimate timing.</div>
+              </div>
+              <div class="note" id="reachForecastNote"></div>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Reach forecast metric</th>
+                      <th class="num">Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reachForecastRows"></tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+
+          <details>
+            <summary>Optional planning helper: sample size from baseline rate and expected lift</summary>
+            <div class="planner-grid">
+              <label>
+                Baseline conversion rate
+                <input id="plannerBaseline" type="number" min="0" step="0.001" value="0.084" />
+                <span class="hint">Percent, e.g. 0.8 means 0.8%.</span>
+              </label>
+              <label>
+                Expected relative lift
+                <input id="plannerLift" type="number" min="0" step="0.1" value="15" />
+                <span class="hint">Percent lift, e.g. 15 means +15%.</span>
+              </label>
+              <label>
+                Power
+                <select id="plannerPower">
+                  <option value="0.70">70%</option>
+                  <option value="0.80" selected>80%</option>
+                  <option value="0.90">90%</option>
+                </select>
+              </label>
+              <label>
+                % Control Allocation
+                <select id="plannerControlAllocation">
+                  <option value="0.0625">6.25% control</option>
+                  <option value="0.1250">12.50% control</option>
+                  <option value="0.1875">18.75% control</option>
+                  <option value="0.2500">25.00% control</option>
+                  <option value="0.3125">31.25% control</option>
+                  <option value="0.3750">37.50% control</option>
+                  <option value="0.4375">43.75% control</option>
+                  <option value="0.5000" selected>50.00% control</option>
+                </select>
+                <span class="hint">Allowed in 6.25% increments. 50% control equals a 1:1 experiment/control allocation ratio.</span>
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Planning metric</th>
+                    <th class="num">Value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="plannerRows"></tbody>
+              </table>
+            </div>
+            <div class="note">
+              Sample-size estimates use a normal approximation for two independent proportions. Treat this as planning math, not a substitute for a full test design review.
+            </div>
+          </details>
+
+
+          <details>
+            <summary>Step-by-step calculation details</summary>
+            <div class="steps" id="steps"></div>
+          </details>
+
+
+
+          <details>
+            <summary>Google Sheets / DOM result IDs</summary>
+            <div class="note warn-note">
+              Google Sheets IMPORTXML can read structured data from a public URL with an XPath query, but a local file is not public, and IMPORTXML usually reads fetched HTML rather than values calculated after browser JavaScript runs. Use these IDs for browser DOM scraping or for a hosted/static results page. For Google Sheets, the most reliable option is usually to calculate these values directly in Sheets from the same inputs.
+            </div>
+            <div class="machine-grid">
+              <div class="machine-card"><div class="machine-id">result-p-value</div><div class="machine-value" id="result-p-value">--</div><div class="hint">Decision p-value as a decimal.</div></div>
+              <div class="machine-card"><div class="machine-id">result-calculated-confidence</div><div class="machine-value" id="result-calculated-confidence">--</div><div class="hint">1 - p-value, as a decimal.</div></div>
+              <div class="machine-card"><div class="machine-id">result-calculated-confidence-pct</div><div class="machine-value" id="result-calculated-confidence-pct">--</div><div class="hint">Calculated confidence formatted as a percent.</div></div>
+              <div class="machine-card"><div class="machine-id">result-observed-power</div><div class="machine-value" id="result-observed-power">--</div><div class="hint">Observed power as a decimal.</div></div>
+              <div class="machine-card"><div class="machine-id">result-observed-power-pct</div><div class="machine-value" id="result-observed-power-pct">--</div><div class="hint">Observed power formatted as a percent.</div></div>
+              <div class="machine-card"><div class="machine-id">result-required-n-per-arm</div><div class="machine-value" id="result-required-n-per-arm">--</div><div class="hint">Required Audience Reach per arm at selected power.</div></div>
+              <div class="machine-card"><div class="machine-id">result-additional-n-smaller-arm</div><div class="machine-value" id="result-additional-n-smaller-arm">--</div><div class="hint">Additional Audience Reach needed in the smaller arm.</div></div>
+              <div class="machine-card"><div class="machine-id">result-reach-periods-needed</div><div class="machine-value" id="result-reach-periods-needed">--</div><div class="hint">Estimated periods needed based on the selected growth unit.</div></div>
+              <div class="machine-card"><div class="machine-id">result-reach-growth-unit</div><div class="machine-value" id="result-reach-growth-unit">--</div><div class="hint">day, week, or month.</div></div>
+              <div class="machine-card"><div class="machine-id">result-reach-days-needed</div><div class="machine-value" id="result-reach-days-needed">--</div><div class="hint">Estimated duration converted to days.</div></div>
+            </div>
+            <div class="code-block">Example IMPORTXML formulas if the page is hosted with these values already present in the HTML:
+=VALUE(IMPORTXML($A$1,"string(//*[@id='result-p-value'])"))
+=VALUE(IMPORTXML($A$1,"string(//*[@id='result-calculated-confidence'])"))
+=VALUE(IMPORTXML($A$1,"string(//*[@id='result-observed-power'])"))
+=VALUE(IMPORTXML($A$1,"string(//*[@id='result-required-n-per-arm'])"))
+=VALUE(IMPORTXML($A$1,"string(//*[@id='result-reach-periods-needed'])"))
+
+Important: standard IMPORTXML usually does not execute this page's JavaScript, so these scrape formulas work only when the values are present in the fetched HTML or you use a browser-rendered DOM tool. For normal Google Sheets use, calculate the values directly from the same inputs.
+
+Recommended Sheets layout:
+B2 = control conversions
+C2 = control Audience Reach
+D2 = experiment conversions
+E2 = experiment Audience Reach
+F2 = confidence level, e.g. 0.95
+G2 = tail, one of: greater, less, two
+H2 = target power, e.g. 0.80
+I2 = control reach growth per selected period
+J2 = experiment reach growth per selected period; leave blank to reuse control growth
+
+P-value:
+=LET(c,B2,nc,C2,e,D2,ne,E2,tail,G2,p1,c/nc,p2,e/ne,pp,(c+e)/(nc+ne),se,SQRT(pp*(1-pp)*(1/nc+1/ne)),z,(p2-p1)/se,SWITCH(tail,"greater",1-NORM.S.DIST(z,TRUE),"less",NORM.S.DIST(z,TRUE),"two",2*(1-NORM.S.DIST(ABS(z),TRUE))))
+
+Calculated confidence %:
+=1 - p_value_cell
+
+Observed power for the current effect:
+=LET(c,B2,nc,C2,e,D2,ne,E2,conf,F2,tail,G2,p1,c/nc,p2,e/ne,diff,ABS(p2-p1),seu,SQRT(p1*(1-p1)/nc+p2*(1-p2)/ne),effectZ,diff/seu,zCrit,NORM.S.INV(1-IF(tail="two",(1-conf)/2,(1-conf))),(1-NORM.S.DIST(zCrit-effectZ,TRUE))+NORM.S.DIST(-zCrit-effectZ,TRUE))
+
+Required n / arm at target power:
+=LET(c,B2,nc,C2,e,D2,ne,E2,conf,F2,tail,G2,targetPower,H2,p1,c/nc,p2,e/ne,diff,ABS(p2-p1),pbar,(p1+p2)/2,zCrit,NORM.S.INV(1-IF(tail="two",(1-conf)/2,(1-conf))),zPower,NORM.S.INV(targetPower),ROUNDUP(((zCrit*SQRT(2*pbar*(1-pbar))+zPower*SQRT(p1*(1-p1)+p2*(1-p2)))^2)/(diff^2),0))
+
+Reach-growth periods needed:
+=MAX(0,ROUNDUP((required_n_cell-C2)/I2,0),ROUNDUP((required_n_cell-E2)/IF(J2="",I2,J2),0))</div>
+          </details>
+
+          <div class="foot">
+            Method: pooled z-test for the null hypothesis that both groups have equal conversion rates. The confidence interval for the observed difference uses the unpooled standard error. For media PSA, ghost, UA, or RE tests, use unique Audience Reach as the denominator, not impression counts.
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const els = {
+      experimentType: document.getElementById('experimentType'),
+      controlLabel: document.getElementById('controlLabel'),
+      experimentLabel: document.getElementById('experimentLabel'),
+      reConversionNames: document.getElementById('reConversionNames'),
+      controlConversionName: document.getElementById('controlConversionName'),
+      experimentConversionName: document.getElementById('experimentConversionName'),
+      controlConversionFieldLabel: document.getElementById('controlConversionFieldLabel'),
+      controlAudienceFieldLabel: document.getElementById('controlAudienceFieldLabel'),
+      experimentConversionFieldLabel: document.getElementById('experimentConversionFieldLabel'),
+      experimentAudienceFieldLabel: document.getElementById('experimentAudienceFieldLabel'),
+      controlConversions: document.getElementById('controlConversions'),
+      controlTrials: document.getElementById('controlTrials'),
+      experimentConversions: document.getElementById('experimentConversions'),
+      experimentTrials: document.getElementById('experimentTrials'),
+      confidenceLevel: document.getElementById('confidenceLevel'),
+      tail: document.getElementById('tail'),
+      comparisons: document.getElementById('comparisons'),
+      precision: document.getElementById('precision'),
+      errorBox: document.getElementById('errorBox'),
+      shareUrl: document.getElementById('shareUrl'),
+      resetBtn: document.getElementById('resetBtn'),
+      copyUrlBtn: document.getElementById('copyUrlBtn'),
+      copySummaryBtn: document.getElementById('copySummaryBtn'),
+      significanceStatus: document.getElementById('significanceStatus'),
+      testDescription: document.getElementById('testDescription'),
+      controlRate: document.getElementById('controlRate'),
+      experimentRate: document.getElementById('experimentRate'),
+      controlSmall: document.getElementById('controlSmall'),
+      experimentSmall: document.getElementById('experimentSmall'),
+      liftMetric: document.getElementById('liftMetric'),
+      diffMetric: document.getElementById('diffMetric'),
+      pValueMetric: document.getElementById('pValueMetric'),
+      pValueSmall: document.getElementById('pValueSmall'),
+      calculatedConfidenceMetric: document.getElementById('calculatedConfidenceMetric'),
+      confidenceMetric: document.getElementById('confidenceMetric'),
+      topObservedPowerMetric: document.getElementById('topObservedPowerMetric'),
+      topObservedPowerSmall: document.getElementById('topObservedPowerSmall'),
+      interpretationCard: document.getElementById('interpretationCard'),
+      interpretationTitle: document.getElementById('interpretationTitle'),
+      interpretationBody: document.getElementById('interpretationBody'),
+      controlBarLabel: document.getElementById('controlBarLabel'),
+      experimentBarLabel: document.getElementById('experimentBarLabel'),
+      controlBar: document.getElementById('controlBar'),
+      experimentBar: document.getElementById('experimentBar'),
+      controlBarRate: document.getElementById('controlBarRate'),
+      experimentBarRate: document.getElementById('experimentBarRate'),
+      summaryRows: document.getElementById('summaryRows'),
+      ciPanelSubtitle: document.getElementById('ciPanelSubtitle'),
+      ciPill: document.getElementById('ciPill'),
+      differenceCiMetric: document.getElementById('differenceCiMetric'),
+      differenceCiSmall: document.getElementById('differenceCiSmall'),
+      controlCiMetric: document.getElementById('controlCiMetric'),
+      controlCiSmall: document.getElementById('controlCiSmall'),
+      experimentCiMetric: document.getElementById('experimentCiMetric'),
+      experimentCiSmall: document.getElementById('experimentCiSmall'),
+      ciVisual: document.getElementById('ciVisual'),
+      ciVisualTitle: document.getElementById('ciVisualTitle'),
+      ciVisualStatus: document.getElementById('ciVisualStatus'),
+      ciVisualLabel: document.getElementById('ciVisualLabel'),
+      ciVisualNote: document.getElementById('ciVisualNote'),
+      ciZeroLine: document.getElementById('ciZeroLine'),
+      ciIntervalBar: document.getElementById('ciIntervalBar'),
+      ciLowBound: document.getElementById('ciLowBound'),
+      ciHighBound: document.getElementById('ciHighBound'),
+      ciObservedDot: document.getElementById('ciObservedDot'),
+      ciAxisMin: document.getElementById('ciAxisMin'),
+      ciAxisZeroLabel: document.getElementById('ciAxisZeroLabel'),
+      ciAxisMax: document.getElementById('ciAxisMax'),
+      ciCallout: document.getElementById('ciCallout'),
+      confidenceMeaningNote: document.getElementById('confidenceMeaningNote'),
+      directionNote: document.getElementById('directionNote'),
+      powerTarget: document.getElementById('powerTarget'),
+      powerTargetDisplay: document.getElementById('powerTargetDisplay'),
+      powerStatus: document.getElementById('powerStatus'),
+      observedPowerMetric: document.getElementById('observedPowerMetric'),
+      requiredNLabel: document.getElementById('requiredNLabel'),
+      requiredNMetric: document.getElementById('requiredNMetric'),
+      requiredNSmall: document.getElementById('requiredNSmall'),
+      smallerArmMetric: document.getElementById('smallerArmMetric'),
+      remainingNMetric: document.getElementById('remainingNMetric'),
+      powerRiskNote: document.getElementById('powerRiskNote'),
+      powerCallout: document.getElementById('powerCallout'),
+      powerRows: document.getElementById('powerRows'),
+      reachForecastSummary: document.getElementById('reachForecastSummary'),
+      reachGrowthUnit: document.getElementById('reachGrowthUnit'),
+      forecastPowerTarget: document.getElementById('forecastPowerTarget'),
+      controlReachGrowthLabel: document.getElementById('controlReachGrowthLabel'),
+      experimentReachGrowthLabel: document.getElementById('experimentReachGrowthLabel'),
+      controlReachGrowthHint: document.getElementById('controlReachGrowthHint'),
+      experimentReachGrowthHint: document.getElementById('experimentReachGrowthHint'),
+      controlDailyReach: document.getElementById('controlDailyReach'),
+      experimentDailyReach: document.getElementById('experimentDailyReach'),
+      reachForecastHeroValue: document.getElementById('reachForecastHeroValue'),
+      reachForecastHeroSub: document.getElementById('reachForecastHeroSub'),
+      reachForecastNote: document.getElementById('reachForecastNote'),
+      reachForecastRows: document.getElementById('reachForecastRows'),
+      steps: document.getElementById('steps'),
+      plannerBaseline: document.getElementById('plannerBaseline'),
+      plannerLift: document.getElementById('plannerLift'),
+      plannerPower: document.getElementById('plannerPower'),
+      plannerControlAllocation: document.getElementById('plannerControlAllocation'),
+      plannerRows: document.getElementById('plannerRows'),
+      resultPValue: document.getElementById('result-p-value'),
+      resultCalculatedConfidence: document.getElementById('result-calculated-confidence'),
+      resultCalculatedConfidencePct: document.getElementById('result-calculated-confidence-pct'),
+      resultObservedPower: document.getElementById('result-observed-power'),
+      resultObservedPowerPct: document.getElementById('result-observed-power-pct'),
+      resultRequiredNPerArm: document.getElementById('result-required-n-per-arm'),
+      resultAdditionalNSmallerArm: document.getElementById('result-additional-n-smaller-arm'),
+      resultReachPeriodsNeeded: document.getElementById('result-reach-periods-needed'),
+      resultReachGrowthUnit: document.getElementById('result-reach-growth-unit'),
+      resultReachDaysNeeded: document.getElementById('result-reach-days-needed')
+    };
+
+    function erf(x) {
+      const sign = x < 0 ? -1 : 1;
+      x = Math.abs(x);
+      const a1 = 0.254829592;
+      const a2 = -0.284496736;
+      const a3 = 1.421413741;
+      const a4 = -1.453152027;
+      const a5 = 1.061405429;
+      const p = 0.3275911;
+      const t = 1 / (1 + p * x);
+      const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+      return sign * y;
+    }
+
+    function normalCdf(x) {
+      return 0.5 * (1 + erf(x / Math.SQRT2));
+    }
+
+    function invNorm(p) {
+      if (!(p > 0 && p < 1)) {
+        if (p === 0) return -Infinity;
+        if (p === 1) return Infinity;
+        return NaN;
+      }
+      const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+      const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+      const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+      const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+      const plow = 0.02425;
+      const phigh = 1 - plow;
+      let q, r;
+      if (p < plow) {
+        q = Math.sqrt(-2 * Math.log(p));
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+          ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      }
+      if (phigh < p) {
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+          ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      }
+      q = p - 0.5;
+      r = q * q;
+      return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q /
+        (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+    }
+
+    function clamp(x, lo, hi) { return Math.min(hi, Math.max(lo, x)); }
+
+    function asInt(input) {
+      const n = Number(String(input).replace(/,/g, ''));
+      return Number.isFinite(n) ? Math.trunc(n) : NaN;
+    }
+
+    function asNum(input) {
+      const n = Number(String(input).replace(/,/g, ''));
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function asOptionalNum(input) {
+      const raw = String(input || '').trim();
+      if (raw === '') return NaN;
+      return asNum(raw);
+    }
+
+    function formatNumber(x, digits = 0) {
+      if (!Number.isFinite(x)) return '--';
+      return x.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+    }
+
+    function formatFlexible(x, maxDigits = 6) {
+      if (!Number.isFinite(x)) return '--';
+      if (Math.abs(x) < 0.000001 && x !== 0) return x.toExponential(4);
+      return x.toLocaleString(undefined, { maximumFractionDigits: maxDigits });
+    }
+
+    function formatPct(p, digits = 3) {
+      if (!Number.isFinite(p)) return '--';
+      return (p * 100).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits }) + '%';
+    }
+
+    function formatPctPoint(p, digits = 3) {
+      if (!Number.isFinite(p)) return '--';
+      const sign = p > 0 ? '+' : '';
+      return sign + (p * 100).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits }) + ' pp';
+    }
+
+    function displayArmLabel(label) {
+      const s = String(label || '').trim();
+      if (!s) return '';
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    function controlConversionDisplayName(input) {
+      return input.experimentType === 'RE' ? `Control Attrib. ${input.controlConversionName}` : input.controlConversionName;
+    }
+
+    function experimentConversionDisplayName(input) {
+      return input.experimentType === 'RE' ? `Experiment Attrib. ${input.experimentConversionName}` : input.experimentConversionName;
+    }
+
+    function parsePair(value) {
+      if (!value) return null;
+      const parts = String(value).split(',').map(v => asInt(decodeURIComponent(v.trim())));
+      if (parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+        return { conversions: parts[0], trials: parts[1] };
+      }
+      return null;
+    }
+
+    function mergedParams() {
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash ? window.location.hash.slice(1) : '';
+      if (hash) {
+        const hashParams = new URLSearchParams(hash);
+        for (const [k, v] of hashParams.entries()) params.set(k, v);
+      }
+      return params;
+    }
+
+    function setSelectByNumber(selectEl, value) {
+      if (value === null || value === undefined || value === '') return;
+      const numeric = asNum(value);
+      const normalized = numeric > 1 ? numeric / 100 : numeric;
+      const match = [...selectEl.options].find(o => Math.abs(Number(o.value) - normalized) < 0.000001);
+      if (match) selectEl.value = match.value;
+    }
+
+    function loadFromUrl() {
+      const params = mergedParams();
+      if ([...params.keys()].length === 0) return;
+
+      const getAny = (...names) => {
+        for (const name of names) {
+          if (params.has(name)) return params.get(name);
+        }
+        return null;
+      };
+
+      const setValue = (el, value) => {
+        if (value !== null && value !== undefined && value !== '') el.value = value;
+      };
+
+      const experimentType = getAny('experimentType', 'useCase', 'campaignType', 'type');
+      if (experimentType) {
+        const t = experimentType.toUpperCase();
+        if (t === 'UA' || t === 'RE') els.experimentType.value = t;
+      }
+      setValue(els.controlLabel, getAny('controlLabel', 'control_label', 'clabel'));
+      setValue(els.experimentLabel, getAny('experimentLabel', 'experiment_label', 'elabel', 'variantLabel', 'variant_label', 'vlabel'));
+      setValue(els.controlConversionName, getAny('controlConversionName', 'control_conversion_name', 'controlMetric'));
+      setValue(els.experimentConversionName, getAny('experimentConversionName', 'experiment_conversion_name', 'experimentMetric', 'variantConversionName', 'variantMetric'));
+      setValue(els.controlDailyReach, getAny('controlDailyReach', 'control_daily_reach', 'dailyControlReach', 'controlGrowthReach'));
+      setValue(els.experimentDailyReach, getAny('experimentDailyReach', 'experiment_daily_reach', 'dailyExperimentReach', 'variantDailyReach', 'experimentGrowthReach'));
+
+      const controlPair = parsePair(getAny('control', 'Control'));
+      const experimentPair = parsePair(getAny('experiment', 'variant', 'Experiment', 'Variant'));
+      if (controlPair) {
+        els.controlConversions.value = controlPair.conversions;
+        els.controlTrials.value = controlPair.trials;
+      }
+      if (experimentPair) {
+        els.experimentConversions.value = experimentPair.conversions;
+        els.experimentTrials.value = experimentPair.trials;
+      }
+
+      setValue(els.controlConversions, getAny('c', 'controlConversions', 'control_successes', 'controlSuccesses', 'control_conv'));
+      setValue(els.controlTrials, getAny('n1', 'controlTrials', 'control_total', 'controlTotal', 'control_n'));
+      setValue(els.experimentConversions, getAny('e', 'v', 'experimentConversions', 'experiment_successes', 'experimentSuccesses', 'experiment_conv', 'variantConversions', 'variant_successes', 'variantSuccesses', 'variant_conv'));
+      setValue(els.experimentTrials, getAny('n2', 'experimentTrials', 'experiment_total', 'experimentTotal', 'experiment_n', 'variantTrials', 'variant_total', 'variantTotal', 'variant_n'));
+
+      setSelectByNumber(els.confidenceLevel, getAny('confidence', 'conf', 'confidenceLevel', 'abba:intervalConfidenceLevel'));
+      setSelectByNumber(els.powerTarget, getAny('powerTarget', 'targetPower', 'requiredPower'));
+      setSelectByNumber(els.forecastPowerTarget, getAny('forecastPowerTarget', 'forecastPower', 'reachPowerTarget'));
+      setSelectByNumber(els.plannerPower, getAny('plannerPower', 'samplePower'));
+      setSelectByNumber(els.plannerControlAllocation, getAny('plannerControlAllocation', 'controlAllocation', 'controlShare'));
+
+      const unit = getAny('reachGrowthUnit', 'reachGrowthPeriod', 'growthUnit', 'period');
+      if (unit) {
+        const u = unit.toLowerCase();
+        if (['day', 'daily', 'days'].includes(u)) els.reachGrowthUnit.value = 'day';
+        if (['week', 'weekly', 'weeks'].includes(u)) els.reachGrowthUnit.value = 'week';
+        if (['month', 'monthly', 'months'].includes(u)) els.reachGrowthUnit.value = 'month';
+      }
+
+      const tail = getAny('tail', 'test', 'alternative');
+      if (tail) {
+        const t = tail.toLowerCase();
+        if (['greater', 'right', 'one-greater', 'b>a', 'experiment>control', 'variant>control'].includes(t)) els.tail.value = 'greater';
+        if (['less', 'left', 'one-less', 'b<a', 'experiment<control', 'variant<control'].includes(t)) els.tail.value = 'less';
+        if (['two', 'two-sided', 'twosided', 'not-equal', 'neq'].includes(t)) els.tail.value = 'two';
+      }
+      setValue(els.precision, getAny('precision', 'digits'));
+
+      for (const [k, v] of params.entries()) {
+        const key = k.toLowerCase();
+        if (key.startsWith('control-')) {
+          const pair = parsePair(v);
+          if (pair) {
+            els.controlLabel.value = k.replace(/-/g, ' ');
+            els.controlConversions.value = pair.conversions;
+            els.controlTrials.value = pair.trials;
+          }
+        }
+        if (key.startsWith('experiment-') || key.startsWith('variant-')) {
+          const pair = parsePair(v);
+          if (pair) {
+            els.experimentLabel.value = k.replace(/-/g, ' ');
+            els.experimentConversions.value = pair.conversions;
+            els.experimentTrials.value = pair.trials;
+          }
+        }
+      }
+    }
+
+    function getInputs() {
+      const experimentType = els.experimentType.value === 'RE' ? 'RE' : 'UA';
+      const controlConversions = asInt(els.controlConversions.value);
+      const controlTrials = asInt(els.controlTrials.value);
+      const experimentConversions = asInt(els.experimentConversions.value);
+      const experimentTrials = asInt(els.experimentTrials.value);
+      const confidenceLevel = asNum(els.confidenceLevel.value);
+      const tail = els.tail.value;
+      const comparisons = 1;
+      const precision = Math.max(0, Math.min(8, asInt(els.precision.value) || 3));
+      const powerTarget = asNum(els.powerTarget.value);
+      const forecastPowerTarget = asNum(els.forecastPowerTarget.value);
+      const reachGrowthUnit = ['day', 'week', 'month'].includes(els.reachGrowthUnit.value) ? els.reachGrowthUnit.value : 'day';
+      const controlLabel = els.controlLabel.value.trim() || 'control';
+      const experimentLabel = els.experimentLabel.value.trim() || 'experiment';
+      const reEventLabel = els.controlConversionName.value.trim() || els.experimentConversionName.value.trim() || 'A - Event';
+      const controlConversionName = experimentType === 'UA' ? 'Control Attributed Installs' : reEventLabel;
+      const experimentConversionName = experimentType === 'UA' ? 'Experiment Attributed Installs' : reEventLabel;
+      const controlDailyReach = asOptionalNum(els.controlDailyReach.value);
+      const experimentDailyReach = asOptionalNum(els.experimentDailyReach.value);
+      const errors = [];
+      if (!Number.isFinite(controlConversions) || controlConversions < 0) errors.push('Control conversions must be a non-negative number.');
+      if (!Number.isFinite(experimentConversions) || experimentConversions < 0) errors.push('Experiment conversions must be a non-negative number.');
+      if (!Number.isFinite(controlTrials) || controlTrials <= 0) errors.push('Control Audience Reach must be greater than zero.');
+      if (!Number.isFinite(experimentTrials) || experimentTrials <= 0) errors.push('Experiment Audience Reach must be greater than zero.');
+      if (Number.isFinite(controlConversions) && Number.isFinite(controlTrials) && controlConversions > controlTrials) errors.push('Control conversions cannot exceed Control Audience Reach.');
+      if (Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) errors.push('Experiment conversions cannot exceed Experiment Audience Reach.');
+      if (!(confidenceLevel > 0 && confidenceLevel < 1)) errors.push('Confidence level must be between 0 and 1.');
+      if (!(powerTarget > 0 && powerTarget < 1)) errors.push('Power target must be between 0 and 1.');
+      if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Forecast target power must be between 0 and 1.');
+      if (Number.isFinite(controlDailyReach) && controlDailyReach < 0) errors.push('Control reach growth cannot be negative.');
+      if (Number.isFinite(experimentDailyReach) && experimentDailyReach < 0) errors.push('Experiment reach growth cannot be negative.');
+      return { experimentType, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
+    }
+
+    function updateCampaignModeUI(input) {
+      const controlArm = displayArmLabel(input.controlLabel);
+      const experimentArm = displayArmLabel(input.experimentLabel);
+      els.reConversionNames.classList.toggle('hidden', input.experimentType !== 'RE');
+      els.controlConversionFieldLabel.textContent = controlConversionDisplayName(input);
+      els.experimentConversionFieldLabel.textContent = experimentConversionDisplayName(input);
+      els.controlAudienceFieldLabel.textContent = `${controlArm} Audience Reach`;
+      els.experimentAudienceFieldLabel.textContent = `${experimentArm} Audience Reach`;
+    }
+
+    function calculate(input) {
+      const p1 = input.controlConversions / input.controlTrials;
+      const p2 = input.experimentConversions / input.experimentTrials;
+      const pooled = (input.controlConversions + input.experimentConversions) / (input.controlTrials + input.experimentTrials);
+      const pooledSe = Math.sqrt(pooled * (1 - pooled) * (1 / input.controlTrials + 1 / input.experimentTrials));
+      const unpooledSe = Math.sqrt((p1 * (1 - p1) / input.controlTrials) + (p2 * (1 - p2) / input.experimentTrials));
+      const diff = p2 - p1;
+      const z = pooledSe > 0 ? diff / pooledSe : NaN;
+      const phiZ = normalCdf(z);
+      let pValueRaw;
+      let testName;
+      if (input.tail === 'greater') {
+        pValueRaw = 1 - phiZ;
+        testName = `One-sided pooled z-test: ${input.experimentLabel} > ${input.controlLabel}`;
+      } else if (input.tail === 'less') {
+        pValueRaw = phiZ;
+        testName = `One-sided pooled z-test: ${input.experimentLabel} < ${input.controlLabel}`;
+      } else {
+        pValueRaw = 2 * (1 - normalCdf(Math.abs(z)));
+        testName = `Two-sided pooled z-test: ${input.experimentLabel} differs from ${input.controlLabel}`;
+      }
+      pValueRaw = clamp(pValueRaw, 0, 1);
+      const pValueAdjusted = clamp(pValueRaw * input.comparisons, 0, 1);
+      const alpha = 1 - input.confidenceLevel;
+      const alphaAdjusted = alpha / input.comparisons;
+      const pForDecision = input.comparisons > 1 ? pValueAdjusted : pValueRaw;
+      const significant = pForDecision <= alpha;
+      const statisticalConfidence = 1 - pForDecision;
+      const ciZ = invNorm(1 - alphaAdjusted / 2);
+      const ciMargin = ciZ * unpooledSe;
+      const ciLow = diff - ciMargin;
+      const ciHigh = diff + ciMargin;
+      const relativeLift = p1 !== 0 ? diff / p1 : NaN;
+      return { p1, p2, pooled, pooledSe, unpooledSe, diff, z, phiZ, pValueRaw, pValueAdjusted, alpha, alphaAdjusted, pForDecision, significant, statisticalConfidence, ciZ, ciMargin, ciLow, ciHigh, relativeLift, testName };
+    }
+
+    function renderRows(rows) {
+      return rows.map(r => `<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td>${r[2] || ''}</td></tr>`).join('');
+    }
+
+    function rateCiNormal(p, n, z) {
+      if (!(Number.isFinite(p) && Number.isFinite(n) && n > 0 && Number.isFinite(z))) return { low: NaN, high: NaN };
+      const se = Math.sqrt(p * (1 - p) / n);
+      return { low: clamp(p - z * se, 0, 1), high: clamp(p + z * se, 0, 1) };
+    }
+
+    function renderCiVisual(input, out, crossesZero) {
+      const d = input.precision;
+      const vals = [out.ciLow, out.ciHigh, out.diff, 0].filter(Number.isFinite);
+      if (vals.length < 4 || !els.ciVisual) return;
+      let min = Math.min(...vals);
+      let max = Math.max(...vals);
+      let range = max - min;
+      if (!(range > 0)) {
+        const fallback = Math.max(Math.abs(out.diff), Math.abs(out.ciLow), Math.abs(out.ciHigh), 0.0001);
+        min = -fallback;
+        max = fallback;
+        range = max - min;
+      }
+      const pad = range * 0.18;
+      min -= pad;
+      max += pad;
+      const pos = (x) => clamp(((x - min) / (max - min)) * 100, 0, 100);
+      const lowPos = pos(out.ciLow);
+      const highPos = pos(out.ciHigh);
+      const zeroPos = pos(0);
+      const diffPos = pos(out.diff);
+      const low = Math.min(lowPos, highPos);
+      const width = Math.max(0.5, Math.abs(highPos - lowPos));
+
+      els.ciVisual.className = 'ci-visual ' + (crossesZero ? 'ci-crosses' : out.ciLow > 0 ? 'ci-positive' : 'ci-negative');
+      const zeroStatus = crossesZero ? '0 lift is plausible' : '0 lift is outside the CI';
+      els.ciVisualLabel.textContent = `${zeroStatus}; observed ${formatPctPoint(out.diff, d)}; CI ${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`;
+      if (crossesZero) {
+        els.ciVisualTitle.textContent = 'The CI crosses the 0-lift line';
+        els.ciVisualStatus.textContent = '0 lift plausible';
+        els.ciVisualNote.textContent = `Because the interval touches the 0-lift line, use the callout below for the significance interpretation.`;
+      } else if (out.ciLow > 0) {
+        els.ciVisualTitle.textContent = 'The CI is fully above 0 lift';
+        els.ciVisualStatus.textContent = 'Positive lift supported';
+        els.ciVisualNote.textContent = `The whole interval is above 0, so the data support positive lift at ${formatPct(1 - out.alphaAdjusted, 0)} confidence.`;
+      } else {
+        els.ciVisualTitle.textContent = 'The CI is fully below 0 lift';
+        els.ciVisualStatus.textContent = 'Negative lift supported';
+        els.ciVisualNote.textContent = `The whole interval is below 0, so the data support negative lift at ${formatPct(1 - out.alphaAdjusted, 0)} confidence.`;
+      }
+      els.ciZeroLine.style.left = `${zeroPos}%`;
+      els.ciIntervalBar.style.left = `${low}%`;
+      els.ciIntervalBar.style.width = `${width}%`;
+      els.ciLowBound.style.left = `${lowPos}%`;
+      els.ciHighBound.style.left = `${highPos}%`;
+      els.ciObservedDot.style.left = `${diffPos}%`;
+      els.ciObservedDot.title = `Observed difference: ${formatPctPoint(out.diff, d)}`;
+      els.ciAxisMin.textContent = formatPctPoint(min, d);
+      els.ciAxisMax.textContent = formatPctPoint(max, d);
+      els.ciAxisZeroLabel.textContent = '0 lift';
+    }
+
+    function renderConfidenceInterval(input, out) {
+      const d = input.precision;
+      const ciConfidence = 1 - out.alphaAdjusted;
+      const rawZ = invNorm(1 - (1 - input.confidenceLevel) / 2);
+      const controlCi = rateCiNormal(out.p1, input.controlTrials, rawZ);
+      const experimentCi = rateCiNormal(out.p2, input.experimentTrials, rawZ);
+      const crossesZero = out.ciLow <= 0 && out.ciHigh >= 0;
+      const falsePositiveRisk = out.pForDecision;
+      const diffRange = `[${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`;
+      const controlRange = `[${formatPct(controlCi.low, d)}, ${formatPct(controlCi.high, d)}]`;
+      const experimentRange = `[${formatPct(experimentCi.low, d)}, ${formatPct(experimentCi.high, d)}]`;
+
+      els.ciPanelSubtitle.textContent = `${formatPct(ciConfidence, 0)} CI for (${input.experimentLabel} rate - ${input.controlLabel} rate).`;
+      els.ciPill.textContent = crossesZero ? 'Crosses zero' : 'Does not cross zero';
+      els.differenceCiMetric.textContent = diffRange;
+      els.differenceCiSmall.textContent = `${formatPct(ciConfidence, 0)} CI for experiment - control`;
+      els.controlCiMetric.textContent = controlRange;
+      els.controlCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} CI for ${input.controlLabel} rate`;
+      els.experimentCiMetric.textContent = experimentRange;
+      els.experimentCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} CI for ${input.experimentLabel} rate`;
+      renderCiVisual(input, out, crossesZero);
+
+      if (crossesZero) {
+        const lead = out.diff < 0
+          ? `The observed result is negative: ${input.experimentLabel} is below ${input.controlLabel} by ${formatPctPoint(out.diff, d)}.`
+          : out.diff > 0
+            ? `The observed result is positive: ${input.experimentLabel} is above ${input.controlLabel} by ${formatPctPoint(out.diff, d)}.`
+            : 'The observed difference is exactly 0.';
+        els.ciCallout.className = 'note warn-note';
+        els.ciCallout.innerHTML = `${lead} The interval crosses zero, so a true difference of 0 is still plausible given the data. This is consistent with a non-significant result.`;
+      } else if (out.ciLow > 0) {
+        els.ciCallout.className = 'note';
+        els.ciCallout.innerHTML = 'The entire difference interval is above zero, so the data are consistent with positive experiment lift at the selected confidence level.';
+      } else {
+        els.ciCallout.className = 'note warn-note';
+        els.ciCallout.innerHTML = 'The entire difference interval is below zero, so the data are consistent with the experiment underperforming control at the selected confidence level.';
+      }
+
+      els.confidenceMeaningNote.innerHTML = `Calculated confidence % is this calculator's display convention: 1 - decision p-value. A ${formatPct(out.statisticalConfidence, 1)} calculated-confidence result means that if you called this a win at this level, you would be accepting about ${formatPct(falsePositiveRisk, 1)} false-positive risk. False positive: you think the experiment drove incrementality, but the lift was actually noise.`;
+    }
+
+    function getCriticalZForPower(input) {
+      const alpha = (1 - input.confidenceLevel) / input.comparisons;
+      return invNorm(1 - (input.tail === 'two' ? alpha / 2 : alpha));
+    }
+
+    function calculatePowerForObservedEffect(input, out, targetPowerOverride) {
+      const zCrit = getCriticalZForPower(input);
+      const effectZ = out.unpooledSe > 0 ? Math.abs(out.diff) / out.unpooledSe : NaN;
+      let observedPower = NaN;
+      if (Number.isFinite(effectZ) && Number.isFinite(zCrit)) {
+        observedPower = clamp((1 - normalCdf(zCrit - effectZ)) + normalCdf(-zCrit - effectZ), 0, 1);
+      }
+
+      const targetPower = Number.isFinite(targetPowerOverride) ? targetPowerOverride : input.powerTarget;
+      const zPower = invNorm(targetPower);
+      const p1 = out.p1;
+      const p2 = out.p2;
+      const diffAbs = Math.abs(out.diff);
+      const pBar = (p1 + p2) / 2;
+      let requiredPerArm = NaN;
+      if (diffAbs > 0 && p1 > 0 && p1 < 1 && p2 > 0 && p2 < 1) {
+        const term1 = zCrit * Math.sqrt(2 * pBar * (1 - pBar));
+        const term2 = zPower * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
+        requiredPerArm = Math.ceil(Math.pow(term1 + term2, 2) / Math.pow(diffAbs, 2));
+      }
+      const smallerArm = Math.min(input.controlTrials, input.experimentTrials);
+      const additionalNeeded = Number.isFinite(requiredPerArm) ? Math.max(0, requiredPerArm - smallerArm) : NaN;
+      return { zCrit, effectZ, observedPower, targetPower, zPower, requiredPerArm, smallerArm, additionalNeeded };
+    }
+
+    function periodInfo(unit) {
+      if (unit === 'week') return { singular: 'week', plural: 'weeks', days: 7 };
+      if (unit === 'month') return { singular: 'month', plural: 'months', days: 30.4375 };
+      return { singular: 'day', plural: 'days', days: 1 };
+    }
+
+    function formatDurationFromDays(days) {
+      if (!Number.isFinite(days)) return '--';
+      const d = Math.max(0, days);
+      return `${formatNumber(d, 0)} days / ${formatNumber(d / 7, 1)} weeks / ${formatNumber(d / 30.4375, 1)} months`;
+    }
+
+    function formatDateFromDays(days) {
+      if (!Number.isFinite(days)) return '--';
+      const dt = new Date();
+      dt.setDate(dt.getDate() + Math.max(0, Math.ceil(days)));
+      return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+
+    function reachForecastCalc(input, out, targetPowerOverride) {
+      const forecastPower = calculatePowerForObservedEffect(input, out, targetPowerOverride);
+      const required = forecastPower.requiredPerArm;
+      const unit = periodInfo(input.reachGrowthUnit);
+      const controlGrowth = input.controlDailyReach;
+      const experimentGrowthRaw = input.experimentDailyReach;
+      const experimentGrowth = Number.isFinite(experimentGrowthRaw) ? experimentGrowthRaw : controlGrowth;
+      const usedControlForExperiment = !Number.isFinite(experimentGrowthRaw) && Number.isFinite(controlGrowth);
+      const controlPeriods = Number.isFinite(required) && Number.isFinite(controlGrowth) && controlGrowth > 0 ? Math.max(0, Math.ceil((required - input.controlTrials) / controlGrowth)) : NaN;
+      const experimentPeriods = Number.isFinite(required) && Number.isFinite(experimentGrowth) && experimentGrowth > 0 ? Math.max(0, Math.ceil((required - input.experimentTrials) / experimentGrowth)) : NaN;
+      const periodsToReady = Number.isFinite(controlPeriods) && Number.isFinite(experimentPeriods) ? Math.max(controlPeriods, experimentPeriods) : NaN;
+      const daysToReady = Number.isFinite(periodsToReady) ? periodsToReady * unit.days : NaN;
+      const limitingArm = Number.isFinite(periodsToReady) ? (controlPeriods >= experimentPeriods ? input.controlLabel : input.experimentLabel) : '--';
+      return { forecastPower, required, unit, controlGrowth, experimentGrowthRaw, experimentGrowth, usedControlForExperiment, controlPeriods, experimentPeriods, periodsToReady, daysToReady, limitingArm };
+    }
+
+    function getPlannerEstimate(input) {
+      const baselinePct = asNum(els.plannerBaseline.value);
+      const relativeLiftPct = asNum(els.plannerLift.value);
+      const power = asNum(els.plannerPower.value);
+      const controlAllocation = asNum(els.plannerControlAllocation.value);
+      const ratio = controlAllocation > 0 ? (1 - controlAllocation) / controlAllocation : NaN;
+      const alpha = (1 - input.confidenceLevel) / input.comparisons;
+      const alphaForZ = input.tail === 'two' ? alpha / 2 : alpha;
+      const zAlpha = invNorm(1 - alphaForZ);
+      const zPower = invNorm(power);
+      const p1 = baselinePct / 100;
+      const p2 = p1 * (1 + relativeLiftPct / 100);
+      const diff = Math.abs(p2 - p1);
+      let nControl = NaN;
+      let nExperiment = NaN;
+      if (p1 > 0 && p2 > 0 && p2 < 1 && diff > 0 && ratio > 0) {
+        const pooledAvg = (p1 + ratio * p2) / (1 + ratio);
+        const term1 = zAlpha * Math.sqrt((1 + 1 / ratio) * pooledAvg * (1 - pooledAvg));
+        const term2 = zPower * Math.sqrt(p1 * (1 - p1) + (p2 * (1 - p2)) / ratio);
+        nControl = Math.ceil(Math.pow(term1 + term2, 2) / Math.pow(diff, 2));
+        nExperiment = Math.ceil(ratio * nControl);
+      }
+      return { baselinePct, relativeLiftPct, power, controlAllocation, ratio, alpha, alphaForZ, zAlpha, zPower, p1, p2, diff, nControl, nExperiment };
+    }
+
+    function renderTopInterpretation(input, out, power) {
+      if (!els.interpretationCard || !els.interpretationTitle || !els.interpretationBody) return;
+      const targetConfidence = input.confidenceLevel;
+      const targetPower = input.powerTarget;
+      const confidenceMet = out.significant;
+      const powerMet = Number.isFinite(power.observedPower) && power.observedPower >= targetPower;
+      const ciCrossesZero = out.ciLow <= 0 && out.ciHigh >= 0;
+      const positiveLift = out.diff > 0;
+      const negativeLift = out.diff < 0;
+      const desiredDirectionMet = input.tail === 'greater' ? positiveLift : input.tail === 'less' ? negativeLift : true;
+      const directionText = positiveLift ? 'experiment is currently above control' : negativeLift ? 'experiment is currently below control' : 'experiment and control are tied';
+      const ciText = ciCrossesZero
+        ? 'CI status: crosses 0.'
+        : positiveLift && out.ciLow > 0
+          ? 'CI status: fully above 0.'
+          : negativeLift && out.ciHigh < 0
+            ? 'CI status: fully below 0.'
+            : 'CI status: does not cross 0.';
+      let title;
+      let body;
+      let cls = 'warn';
+
+      if ((input.tail === 'greater' || input.tail === 'less') && !desiredDirectionMet) {
+        title = 'No evidence in the selected success direction';
+        body = `The selected hypothesis is <strong>${input.tail === 'greater' ? 'Experiment > Control' : 'Experiment < Control'}</strong>, but ${directionText}. ${ciText} Do not call this a win for the selected direction.`;
+        cls = 'bad';
+      } else if (confidenceMet && powerMet) {
+        title = 'Strong result: confidence and power targets are both met';
+        body = `This clears the selected <strong>${formatPct(targetConfidence, 0)} confidence</strong> threshold and meets the <strong>${formatPct(targetPower, 0)} observed-power</strong> target. ${ciText} If the observed lift also clears the business CPA/ROAS bar, this is the cleanest case for scaling or continuing spend.`;
+        cls = positiveLift ? 'good' : 'bad';
+      } else if (confidenceMet && !powerMet) {
+        title = 'Significant, but underpowered';
+        body = `The result clears the selected <strong>${formatPct(targetConfidence, 0)} confidence</strong> threshold, but observed power is below the <strong>${formatPct(targetPower, 0)}</strong> target. Treat this as positive evidence, but fragile; it is better for cautious scaling or continued testing than for a major budget shift. ${ciText}`;
+        cls = 'warn';
+      } else if (!confidenceMet && powerMet) {
+        title = 'Powered, but not significant';
+        body = `The test has enough reach to detect an effect around this observed size at the <strong>${formatPct(targetPower, 0)}</strong> power target, but it does not clear the <strong>${formatPct(targetConfidence, 0)} confidence</strong> threshold. If the test design is clean and conversion lag is mature, this argues against scaling under the current setup. ${ciText}`;
+        cls = 'warn';
+      } else {
+        title = 'Inconclusive: not significant and underpowered';
+        body = `The result does not clear the <strong>${formatPct(targetConfidence, 0)} confidence</strong> threshold and observed power is below the <strong>${formatPct(targetPower, 0)}</strong> target. Do not call this a win or a loss yet; the test is too small or too noisy for decision-grade proof. ${ciText}`;
+        cls = 'warn';
+      }
+
+      els.interpretationCard.className = `interpretation-card ${cls}`;
+      els.interpretationTitle.textContent = title;
+      els.interpretationBody.innerHTML = body;
+    }
+
+    function renderPower(input, out) {
+      const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const d = input.precision;
+      const adequatelyPowered = Number.isFinite(power.observedPower) && power.observedPower >= power.targetPower;
+      const needsMore = Number.isFinite(power.additionalNeeded) && power.additionalNeeded > 0;
+      const directionMismatch = (input.tail === 'greater' && out.diff < 0) || (input.tail === 'less' && out.diff > 0);
+      const caveat = directionMismatch ? ` Note: the observed effect is opposite your selected one-sided success direction, so this panel is a sample-strength diagnostic, not evidence of lift in the desired direction.` : '';
+
+      if (els.powerTargetDisplay) els.powerTargetDisplay.textContent = `Target power: ${formatPct(power.targetPower, 0)}`;
+      els.powerStatus.className = 'status ' + (adequatelyPowered ? 'good' : 'warn');
+      els.powerStatus.innerHTML = `<span class="dot"></span><span>${adequatelyPowered ? 'Adequately powered' : 'Underpowered'}</span>`;
+      els.observedPowerMetric.textContent = Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--';
+      els.requiredNLabel.textContent = `Required n / arm @ ${formatPct(power.targetPower, 0)}`;
+      els.requiredNMetric.textContent = Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--';
+      els.requiredNSmall.textContent = `Equal-size arms at ${formatPct(power.targetPower, 0)} power and ${formatPct(input.confidenceLevel, 0)} confidence.`;
+      els.smallerArmMetric.textContent = Number.isFinite(power.smallerArm) ? formatNumber(power.smallerArm) : '--';
+      els.remainingNMetric.textContent = Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--';
+
+      if (Number.isFinite(power.observedPower)) {
+        els.powerRiskNote.innerHTML = `Observed power is the estimated chance this test could detect an effect as large as the one currently observed. At ${formatPct(power.observedPower, 1)} observed power, you are accepting about ${formatPct(1 - power.observedPower, 1)} false-negative risk for an effect this large. False negative: the experiment actually drove incrementality, but the test was too noisy to prove it and showed no incrementality.`;
+      } else {
+        els.powerRiskNote.innerHTML = 'Observed power cannot be estimated until the calculator has a non-zero observed effect and valid conversion rates.';
+      }
+
+      if (!Number.isFinite(power.requiredPerArm) || !Number.isFinite(power.observedPower)) {
+        els.powerCallout.innerHTML = 'Power cannot be estimated because the observed effect is zero or one of the rates is outside the valid range.';
+      } else if (needsMore) {
+        els.powerCallout.innerHTML = `Your test is currently underpowered. To confirm the observed lift at ${formatPct(power.targetPower, 0)} power and ${formatPct(input.confidenceLevel, 0)} confidence, you would need about ${formatNumber(power.requiredPerArm)} Audience Reach per arm - roughly ${formatNumber(power.additionalNeeded)} more than your smaller arm has today.${caveat}`;
+      } else {
+        els.powerCallout.innerHTML = `Your smaller arm has at least the estimated ${formatNumber(power.requiredPerArm)} Audience Reach per arm needed to confirm the observed lift at ${formatPct(power.targetPower, 0)} power and ${formatPct(input.confidenceLevel, 0)} confidence. Still check test design, randomization, and conversion lag before making a spend decision.${caveat}`;
+      }
+
+      els.powerRows.innerHTML = renderRows([
+        ['Observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Post-hoc estimate for detecting the absolute observed effect with the current sample sizes.'],
+        [`Required n / arm @ ${formatPct(power.targetPower, 0)}`, Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--', `Equal allocation, ${input.tail === 'two' ? 'two-sided' : 'one-sided'} threshold, current confidence setting${input.comparisons > 1 ? ' with Bonferroni correction' : ''}.`],
+        ['Additional n needed', Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--', 'Required n per arm minus the smaller current arm.'],
+        ['Observed absolute effect', formatPctPoint(Math.abs(out.diff), d), 'Absolute value of experiment rate minus control rate.'],
+        ['Effect z for power', Number.isFinite(power.effectZ) ? formatNumber(power.effectZ, 4) : '--', 'Observed absolute effect divided by the unpooled standard error.'],
+        ['Critical z', Number.isFinite(power.zCrit) ? formatNumber(power.zCrit, 4) : '--', `${input.tail === 'two' ? 'Two-sided' : 'One-sided'} threshold from selected confidence.`],
+        ['Power target', formatPct(power.targetPower, 0), 'Used for required n / arm.']
+      ]);
+      renderReachForecast(input, out);
+    }
+
+    function renderReachForecast(input, out) {
+      if (!els.reachForecastRows || !els.reachForecastNote) return;
+      const forecast = reachForecastCalc(input, out, input.forecastPowerTarget);
+      const required = forecast.required;
+      const unit = forecast.unit;
+      const periodLabel = `per ${unit.singular}`;
+
+      els.reachForecastSummary.textContent = `Reach growth forecast: time to ${formatPct(input.forecastPowerTarget, 0)} power`;
+      els.controlReachGrowthLabel.textContent = `${displayArmLabel(input.controlLabel)} new Audience Reach ${periodLabel}`;
+      els.experimentReachGrowthLabel.textContent = `${displayArmLabel(input.experimentLabel)} new Audience Reach ${periodLabel}`;
+      els.controlReachGrowthHint.textContent = `Average incremental unique reach added ${periodLabel} in control.`;
+      els.experimentReachGrowthHint.textContent = `Enter this if experiment delivery grows differently from control. Blank = use control ${periodLabel}.`;
+
+      if (!Number.isFinite(required)) {
+        els.reachForecastHeroValue.textContent = '--';
+        els.reachForecastHeroSub.textContent = 'Required Audience Reach cannot be calculated until there is a non-zero observed effect.';
+        els.reachForecastNote.innerHTML = 'Reach timing cannot be estimated until required n / arm can be calculated. This usually requires a non-zero observed effect.';
+      } else if (!Number.isFinite(forecast.controlGrowth) || forecast.controlGrowth <= 0) {
+        els.reachForecastHeroValue.textContent = '--';
+        els.reachForecastHeroSub.textContent = `Enter control reach growth ${periodLabel}.`;
+        els.reachForecastNote.innerHTML = `Enter average new Audience Reach ${periodLabel} for control to estimate how long is needed. Enter experiment growth too if the two arms do not grow at the same pace.`;
+      } else if (!Number.isFinite(forecast.periodsToReady)) {
+        els.reachForecastHeroValue.textContent = '--';
+        els.reachForecastHeroSub.textContent = `Enter positive reach growth ${periodLabel} for any arm still below required reach.`;
+        els.reachForecastNote.innerHTML = `Enter a positive reach-growth value ${periodLabel} for any arm that is still below the required Audience Reach.`;
+      } else if (forecast.periodsToReady === 0) {
+        els.reachForecastHeroValue.textContent = `0 more ${unit.plural} needed`;
+        els.reachForecastHeroSub.textContent = `Both arms are at or above the estimated ${formatPct(input.forecastPowerTarget, 0)}-power reach target.`;
+        els.reachForecastNote.innerHTML = `Both arms have reached the estimated Audience Reach needed for ${formatPct(input.forecastPowerTarget, 0)} power for an effect this large. That does not guarantee statistical significance; it only means the sample-size target is no longer the obvious bottleneck.`;
+      } else {
+        const label = forecast.periodsToReady === 1 ? unit.singular : unit.plural;
+        const expAssumption = forecast.usedControlForExperiment ? ' Experiment growth is blank, so the control growth value is reused for experiment.' : '';
+        els.reachForecastHeroValue.textContent = `${formatNumber(forecast.periodsToReady)} more ${label} needed`;
+        els.reachForecastHeroSub.textContent = `${formatDurationFromDays(forecast.daysToReady)}; limiting arm: ${forecast.limitingArm}.`;
+        els.reachForecastNote.innerHTML = `Assuming observed conversion rates and reach growth stay roughly stable, you need about ${formatNumber(forecast.periodsToReady)} more ${label} (${formatDurationFromDays(forecast.daysToReady)}) for both arms to reach the estimated ${formatPct(input.forecastPowerTarget, 0)}-power sample size. The limiting arm is ${forecast.limitingArm}.${expAssumption} This forecasts when the test is powered; it does not guarantee the eventual p-value will be significant.`;
+      }
+
+      els.reachForecastRows.innerHTML = renderRows([
+        [`Required Audience Reach / arm @ ${formatPct(input.forecastPowerTarget, 0)} power`, Number.isFinite(required) ? formatNumber(required) : '--', 'Calculated using the observed absolute effect, selected confidence, selected tail, and forecast target power.'],
+        ['Growth input unit', displayArmLabel(unit.singular), `Reach-growth inputs are interpreted as new unique reach ${periodLabel}.`],
+        [`Current ${input.controlLabel} Audience Reach`, formatNumber(input.controlTrials), 'Current control denominator.'],
+        [`Current ${input.experimentLabel} Audience Reach`, formatNumber(input.experimentTrials), 'Current experiment denominator.'],
+        [`${input.controlLabel} new Audience Reach ${periodLabel}`, Number.isFinite(forecast.controlGrowth) ? formatNumber(forecast.controlGrowth) : '--', `Average incremental unique reach added ${periodLabel}.`],
+        [`${input.experimentLabel} new Audience Reach ${periodLabel}`, Number.isFinite(forecast.experimentGrowth) ? formatNumber(forecast.experimentGrowth) : '--', forecast.usedControlForExperiment ? 'Using control growth because experiment is blank.' : `Average incremental unique reach added ${periodLabel}.`],
+        [`${unit.plural} until ${input.controlLabel} reaches required n`, Number.isFinite(forecast.controlPeriods) ? formatNumber(forecast.controlPeriods) : '--', `Based on max(0, required n - current control reach) / control growth ${periodLabel}.`],
+        [`${unit.plural} until ${input.experimentLabel} reaches required n`, Number.isFinite(forecast.experimentPeriods) ? formatNumber(forecast.experimentPeriods) : '--', `Based on max(0, required n - current experiment reach) / experiment growth ${periodLabel}.`],
+        ['Estimated time until both arms are powered', Number.isFinite(forecast.daysToReady) ? formatDurationFromDays(forecast.daysToReady) : '--', 'Uses the slower/limiting arm.'],
+        ['Estimated date powered', Number.isFinite(forecast.daysToReady) ? formatDateFromDays(forecast.daysToReady) : '--', 'Local browser date plus estimated duration.']
+      ]);
+    }
+
+    function renderSteps(input, out) {
+      const d = input.precision;
+      const dMore = Math.max(6, d + 3);
+      const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const forecast = reachForecastCalc(input, out, input.forecastPowerTarget);
+      const planner = getPlannerEstimate(input);
+      const alphaText = input.comparisons > 1
+        ? `${formatFlexible(out.alpha, dMore)} / ${input.comparisons} = ${formatFlexible(out.alphaAdjusted, dMore)} for the adjusted CI; p-value shown with Bonferroni adjustment for decision.`
+        : `${formatFlexible(out.alpha, dMore)}.`;
+      let pFormula;
+      if (input.tail === 'greater') {
+        pFormula = `p-value = 1 - Phi(z) = 1 - Phi(${formatNumber(out.z, 4)}) = ${formatFlexible(out.pValueRaw, dMore)}. This credits only the pre-declared direction: ${input.experimentLabel} > ${input.controlLabel}.`;
+      } else if (input.tail === 'less') {
+        pFormula = `p-value = Phi(z) = Phi(${formatNumber(out.z, 4)}) = ${formatFlexible(out.pValueRaw, dMore)}. This credits only the pre-declared direction: ${input.experimentLabel} < ${input.controlLabel}.`;
+      } else {
+        pFormula = `p-value = 2 x [1 - Phi(abs(z))] = 2 x [1 - Phi(${formatNumber(Math.abs(out.z), 4)})] = ${formatFlexible(out.pValueRaw, dMore)}. This checks for a difference in either direction.`;
+      }
+      const zCritFormula = input.tail === 'two'
+        ? `zcrit = Phi^-1(1 - alpha / 2) = Phi^-1(1 - ${formatFlexible(out.alphaAdjusted, dMore)} / 2) = ${formatNumber(power.zCrit, 4)}.`
+        : `zcrit = Phi^-1(1 - alpha) = Phi^-1(1 - ${formatFlexible(out.alphaAdjusted, dMore)}) = ${formatNumber(power.zCrit, 4)}.`;
+      const periodLabel = forecast.unit ? `per ${forecast.unit.singular}` : '';
+      const steps = [
+        {
+          title: 'Compute conversion rates',
+          body: `p1 = ${formatNumber(input.controlConversions)} ${controlConversionDisplayName(input)} / ${formatNumber(input.controlTrials)} ${input.controlLabel} Audience Reach = ${formatPct(out.p1, d)}.
+p2 = ${formatNumber(input.experimentConversions)} ${experimentConversionDisplayName(input)} / ${formatNumber(input.experimentTrials)} ${input.experimentLabel} Audience Reach = ${formatPct(out.p2, d)}.`
+        },
+        {
+          title: 'Compute observed effect',
+          body: `Absolute difference = p2 - p1 = ${formatFlexible(out.p2, dMore)} - ${formatFlexible(out.p1, dMore)} = ${formatPctPoint(out.diff, d)}.
+Relative lift = (p2 - p1) / p1 = ${Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--'}.`
+        },
+        {
+          title: 'Pooled rate under the null hypothesis',
+          body: `p-hat = (${formatNumber(input.controlConversions)} + ${formatNumber(input.experimentConversions)}) / (${formatNumber(input.controlTrials)} + ${formatNumber(input.experimentTrials)}) = ${formatFlexible(out.pooled, dMore)} (${formatPct(out.pooled, d)}).`
+        },
+        {
+          title: 'Standard error using the pooled rate',
+          body: `SE_pooled = sqrt[p-hat x (1 - p-hat) x (1/n1 + 1/n2)]
+= sqrt[${formatFlexible(out.pooled, dMore)} x ${formatFlexible(1 - out.pooled, dMore)} x (${formatFlexible(1 / input.controlTrials, dMore)} + ${formatFlexible(1 / input.experimentTrials, dMore)})]
+= ${formatFlexible(out.pooledSe, dMore)}.`
+        },
+        {
+          title: 'Test statistic',
+          body: `z = (p2 - p1) / SE_pooled = ${formatFlexible(out.diff, dMore)} / ${formatFlexible(out.pooledSe, dMore)} = ${formatNumber(out.z, 4)}.`
+        },
+        {
+          title: input.tail === 'two' ? 'Two-sided p-value' : 'One-sided p-value',
+          body: pFormula
+        },
+        {
+          title: 'Compare to alpha and calculate confidence display',
+          body: `alpha = 1 - confidence = 1 - ${formatFlexible(input.confidenceLevel, dMore)} = ${alphaText}
+Decision p-value = ${formatFlexible(out.pForDecision, dMore)}.
+Calculated confidence % = 1 - decision p-value = ${formatPct(out.statisticalConfidence, d)}.
+${out.significant ? 'Reject H0: statistically significant.' : 'Fail to reject H0: not statistically significant.'}`
+        },
+        {
+          title: 'Confidence interval on the difference',
+          body: `Unpooled SE = sqrt[p1(1-p1)/n1 + p2(1-p2)/n2] = ${formatFlexible(out.unpooledSe, dMore)}.
+CI z = ${formatNumber(out.ciZ, 4)}.
+CI margin = z x unpooled SE = ${formatPctPoint(out.ciMargin, d)}.
+${formatPct(1 - out.alphaAdjusted, d)} CI for (p2 - p1) = ${formatPctPoint(out.diff, d)} +/- ${formatPctPoint(out.ciMargin, d)} = [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}].`
+        },
+        {
+          title: 'Control and experiment rate intervals',
+          body: `Each arm CI uses rate +/- z x sqrt[p(1-p)/n].
+Control SE = sqrt[${formatFlexible(out.p1, dMore)} x ${formatFlexible(1 - out.p1, dMore)} / ${formatNumber(input.controlTrials)}].
+Experiment SE = sqrt[${formatFlexible(out.p2, dMore)} x ${formatFlexible(1 - out.p2, dMore)} / ${formatNumber(input.experimentTrials)}].
+These produce the Control CI and Experiment CI shown above.`
+        },
+        {
+          title: 'Statistical power for this observed effect',
+          body: `${zCritFormula}
+Effect z = abs(p2 - p1) / unpooled SE = ${formatPctPoint(Math.abs(out.diff), d)} / ${formatFlexible(out.unpooledSe, dMore)} = ${Number.isFinite(power.effectZ) ? formatNumber(power.effectZ, 4) : '--'}.
+Observed power = [1 - Phi(zcrit - effect z)] + Phi(-zcrit - effect z) = ${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'}.
+False-negative risk for an effect this large is approximately 1 - observed power = ${Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) : '--'}.`
+        },
+        {
+          title: `Required n / arm at ${formatPct(input.powerTarget, 0)} power`,
+          body: `pbar = (p1 + p2) / 2 = ${formatFlexible((out.p1 + out.p2) / 2, dMore)}.
+zpower = Phi^-1(target power) = Phi^-1(${formatFlexible(input.powerTarget, dMore)}) = ${Number.isFinite(power.zPower) ? formatNumber(power.zPower, 4) : '--'}.
+Required n per arm = [(zcrit x sqrt(2 x pbar x (1-pbar)) + zpower x sqrt(p1(1-p1)+p2(1-p2)))^2] / abs(p2-p1)^2
+= ${Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--'}.
+Additional n needed in smaller arm = required n per arm - smaller current arm = ${Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--'}.`
+        },
+        {
+          title: `Reach growth forecast to ${formatPct(input.forecastPowerTarget, 0)} power`,
+          body: `Required reach per arm = ${Number.isFinite(forecast.required) ? formatNumber(forecast.required) : '--'}.
+Control periods needed = ceil(max(0, required - current control reach) / control reach growth ${periodLabel}) = ${Number.isFinite(forecast.controlPeriods) ? formatNumber(forecast.controlPeriods) : '--'}.
+Experiment periods needed = ceil(max(0, required - current experiment reach) / experiment reach growth ${periodLabel}) = ${Number.isFinite(forecast.experimentPeriods) ? formatNumber(forecast.experimentPeriods) : '--'}.
+Estimated time needed = max(control periods, experiment periods) = ${Number.isFinite(forecast.periodsToReady) ? formatNumber(forecast.periodsToReady) + ' ' + (forecast.periodsToReady === 1 ? forecast.unit.singular : forecast.unit.plural) : '--'}.
+Limiting arm = ${forecast.limitingArm || '--'}.`
+        },
+        {
+          title: 'Planning helper sample-size math',
+          body: `Baseline rate = ${Number.isFinite(planner.p1) ? formatPct(planner.p1, d) : '--'}.
+Experiment rate at expected lift = baseline x (1 + lift) = ${Number.isFinite(planner.p2) ? formatPct(planner.p2, d) : '--'}.
+Control allocation = ${Number.isFinite(planner.controlAllocation) ? formatPct(planner.controlAllocation, 2) : '--'}; implied experiment/control ratio = (1 - control allocation) / control allocation = ${Number.isFinite(planner.ratio) ? formatNumber(planner.ratio, 4) : '--'}.
+The helper then uses the unequal-allocation two-proportion normal approximation to estimate required Control N = ${Number.isFinite(planner.nControl) ? formatNumber(planner.nControl) : '--'} and Experiment N = ${Number.isFinite(planner.nExperiment) ? formatNumber(planner.nExperiment) : '--'}.`
+        }
+      ];
+      els.steps.innerHTML = steps.map((s, idx) => `
+        <div class="step">
+          <div><div class="step-badge">${idx + 1}</div></div>
+          <div>
+            <div class="step-title">${s.title}</div>
+            <div class="formula">${s.body}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderPlanner(input) {
+      const planner = getPlannerEstimate(input);
+      els.plannerRows.innerHTML = renderRows([
+        ['Baseline rate', Number.isFinite(planner.p1) ? formatPct(planner.p1, input.precision) : '--', 'Control conversion rate assumption.'],
+        ['Experiment rate at MDE', Number.isFinite(planner.p2) ? formatPct(planner.p2, input.precision) : '--', 'Baseline rate multiplied by expected relative lift.'],
+        ['Absolute MDE', Number.isFinite(planner.diff) ? formatPctPoint(planner.diff, input.precision) : '--', 'Smallest absolute rate difference the test is planned to detect.'],
+        ['% Control Allocation', Number.isFinite(planner.controlAllocation) ? formatPct(planner.controlAllocation, 2) : '--', 'Selected control share of the total test population.'],
+        ['Implied experiment/control ratio', Number.isFinite(planner.ratio) ? formatNumber(planner.ratio, 4) : '--', 'Computed as (1 - control allocation) / control allocation. 50% control = 1.0000.'],
+        ['z for alpha', Number.isFinite(planner.zAlpha) ? formatNumber(planner.zAlpha, 4) : '--', `${input.tail === 'two' ? 'Two-sided' : 'One-sided'} threshold.`],
+        ['z for power', Number.isFinite(planner.zPower) ? formatNumber(planner.zPower, 4) : '--', 'Power threshold.'],
+        ['Required control N', Number.isFinite(planner.nControl) ? formatNumber(planner.nControl) : '--', 'Estimated control Audience Reach.'],
+        ['Required experiment N', Number.isFinite(planner.nExperiment) ? formatNumber(planner.nExperiment) : '--', 'Estimated experiment Audience Reach.'],
+        ['Total required N', Number.isFinite(planner.nControl + planner.nExperiment) ? formatNumber(planner.nControl + planner.nExperiment) : '--', 'Control plus experiment.']
+      ]);
+    }
+
+    function renderMachineReadable(input, out) {
+      const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const forecast = reachForecastCalc(input, out, input.forecastPowerTarget);
+      if (els.resultPValue) els.resultPValue.textContent = Number.isFinite(out.pForDecision) ? String(out.pForDecision) : '';
+      if (els.resultCalculatedConfidence) els.resultCalculatedConfidence.textContent = Number.isFinite(out.statisticalConfidence) ? String(out.statisticalConfidence) : '';
+      if (els.resultCalculatedConfidencePct) els.resultCalculatedConfidencePct.textContent = Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, 4) : '';
+      if (els.resultObservedPower) els.resultObservedPower.textContent = Number.isFinite(power.observedPower) ? String(power.observedPower) : '';
+      if (els.resultObservedPowerPct) els.resultObservedPowerPct.textContent = Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 4) : '';
+      if (els.resultRequiredNPerArm) els.resultRequiredNPerArm.textContent = Number.isFinite(power.requiredPerArm) ? String(power.requiredPerArm) : '';
+      if (els.resultAdditionalNSmallerArm) els.resultAdditionalNSmallerArm.textContent = Number.isFinite(power.additionalNeeded) ? String(power.additionalNeeded) : '';
+      if (els.resultReachPeriodsNeeded) els.resultReachPeriodsNeeded.textContent = Number.isFinite(forecast.periodsToReady) ? String(forecast.periodsToReady) : '';
+      if (els.resultReachGrowthUnit) els.resultReachGrowthUnit.textContent = forecast.unit ? forecast.unit.singular : '';
+      if (els.resultReachDaysNeeded) els.resultReachDaysNeeded.textContent = Number.isFinite(forecast.daysToReady) ? String(forecast.daysToReady) : '';
+    }
+
+    function render() {
+      const input = getInputs();
+      updateCampaignModeUI(input);
+      if (input.errors.length) {
+        els.errorBox.style.display = 'block';
+        els.errorBox.innerHTML = input.errors.join('<br>');
+        return;
+      }
+      els.errorBox.style.display = 'none';
+      const out = calculate(input);
+      const d = input.precision;
+      const dMore = Math.max(6, d + 3);
+
+      els.testDescription.textContent = out.testName;
+      const statusText = out.significant ? 'Statistically significant' : 'Not statistically significant';
+      els.significanceStatus.className = 'status ' + (out.significant ? 'good' : 'warn');
+      els.significanceStatus.innerHTML = `<span class="dot"></span><span>${statusText}</span>`;
+
+      els.controlRate.textContent = formatPct(out.p1, d);
+      els.experimentRate.textContent = formatPct(out.p2, d);
+      els.controlSmall.textContent = `${formatNumber(input.controlConversions)} / ${formatNumber(input.controlTrials)}`;
+      els.experimentSmall.textContent = `${formatNumber(input.experimentConversions)} / ${formatNumber(input.experimentTrials)}`;
+      els.liftMetric.textContent = Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--';
+      els.diffMetric.textContent = `${formatPctPoint(out.diff, d)} absolute difference`;
+      els.pValueMetric.textContent = formatFlexible(out.pForDecision, dMore);
+      els.pValueSmall.textContent = input.comparisons > 1 ? 'Bonferroni-adjusted decision p-value' : 'Decision p-value';
+      els.calculatedConfidenceMetric.textContent = formatPct(out.statisticalConfidence, d);
+      els.confidenceMetric.textContent = `${formatPct(out.pForDecision, d)} false-positive risk if declared`;
+
+      els.controlBarLabel.textContent = input.controlLabel;
+      els.experimentBarLabel.textContent = input.experimentLabel;
+      els.controlBarRate.textContent = formatPct(out.p1, d);
+      els.experimentBarRate.textContent = formatPct(out.p2, d);
+      const maxRate = Math.max(out.p1, out.p2, 0.0000001);
+      els.controlBar.style.width = `${Math.max(2, out.p1 / maxRate * 100)}%`;
+      els.experimentBar.style.width = `${Math.max(2, out.p2 / maxRate * 100)}%`;
+
+      const ciLabel = `${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`;
+      const powerForRows = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      els.topObservedPowerMetric.textContent = Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--';
+      els.topObservedPowerSmall.textContent = `Target: ${formatPct(input.powerTarget, 0)}`;
+      renderTopInterpretation(input, out, powerForRows);
+      els.summaryRows.innerHTML = renderRows([
+        [`${input.controlLabel} rate`, formatPct(out.p1, d), `${controlConversionDisplayName(input)}: ${formatNumber(input.controlConversions)} from ${formatNumber(input.controlTrials)} Audience Reach.`],
+        [`${input.experimentLabel} rate`, formatPct(out.p2, d), `${experimentConversionDisplayName(input)}: ${formatNumber(input.experimentConversions)} from ${formatNumber(input.experimentTrials)} Audience Reach.`],
+        ['Absolute difference', formatPctPoint(out.diff, d), 'Experiment rate minus control rate.'],
+        ['Relative lift', Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--', 'Absolute difference divided by control rate.'],
+        ['Pooled rate', formatPct(out.pooled, d), 'Assumes the null hypothesis is true.'],
+        ['Pooled standard error', formatFlexible(out.pooledSe, dMore), 'Used for the z-test.'],
+        ['Z-score', formatNumber(out.z, 4), 'How many standard errors the observed difference is from zero.'],
+        ['Raw p-value', formatFlexible(out.pValueRaw, dMore), input.tail === 'two' ? 'Two-sided p-value.' : 'One-sided p-value in the selected direction.'],
+        ['Decision p-value', formatFlexible(out.pForDecision, dMore), input.comparisons > 1 ? `Bonferroni adjusted for ${input.comparisons} comparisons.` : 'Same as raw p-value because comparisons = 1.'],
+        ['Calculated confidence %', formatPct(out.statisticalConfidence, d), 'Displayed as 1 - decision p-value.'],
+        ['Decision alpha', formatFlexible(out.alpha, dMore), `Equivalent to ${formatPct(input.confidenceLevel, d)} confidence.`],
+        ['Confidence interval', ciLabel, `${formatPct(1 - out.alphaAdjusted, d)} CI for experiment - control, using unpooled SE.`],
+        ['Observed power', Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--', 'Post-hoc estimate using the absolute observed effect and current sample sizes.'],
+        [`Required n / arm @ ${formatPct(input.powerTarget, 0)} power`, Number.isFinite(powerForRows.requiredPerArm) ? formatNumber(powerForRows.requiredPerArm) : '--', 'Equal-sized arms required to confirm the observed absolute lift under the selected test direction.']
+      ]);
+
+      const isExperimentHigher = out.diff > 0;
+      if (input.tail === 'greater') {
+        els.directionNote.innerHTML = isExperimentHigher
+          ? `The selected one-sided test credits only positive lift. Because ${input.experimentLabel} is higher than ${input.controlLabel}, this is the case where a two-sided p-value would be roughly twice the one-sided p-value.`
+          : `The selected one-sided test credits only positive lift. Because ${input.experimentLabel} is lower than ${input.controlLabel}, the positive-lift p-value is high; do not divide a two-sided p-value by 2 to claim success in this direction.`;
+      } else if (input.tail === 'less') {
+        els.directionNote.innerHTML = !isExperimentHigher
+          ? `The selected one-sided test credits only negative movement. Because ${input.experimentLabel} is lower than ${input.controlLabel}, this is the case where a two-sided p-value would be roughly twice the one-sided p-value.`
+          : `The selected one-sided test credits only negative movement. Because ${input.experimentLabel} is higher than ${input.controlLabel}, the negative-direction p-value is high.`;
+      } else {
+        els.directionNote.innerHTML = `The selected two-sided test asks whether ${input.experimentLabel} is different from ${input.controlLabel} in either direction. It is more conservative than a pre-declared one-sided positive-lift test.`;
+      }
+
+      renderConfidenceInterval(input, out);
+      renderPower(input, out);
+      renderSteps(input, out);
+      renderPlanner(input);
+      renderMachineReadable(input, out);
+      updateUrl(input);
+      window.lastSummaryText = buildSummaryText(input, out);
+    }
+
+    function updateUrl(input) {
+      const params = new URLSearchParams();
+      params.set('experimentType', input.experimentType);
+      params.set('control', `${input.controlConversions},${input.controlTrials}`);
+      params.set('experiment', `${input.experimentConversions},${input.experimentTrials}`);
+      params.set('controlLabel', input.controlLabel);
+      params.set('experimentLabel', input.experimentLabel);
+      if (input.experimentType === 'RE') {
+        params.set('controlConversionName', input.controlConversionName);
+        params.set('experimentConversionName', input.experimentConversionName);
+      }
+      if (Number.isFinite(input.controlDailyReach)) params.set('controlDailyReach', input.controlDailyReach);
+      if (Number.isFinite(input.experimentDailyReach)) params.set('experimentDailyReach', input.experimentDailyReach);
+      params.set('confidence', input.confidenceLevel);
+      params.set('tail', input.tail);
+      params.set('powerTarget', input.powerTarget);
+      params.set('forecastPowerTarget', input.forecastPowerTarget);
+      params.set('plannerPower', els.plannerPower.value);
+      params.set('plannerControlAllocation', els.plannerControlAllocation.value);
+      params.set('reachGrowthUnit', input.reachGrowthUnit);
+      params.set('precision', input.precision);
+      const base = window.location.href.split('#')[0].split('?')[0];
+      const url = `${base}#${params.toString()}`;
+      els.shareUrl.value = url;
+      if (history.replaceState) {
+        history.replaceState(null, '', `#${params.toString()}`);
+      }
+    }
+
+    function buildSummaryText(input, out) {
+      const d = input.precision;
+      const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const forecastPower = calculatePowerForObservedEffect(input, out, input.forecastPowerTarget);
+      const unit = periodInfo(input.reachGrowthUnit);
+      const required = forecastPower.requiredPerArm;
+      const controlGrowth = input.controlDailyReach;
+      const experimentGrowthRaw = input.experimentDailyReach;
+      const experimentGrowth = Number.isFinite(experimentGrowthRaw) ? experimentGrowthRaw : controlGrowth;
+      const controlPeriods = Number.isFinite(required) && Number.isFinite(controlGrowth) && controlGrowth > 0 ? Math.max(0, Math.ceil((required - input.controlTrials) / controlGrowth)) : NaN;
+      const experimentPeriods = Number.isFinite(required) && Number.isFinite(experimentGrowth) && experimentGrowth > 0 ? Math.max(0, Math.ceil((required - input.experimentTrials) / experimentGrowth)) : NaN;
+      const periodsToReady = Number.isFinite(controlPeriods) && Number.isFinite(experimentPeriods) ? Math.max(controlPeriods, experimentPeriods) : NaN;
+      const daysToReady = Number.isFinite(periodsToReady) ? periodsToReady * unit.days : NaN;
+      return [
+        'A/B Test Significance Result',
+        `Use case: ${input.experimentType}`,
+        `${input.controlLabel}: ${formatNumber(input.controlConversions)} ${controlConversionDisplayName(input)} / ${formatNumber(input.controlTrials)} Audience Reach = ${formatPct(out.p1, d)}`,
+        `${input.experimentLabel}: ${formatNumber(input.experimentConversions)} ${experimentConversionDisplayName(input)} / ${formatNumber(input.experimentTrials)} Audience Reach = ${formatPct(out.p2, d)}`,
+        `Absolute difference: ${formatPctPoint(out.diff, d)}`,
+        `Relative lift: ${Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--'}`,
+        `Test: ${out.testName}`,
+        `z-score: ${formatNumber(out.z, 4)}`,
+        `p-value: ${formatFlexible(out.pForDecision, Math.max(6, d + 3))}`,
+        `Calculated confidence %: ${formatPct(out.statisticalConfidence, d)}`,
+        `Significant at ${formatPct(input.confidenceLevel, d)} confidence: ${out.significant ? 'yes' : 'no'}`,
+        `Observed power: ${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'}`,
+        `Required n / arm @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--'}`,
+        `Additional n needed for smaller arm: ${Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--'}`,
+        `Estimated time until both arms are powered @ ${formatPct(forecastPower.targetPower, 0)} power: ${Number.isFinite(daysToReady) ? formatDurationFromDays(daysToReady) : '--'}`,
+        `CI for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`
+      ].join('\n');
+    }
+
+    function resetExample() {
+      els.experimentType.value = 'UA';
+      els.controlLabel.value = 'control';
+      els.experimentLabel.value = 'experiment';
+      els.controlConversionName.value = 'A - Event';
+      els.experimentConversionName.value = 'A - Event';
+      els.controlConversions.value = '107';
+      els.controlTrials.value = '126968';
+      els.experimentConversions.value = '466';
+      els.experimentTrials.value = '580356';
+      els.confidenceLevel.value = '0.95';
+      els.tail.value = 'greater';
+      els.comparisons.value = '1';
+      els.precision.value = '3';
+      els.powerTarget.value = '0.80';
+      els.forecastPowerTarget.value = '0.80';
+      els.reachGrowthUnit.value = 'day';
+      els.plannerBaseline.value = '0.084';
+      els.plannerLift.value = '15';
+      els.plannerPower.value = '0.80';
+      els.plannerControlAllocation.value = '0.5000';
+      els.controlDailyReach.value = '';
+      els.experimentDailyReach.value = '';
+      render();
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        const ok = document.execCommand('copy');
+        temp.remove();
+        return ok;
+      }
+    }
+
+    for (const el of [
+      els.experimentType, els.controlLabel, els.experimentLabel, els.controlConversionName,
+      els.experimentConversionName, els.controlConversions, els.controlTrials,
+      els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
+      els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
+      els.reachGrowthUnit, els.controlDailyReach, els.experimentDailyReach,
+      els.plannerBaseline, els.plannerLift, els.plannerPower, els.plannerControlAllocation
+    ]) {
+      el.addEventListener('input', render);
+      el.addEventListener('change', render);
+    }
+
+    els.resetBtn.addEventListener('click', resetExample);
+    els.copyUrlBtn.addEventListener('click', async () => {
+      const old = els.copyUrlBtn.textContent;
+      const ok = await copyText(els.shareUrl.value);
+      els.copyUrlBtn.textContent = ok ? 'Copied URL' : 'Copy failed';
+      setTimeout(() => { els.copyUrlBtn.textContent = old; }, 1200);
+    });
+    els.copySummaryBtn.addEventListener('click', async () => {
+      const old = els.copySummaryBtn.textContent;
+      const ok = await copyText(window.lastSummaryText || '');
+      els.copySummaryBtn.textContent = ok ? 'Copied summary' : 'Copy failed';
+      setTimeout(() => { els.copySummaryBtn.textContent = old; }, 1200);
+    });
+
+    loadFromUrl();
+    render();
+  </script>
+</body>
+</html>
