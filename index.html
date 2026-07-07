@@ -555,41 +555,6 @@
       font-weight: 650;
     }
 
-    .machine-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    @media (max-width: 760px) {
-      .machine-grid { grid-template-columns: 1fr; }
-    }
-
-    .machine-card {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: #fbfdff;
-      padding: 12px;
-      display: grid;
-      gap: 5px;
-    }
-
-    .machine-id {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: #2443a8;
-      overflow-wrap: anywhere;
-    }
-
-    .machine-value {
-      font-family: var(--mono);
-      font-size: 15px;
-      font-weight: 900;
-      color: var(--ink);
-      overflow-wrap: anywhere;
-    }
-
     .code-block {
       font-family: var(--mono);
       font-size: 12px;
@@ -1236,71 +1201,11 @@
 
 
           <details>
-            <summary>Google Sheets / DOM result IDs</summary>
-            <div class="note warn-note">
-              Google Sheets IMPORTXML can read structured data from a public URL with an XPath query, but a local file is not public, and IMPORTXML usually reads fetched HTML rather than values calculated after browser JavaScript runs. Use these IDs for browser DOM scraping or for a hosted/static results page. For Google Sheets, the most reliable option is usually to calculate these values directly in Sheets from the same inputs.
-            </div>
-            <div class="machine-grid">
-              <div class="machine-card"><div class="machine-id">result-p-value</div><div class="machine-value" id="result-p-value">--</div><div class="hint">Decision p-value as a decimal.</div></div>
-              <div class="machine-card"><div class="machine-id">result-calculated-confidence</div><div class="machine-value" id="result-calculated-confidence">--</div><div class="hint">1 - p-value, as a decimal.</div></div>
-              <div class="machine-card"><div class="machine-id">result-calculated-confidence-pct</div><div class="machine-value" id="result-calculated-confidence-pct">--</div><div class="hint">Calculated confidence formatted as a percent.</div></div>
-              <div class="machine-card"><div class="machine-id">result-observed-power</div><div class="machine-value" id="result-observed-power">--</div><div class="hint">Observed power as a decimal.</div></div>
-              <div class="machine-card"><div class="machine-id">result-observed-power-pct</div><div class="machine-value" id="result-observed-power-pct">--</div><div class="hint">Observed power formatted as a percent.</div></div>
-              <div class="machine-card"><div class="machine-id">result-required-n-per-arm</div><div class="machine-value" id="result-required-n-per-arm">--</div><div class="hint">Required Audience Reach per arm at selected power.</div></div>
-              <div class="machine-card"><div class="machine-id">result-additional-n-smaller-arm</div><div class="machine-value" id="result-additional-n-smaller-arm">--</div><div class="hint">Additional Audience Reach needed in the smaller arm.</div></div>
-              <div class="machine-card"><div class="machine-id">result-reach-periods-needed</div><div class="machine-value" id="result-reach-periods-needed">--</div><div class="hint">Estimated periods needed based on the selected growth unit.</div></div>
-              <div class="machine-card"><div class="machine-id">result-reach-growth-unit</div><div class="machine-value" id="result-reach-growth-unit">--</div><div class="hint">day, week, or month.</div></div>
-              <div class="machine-card"><div class="machine-id">result-reach-days-needed</div><div class="machine-value" id="result-reach-days-needed">--</div><div class="hint">Estimated duration converted to days.</div></div>
-            </div>
-            <div class="dom-results-sink" aria-hidden="true">
-              <table id="calculated-results-table">
-                <caption>Machine-readable calculated results</caption>
-                <thead>
-                  <tr>
-                    <th>key</th>
-                    <th>value</th>
-                    <th>description</th>
-                  </tr>
-                </thead>
-                <tbody id="calculatedResultsTableBody"></tbody>
-              </table>
-              <pre id="calculated-results-json"></pre>
-            </div>
+            <summary>Google Sheets formulas to embed</summary>
             <div class="note">
-              A hidden machine-readable table is now written into the browser DOM at <span class="mono">#calculated-results-table</span>. Each row has a stable <span class="mono">data-key</span>, and each value cell has an ID like <span class="mono">machine-p_value</span> and a <span class="mono">data-result-key</span> attribute. This is designed for browser-rendered DOM tools, browser automation, or any workflow that reads the page after JavaScript runs.
+              Use these formulas directly inside Google Sheets from your input cells. Format rate outputs as percentages where helpful. The formulas use descriptive variable names such as <span class="mono">controlrate</span> and <span class="mono">experimentrate</span> because names like <span class="mono">p1</span> and <span class="mono">p2</span> can be interpreted as cell references in Google Sheets.
             </div>
-            <div class="code-block">Hidden table XPath examples:
-P-value:
-=VALUE(IMPORTXML($A$1,"string(//table[@id='calculated-results-table']//tr[@data-key='p_value']/td[2])"))
-
-Calculated confidence, decimal:
-=VALUE(IMPORTXML($A$1,"string(//table[@id='calculated-results-table']//tr[@data-key='calculated_confidence']/td[2])"))
-
-Calculated confidence, percent number:
-=VALUE(IMPORTXML($A$1,"string(//table[@id='calculated-results-table']//tr[@data-key='calculated_confidence_pct']/td[2])"))
-
-Observed power, decimal:
-=VALUE(IMPORTXML($A$1,"string(//table[@id='calculated-results-table']//tr[@data-key='observed_power']/td[2])"))
-
-Required n / arm:
-=VALUE(IMPORTXML($A$1,"string(//table[@id='calculated-results-table']//tr[@data-key='required_n_per_arm']/td[2])"))
-
-Reach-growth periods needed:
-=VALUE(IMPORTXML($A$1,"string(//table[@id='calculated-results-table']//tr[@data-key='reach_periods_needed']/td[2])"))
-
-Direct ID XPath examples:
-=VALUE(IMPORTXML($A$1,"string(//*[@id='machine-p_value'])"))
-=VALUE(IMPORTXML($A$1,"string(//*[@id='machine-calculated_confidence'])"))
-=VALUE(IMPORTXML($A$1,"string(//*[@id='machine-observed_power'])"))
-
-Direct data-result-key XPath examples:
-=VALUE(IMPORTXML($A$1,"string(//*[@data-result-key='p_value'])"))
-=VALUE(IMPORTXML($A$1,"string(//*[@data-result-key='calculated_confidence'])"))
-=VALUE(IMPORTXML($A$1,"string(//*[@data-result-key='observed_power'])"))
-
-Important: standard Google Sheets IMPORTXML fetches page HTML and usually does not execute browser JavaScript. Also, URL hash parameters after # are not sent to the server. These scrape formulas work only when the values are present in the fetched HTML or when your workflow reads a browser-rendered DOM. For normal Google Sheets use, calculate the values directly from the same inputs. The LET formulas below use descriptive variable names like controlRate and experimentRate because names such as p1 or p2 can be interpreted as cell references in Google Sheets.
-
-Recommended Sheets layout:
+            <div class="code-block">Recommended Sheets layout:
 B2 = control conversions
 C2 = control Audience Reach
 D2 = experiment conversions
@@ -1312,23 +1217,66 @@ I2 = control reach growth per selected period
 J2 = experiment reach growth per selected period; leave blank to reuse control growth
 K2 = p-value output
 L2 = required n / arm output
+M2 = observed power output
+N2 = CI lower-bound output
+O2 = CI upper-bound output</div>
 
-P-value:
-=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,tailchoice,G2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,pooledrate,(controlconv+experimentconv)/(controlreach+experimentreach),standarderror,SQRT(pooledrate*(1-pooledrate)*(1/controlreach+1/experimentreach)),zscore,(experimentrate-controlrate)/standarderror,SWITCH(tailchoice,"greater",1-NORM.S.DIST(zscore,TRUE),"less",NORM.S.DIST(zscore,TRUE),"two",2*(1-NORM.S.DIST(ABS(zscore),TRUE))))
+            <div class="code-block">Control conversion rate:
+=LET(controlconv,B2,controlreach,C2,controlconv/controlreach)
 
-Calculated confidence %:
-=1 - K2
+Experiment conversion rate:
+=LET(experimentconv,D2,experimentreach,E2,experimentconv/experimentreach)
 
-Observed power for the current effect:
-=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,G2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,effectdiff,ABS(experimentrate-controlrate),unpooledse,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),effectz,effectdiff/unpooledse,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),(1-NORM.S.DIST(zcrit-effectz,TRUE))+NORM.S.DIST(-zcrit-effectz,TRUE))
+Absolute difference, experiment - control:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,experimentrate-controlrate)
+
+Relative lift:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,IF(controlrate=0,"",(experimentrate/controlrate)-1))</div>
+
+            <div class="code-block">P-value:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,tailchoice,LOWER(G2),controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,pooledrate,(controlconv+experimentconv)/(controlreach+experimentreach),standarderror,SQRT(pooledrate*(1-pooledrate)*(1/controlreach+1/experimentreach)),zscore,(experimentrate-controlrate)/standarderror,SWITCH(tailchoice,"greater",1-NORM.S.DIST(zscore,TRUE),"less",NORM.S.DIST(zscore,TRUE),"two",2*(1-NORM.S.DIST(ABS(zscore),TRUE))))
+
+Calculated confidence, format the cell as a percent:
+=1-K2
+
+False-positive risk:
+=K2
+
+Z-score:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,pooledrate,(controlconv+experimentconv)/(controlreach+experimentreach),standarderror,SQRT(pooledrate*(1-pooledrate)*(1/controlreach+1/experimentreach)),(experimentrate-controlrate)/standarderror)</div>
+
+            <div class="code-block">Difference CI lower bound:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,difference,experimentrate-controlrate,standarderror,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),zcrit,NORM.S.INV(1-(1-confidence)/2),difference-zcrit*standarderror)
+
+Difference CI upper bound:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,difference,experimentrate-controlrate,standarderror,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),zcrit,NORM.S.INV(1-(1-confidence)/2),difference+zcrit*standarderror)
+
+CI crosses zero? TRUE/FALSE:
+=AND(N2<=0,O2>=0)</div>
+
+            <div class="code-block">Observed power for the current effect:
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,LOWER(G2),controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,effectdiff,ABS(experimentrate-controlrate),unpooledse,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),effectz,effectdiff/unpooledse,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),(1-NORM.S.DIST(zcrit-effectz,TRUE))+NORM.S.DIST(-zcrit-effectz,TRUE))
+
+False-negative risk for the observed effect:
+=1-M2
 
 Required n / arm at target power:
-=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,G2,targetpower,H2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,effectdiff,ABS(experimentrate-controlrate),averagerate,(controlrate+experimentrate)/2,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),zpower,NORM.S.INV(targetpower),ROUNDUP(((zcrit*SQRT(2*averagerate*(1-averagerate))+zpower*SQRT(controlrate*(1-controlrate)+experimentrate*(1-experimentrate)))^2)/(effectdiff^2),0))
+=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,LOWER(G2),targetpower,H2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,effectdiff,ABS(experimentrate-controlrate),averagerate,(controlrate+experimentrate)/2,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),zpower,NORM.S.INV(targetpower),IF(effectdiff=0,"",ROUNDUP(((zcrit*SQRT(2*averagerate*(1-averagerate))+zpower*SQRT(controlrate*(1-controlrate)+experimentrate*(1-experimentrate)))^2)/(effectdiff^2),0)))
 
-Reach-growth periods needed:
-=MAX(0,ROUNDUP((L2-C2)/I2,0),ROUNDUP((L2-E2)/IF(J2="",I2,J2),0))
+Additional Audience Reach needed in the smaller arm:
+=IF(L2="","",MAX(0,L2-MIN(C2,E2)))</div>
 
-Note: the LET variable names above intentionally avoid cell-like names such as p1 or p2, because Google Sheets can interpret those as cell references.</div>
+            <div class="code-block">Reach-growth periods needed:
+=IFERROR(MAX(0,ROUNDUP((L2-C2)/I2,0),ROUNDUP((L2-E2)/IF(J2="",I2,J2),0)),"")
+
+Reach-growth days needed when your growth input is daily:
+=IFERROR(MAX(0,ROUNDUP((L2-C2)/I2,0),ROUNDUP((L2-E2)/IF(J2="",I2,J2),0)),"")
+
+Reach-growth days needed when your growth input is weekly:
+=IFERROR(7*MAX(0,ROUNDUP((L2-C2)/I2,0),ROUNDUP((L2-E2)/IF(J2="",I2,J2),0)),"")
+
+Reach-growth days needed when your growth input is monthly:
+=IFERROR(30.4375*MAX(0,ROUNDUP((L2-C2)/I2,0),ROUNDUP((L2-E2)/IF(J2="",I2,J2),0)),"")</div>
           </details>
 
           <div class="foot">
@@ -1442,19 +1390,7 @@ Note: the LET variable names above intentionally avoid cell-like names such as p
       plannerLift: document.getElementById('plannerLift'),
       plannerPower: document.getElementById('plannerPower'),
       plannerControlAllocation: document.getElementById('plannerControlAllocation'),
-      plannerRows: document.getElementById('plannerRows'),
-      resultPValue: document.getElementById('result-p-value'),
-      resultCalculatedConfidence: document.getElementById('result-calculated-confidence'),
-      resultCalculatedConfidencePct: document.getElementById('result-calculated-confidence-pct'),
-      resultObservedPower: document.getElementById('result-observed-power'),
-      resultObservedPowerPct: document.getElementById('result-observed-power-pct'),
-      resultRequiredNPerArm: document.getElementById('result-required-n-per-arm'),
-      resultAdditionalNSmallerArm: document.getElementById('result-additional-n-smaller-arm'),
-      resultReachPeriodsNeeded: document.getElementById('result-reach-periods-needed'),
-      resultReachGrowthUnit: document.getElementById('result-reach-growth-unit'),
-      resultReachDaysNeeded: document.getElementById('result-reach-days-needed'),
-      calculatedResultsTableBody: document.getElementById('calculatedResultsTableBody'),
-      calculatedResultsJson: document.getElementById('calculated-results-json')
+      plannerRows: document.getElementById('plannerRows')
     };
 
     function erf(x) {
@@ -1905,27 +1841,6 @@ Note: the LET variable names above intentionally avoid cell-like names such as p
       return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     }
 
-    function escapeHtml(value) {
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function machineNumber(value, digits) {
-      if (!Number.isFinite(value)) return '';
-      if (Number.isInteger(value)) return String(value);
-      const places = Number.isFinite(digits) ? digits : 12;
-      return Number(value).toPrecision(places).replace(/(?:\.0+|(?:(\.\d*?)0+))$/, '$1');
-    }
-
-    function machineBool(value) {
-      return value ? 'TRUE' : 'FALSE';
-    }
-
-
     function reachForecastCalc(input, out, targetPowerOverride) {
       const forecastPower = calculatePowerForObservedEffect(input, out, targetPowerOverride);
       const required = forecastPower.requiredPerArm;
@@ -2242,134 +2157,6 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
       ]);
     }
 
-    function renderMachineReadable(input, out) {
-      const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
-      const forecast = reachForecastCalc(input, out, input.forecastPowerTarget);
-      const planner = getPlannerEstimate(input);
-      const rawZ = invNorm(1 - (1 - input.confidenceLevel) / 2);
-      const controlCi = rateCiNormal(out.p1, input.controlTrials, rawZ);
-      const experimentCi = rateCiNormal(out.p2, input.experimentTrials, rawZ);
-      const ciCrossesZero = out.ciLow <= 0 && out.ciHigh >= 0;
-      const direction = out.diff > 0 ? 'positive' : out.diff < 0 ? 'negative' : 'flat';
-      const d = input.precision;
-
-      if (els.resultPValue) els.resultPValue.textContent = Number.isFinite(out.pForDecision) ? String(out.pForDecision) : '';
-      if (els.resultCalculatedConfidence) els.resultCalculatedConfidence.textContent = Number.isFinite(out.statisticalConfidence) ? String(out.statisticalConfidence) : '';
-      if (els.resultCalculatedConfidencePct) els.resultCalculatedConfidencePct.textContent = Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, 4) : '';
-      if (els.resultObservedPower) els.resultObservedPower.textContent = Number.isFinite(power.observedPower) ? String(power.observedPower) : '';
-      if (els.resultObservedPowerPct) els.resultObservedPowerPct.textContent = Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 4) : '';
-      if (els.resultRequiredNPerArm) els.resultRequiredNPerArm.textContent = Number.isFinite(power.requiredPerArm) ? String(power.requiredPerArm) : '';
-      if (els.resultAdditionalNSmallerArm) els.resultAdditionalNSmallerArm.textContent = Number.isFinite(power.additionalNeeded) ? String(power.additionalNeeded) : '';
-      if (els.resultReachPeriodsNeeded) els.resultReachPeriodsNeeded.textContent = Number.isFinite(forecast.periodsToReady) ? String(forecast.periodsToReady) : '';
-      if (els.resultReachGrowthUnit) els.resultReachGrowthUnit.textContent = forecast.unit ? forecast.unit.singular : '';
-      if (els.resultReachDaysNeeded) els.resultReachDaysNeeded.textContent = Number.isFinite(forecast.daysToReady) ? String(forecast.daysToReady) : '';
-
-      const rows = [
-        ['experiment_type', input.experimentType, 'UA or RE setting.'],
-        ['tail', input.tail, 'greater, less, or two.'],
-        ['test_name', out.testName, 'Human-readable hypothesis test name.'],
-        ['target_confidence', machineNumber(input.confidenceLevel), 'Selected confidence level as a decimal.'],
-        ['target_confidence_pct', machineNumber(input.confidenceLevel * 100), 'Selected confidence level as a percent number.'],
-        ['target_power', machineNumber(input.powerTarget), 'Selected power target as a decimal.'],
-        ['target_power_pct', machineNumber(input.powerTarget * 100), 'Selected power target as a percent number.'],
-        ['control_label', input.controlLabel, 'Control arm label.'],
-        ['experiment_label', input.experimentLabel, 'Experiment arm label.'],
-        ['control_conversion_name', controlConversionDisplayName(input), 'Control conversion field label.'],
-        ['experiment_conversion_name', experimentConversionDisplayName(input), 'Experiment conversion field label.'],
-        ['control_conversions', String(input.controlConversions), 'Control conversion count.'],
-        ['control_audience_reach', String(input.controlTrials), 'Control denominator.'],
-        ['experiment_conversions', String(input.experimentConversions), 'Experiment conversion count.'],
-        ['experiment_audience_reach', String(input.experimentTrials), 'Experiment denominator.'],
-        ['control_rate', machineNumber(out.p1), 'Control conversion rate as a decimal.'],
-        ['control_rate_pct', machineNumber(out.p1 * 100), 'Control conversion rate as a percent number.'],
-        ['experiment_rate', machineNumber(out.p2), 'Experiment conversion rate as a decimal.'],
-        ['experiment_rate_pct', machineNumber(out.p2 * 100), 'Experiment conversion rate as a percent number.'],
-        ['absolute_difference', machineNumber(out.diff), 'Experiment rate minus control rate as a decimal.'],
-        ['absolute_difference_pct_points', machineNumber(out.diff * 100), 'Experiment minus control in percentage points.'],
-        ['relative_lift', machineNumber(out.relativeLift), 'Absolute difference divided by control rate as a decimal.'],
-        ['relative_lift_pct', machineNumber(out.relativeLift * 100), 'Relative lift as a percent number.'],
-        ['direction', direction, 'positive, negative, or flat based on experiment minus control.'],
-        ['pooled_rate', machineNumber(out.pooled), 'Pooled conversion rate under the null.'],
-        ['pooled_standard_error', machineNumber(out.pooledSe), 'Pooled standard error used in z-test.'],
-        ['unpooled_standard_error', machineNumber(out.unpooledSe), 'Unpooled standard error used for confidence interval.'],
-        ['z_score', machineNumber(out.z), 'Pooled z statistic.'],
-        ['raw_p_value', machineNumber(out.pValueRaw), 'Raw p-value before any correction.'],
-        ['p_value', machineNumber(out.pForDecision), 'Decision p-value.'],
-        ['decision_p_value', machineNumber(out.pForDecision), 'Alias for p_value.'],
-        ['calculated_confidence', machineNumber(out.statisticalConfidence), '1 - decision p-value as a decimal.'],
-        ['calculated_confidence_pct', machineNumber(out.statisticalConfidence * 100), '1 - decision p-value as a percent number.'],
-        ['false_positive_risk', machineNumber(out.pForDecision), 'Same as decision p-value.'],
-        ['false_positive_risk_pct', machineNumber(out.pForDecision * 100), 'Decision p-value as a percent number.'],
-        ['significant', machineBool(out.significant), 'TRUE when decision p-value <= alpha.'],
-        ['alpha', machineNumber(out.alpha), '1 - target confidence.'],
-        ['alpha_adjusted', machineNumber(out.alphaAdjusted), 'Alpha after hidden comparisons setting, currently comparisons = 1.'],
-        ['ci_z', machineNumber(out.ciZ), 'Critical z used for difference confidence interval.'],
-        ['ci_margin', machineNumber(out.ciMargin), 'Difference CI margin as a decimal.'],
-        ['ci_margin_pct_points', machineNumber(out.ciMargin * 100), 'Difference CI margin in percentage points.'],
-        ['difference_ci_low', machineNumber(out.ciLow), 'Lower bound for experiment - control as a decimal.'],
-        ['difference_ci_high', machineNumber(out.ciHigh), 'Upper bound for experiment - control as a decimal.'],
-        ['difference_ci_low_pct_points', machineNumber(out.ciLow * 100), 'Lower bound in percentage points.'],
-        ['difference_ci_high_pct_points', machineNumber(out.ciHigh * 100), 'Upper bound in percentage points.'],
-        ['ci_crosses_zero', machineBool(ciCrossesZero), 'TRUE when the difference CI includes 0.'],
-        ['control_ci_low', machineNumber(controlCi.low), 'Control rate CI lower bound as a decimal.'],
-        ['control_ci_high', machineNumber(controlCi.high), 'Control rate CI upper bound as a decimal.'],
-        ['control_ci_low_pct', machineNumber(controlCi.low * 100), 'Control rate CI lower bound as a percent number.'],
-        ['control_ci_high_pct', machineNumber(controlCi.high * 100), 'Control rate CI upper bound as a percent number.'],
-        ['experiment_ci_low', machineNumber(experimentCi.low), 'Experiment rate CI lower bound as a decimal.'],
-        ['experiment_ci_high', machineNumber(experimentCi.high), 'Experiment rate CI upper bound as a decimal.'],
-        ['experiment_ci_low_pct', machineNumber(experimentCi.low * 100), 'Experiment rate CI lower bound as a percent number.'],
-        ['experiment_ci_high_pct', machineNumber(experimentCi.high * 100), 'Experiment rate CI upper bound as a percent number.'],
-        ['observed_power', machineNumber(power.observedPower), 'Observed power as a decimal.'],
-        ['observed_power_pct', machineNumber(power.observedPower * 100), 'Observed power as a percent number.'],
-        ['false_negative_risk', machineNumber(Number.isFinite(power.observedPower) ? 1 - power.observedPower : NaN), '1 - observed power as a decimal.'],
-        ['false_negative_risk_pct', machineNumber(Number.isFinite(power.observedPower) ? (1 - power.observedPower) * 100 : NaN), '1 - observed power as a percent number.'],
-        ['effect_z_for_power', machineNumber(power.effectZ), 'Absolute observed effect divided by unpooled SE.'],
-        ['critical_z_for_power', machineNumber(power.zCrit), 'Critical z threshold used for power calculation.'],
-        ['z_power_target', machineNumber(power.zPower), 'z value for selected target power.'],
-        ['required_n_per_arm', machineNumber(power.requiredPerArm), 'Required Audience Reach per arm at selected power.'],
-        ['smaller_arm', machineNumber(power.smallerArm), 'Smaller current Audience Reach arm.'],
-        ['additional_n_smaller_arm', machineNumber(power.additionalNeeded), 'Additional reach needed in the smaller arm.'],
-        ['forecast_power_target', machineNumber(input.forecastPowerTarget), 'Power target used for reach-growth forecast.'],
-        ['forecast_power_target_pct', machineNumber(input.forecastPowerTarget * 100), 'Forecast power target as a percent number.'],
-        ['forecast_required_n_per_arm', machineNumber(forecast.required), 'Required n per arm for the forecast target power.'],
-        ['reach_growth_unit', forecast.unit ? forecast.unit.singular : '', 'day, week, or month.'],
-        ['control_reach_growth', machineNumber(forecast.controlGrowth), 'Control new Audience Reach per selected period.'],
-        ['experiment_reach_growth', machineNumber(forecast.experimentGrowth), 'Experiment new Audience Reach per selected period.'],
-        ['experiment_growth_uses_control_growth', machineBool(forecast.usedControlForExperiment), 'TRUE if experiment growth was blank and control growth was reused.'],
-        ['control_periods_needed', machineNumber(forecast.controlPeriods), 'Periods until control reaches required n.'],
-        ['experiment_periods_needed', machineNumber(forecast.experimentPeriods), 'Periods until experiment reaches required n.'],
-        ['reach_periods_needed', machineNumber(forecast.periodsToReady), 'Periods until both arms reach required n.'],
-        ['reach_days_needed', machineNumber(forecast.daysToReady), 'Forecast duration converted to days.'],
-        ['forecast_limiting_arm', forecast.limitingArm || '', 'Arm determining the forecast timeline.'],
-        ['forecast_estimated_date_powered', Number.isFinite(forecast.daysToReady) ? formatDateFromDays(forecast.daysToReady) : '', 'Local browser date plus estimated duration.'],
-        ['planner_baseline_rate', machineNumber(planner.p1), 'Planning helper baseline rate as a decimal.'],
-        ['planner_baseline_rate_pct', machineNumber(planner.p1 * 100), 'Planning helper baseline rate as a percent number.'],
-        ['planner_expected_relative_lift', machineNumber(planner.relativeLiftPct / 100), 'Planning helper expected relative lift as a decimal.'],
-        ['planner_expected_relative_lift_pct', machineNumber(planner.relativeLiftPct), 'Planning helper expected relative lift as a percent number.'],
-        ['planner_experiment_rate_at_mde', machineNumber(planner.p2), 'Planning helper experiment rate at MDE as a decimal.'],
-        ['planner_absolute_mde', machineNumber(planner.diff), 'Planning helper absolute MDE as a decimal.'],
-        ['planner_absolute_mde_pct_points', machineNumber(planner.diff * 100), 'Planning helper absolute MDE in percentage points.'],
-        ['planner_control_allocation', machineNumber(planner.controlAllocation), 'Control allocation as a decimal.'],
-        ['planner_control_allocation_pct', machineNumber(planner.controlAllocation * 100), 'Control allocation as a percent number.'],
-        ['planner_required_control_n', machineNumber(planner.nControl), 'Planning helper required control Audience Reach.'],
-        ['planner_required_experiment_n', machineNumber(planner.nExperiment), 'Planning helper required experiment Audience Reach.'],
-        ['planner_total_required_n', machineNumber(Number.isFinite(planner.nControl) && Number.isFinite(planner.nExperiment) ? planner.nControl + planner.nExperiment : NaN), 'Planning helper total required Audience Reach.']
-      ];
-
-      if (els.calculatedResultsTableBody) {
-        els.calculatedResultsTableBody.innerHTML = rows.map(([key, value, description]) => {
-          const safeKey = escapeHtml(key);
-          return `<tr id="machine-row-${safeKey}" data-key="${safeKey}"><td class="machine-key">${safeKey}</td><td class="machine-result-value" id="machine-${safeKey}" data-result-key="${safeKey}">${escapeHtml(value)}</td><td class="machine-description">${escapeHtml(description)}</td></tr>`;
-        }).join('');
-      }
-      if (els.calculatedResultsJson) {
-        const json = {};
-        rows.forEach(([key, value]) => { json[key] = value; });
-        els.calculatedResultsJson.textContent = JSON.stringify(json, null, 2);
-      }
-    }
-
-
     function render() {
       const input = getInputs();
       updateCampaignModeUI(input);
@@ -2446,7 +2233,6 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
       renderPower(input, out);
       renderSteps(input, out);
       renderPlanner(input);
-      renderMachineReadable(input, out);
       updateUrl(input);
       window.lastSummaryText = buildSummaryText(input, out);
     }
