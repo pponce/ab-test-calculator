@@ -24,6 +24,9 @@
       --radius: 18px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --sticky-header-height: 118px;
+      --sticky-input-max-height: calc(100vh - 150px);
+      --sticky-gap: 16px;
     }
 
     * { box-sizing: border-box; }
@@ -39,15 +42,36 @@
     }
 
     .wrap {
-      width: min(1180px, calc(100% - 32px));
+      width: min(2400px, calc(100vw - clamp(16px, 2vw, 48px)));
       margin: 0 auto;
       padding: 32px 0 54px;
     }
 
     header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
       display: grid;
-      gap: 12px;
-      margin: 8px 0 26px;
+      gap: 8px;
+      margin: 0 0 22px;
+      padding: 14px 0 16px;
+      background: rgba(255, 255, 255, .92);
+      border-bottom: 1px solid rgba(219, 227, 239, .92);
+      box-shadow: 0 10px 26px rgba(24, 36, 66, .08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      isolation: isolate;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 50%;
+      width: 100vw;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,248,251,.92));
+      border-bottom: 1px solid rgba(219, 227, 239, .92);
+      z-index: -1;
     }
 
     h1 {
@@ -58,23 +82,75 @@
     }
 
     .subhead {
-      max-width: 900px;
+      max-width: 1120px;
       color: var(--muted);
       font-size: 16px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: 390px 1fr;
-      gap: 18px;
+      grid-template-columns: minmax(320px, clamp(320px, 24vw, 520px)) minmax(0, 1fr);
+      gap: clamp(16px, 1.6vw, 32px);
       align-items: start;
     }
 
-    @media (max-width: 940px) {
+    @media (max-width: 1080px) {
       .grid { grid-template-columns: 1fr; }
     }
 
+    @media (min-width: 1800px) {
+      .wrap { width: min(2500px, calc(100vw - 64px)); }
+      .card-pad { padding: 22px; }
+    }
+
+    @media (min-width: 1081px) {
+      .input-card {
+        position: sticky;
+        top: calc(var(--sticky-header-height, 118px) + var(--sticky-gap, 16px));
+        max-height: var(--sticky-input-max-height, calc(100vh - var(--sticky-header-height, 118px) - 32px));
+        display: flex;
+        flex-direction: column;
+      }
+
+      .input-card > .card-pad {
+        max-height: inherit;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .input-card .section-title {
+        position: sticky;
+        top: -18px;
+        z-index: 2;
+        background: rgba(255, 255, 255, .96);
+        backdrop-filter: blur(8px);
+        padding-top: 18px;
+      }
+    }
+
+    @media (min-width: 1800px) {
+      .input-card .section-title {
+        top: -22px;
+        padding-top: 22px;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .input-card {
+        position: static;
+        max-height: none;
+      }
+
+      .input-card > .card-pad {
+        max-height: none;
+        overflow-y: visible;
+      }
+    }
+
     .card {
+      min-width: 0;
       background: rgba(255,255,255,.94);
       border: 1px solid rgba(219,227,239,.95);
       border-radius: var(--radius);
@@ -211,15 +287,19 @@
 
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: clamp(10px, 1vw, 16px);
       margin-bottom: 14px;
     }
 
-    .top-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .top-metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+    @media (min-width: 1500px) {
+      .top-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    }
 
     @media (max-width: 1120px) {
-      .top-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .top-metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
     }
 
     @media (max-width: 720px) {
@@ -311,7 +391,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
-      min-width: 680px;
+      min-width: 760px;
     }
 
     th, td {
@@ -778,7 +858,7 @@
     </header>
 
     <div class="grid">
-      <section class="card">
+      <section class="card input-card">
         <div class="card-pad">
           <div class="section-title">
             <h2>Inputs</h2>
@@ -903,7 +983,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card results-card">
         <div class="card-pad">
           <div class="results-top">
             <div>
@@ -1175,6 +1255,68 @@
                 <span class="hint">Allowed in 6.25% increments. 50% control equals a 1:1 experiment/control allocation ratio.</span>
               </label>
             </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Media spend planner</h3>
+                  <div class="muted small">Uses the required Audience Reach from the planning helper and converts it into suggested spend by arm.</div>
+                </div>
+              </div>
+              <div class="planner-grid">
+                <label>
+                  Planned test length
+                  <input id="plannerDurationDays" type="number" min="1" step="1" value="14" />
+                  <span class="hint">Days you want the test to run.</span>
+                </label>
+                <label>
+                  Control unique reach per $1
+                  <input id="plannerControlReachPerDollar" type="number" min="0" step="0.01" placeholder="e.g. 50" />
+                  <span class="hint">Incremental unique control Audience Reach expected for each $1 of control spend.</span>
+                </label>
+                <label>
+                  Experiment unique reach per $1
+                  <input id="plannerExperimentReachPerDollar" type="number" min="0" step="0.01" placeholder="blank = use control" />
+                  <span class="hint">Use this when experiment delivery has a different reach curve. Blank = use control reach per $1.</span>
+                </label>
+              </div>
+              <div class="metric-grid compact-table">
+                <div class="metric">
+                  <div class="k">Control daily spend</div>
+                  <div class="v" id="plannerControlDailySpendMetric">--</div>
+                  <div class="s">Suggested control budget per day.</div>
+                </div>
+                <div class="metric">
+                  <div class="k">Experiment daily spend</div>
+                  <div class="v" id="plannerExperimentDailySpendMetric">--</div>
+                  <div class="s">Suggested experiment budget per day.</div>
+                </div>
+                <div class="metric">
+                  <div class="k">Total daily spend</div>
+                  <div class="v" id="plannerTotalDailySpendMetric">--</div>
+                  <div class="s">Control plus experiment.</div>
+                </div>
+                <div class="metric">
+                  <div class="k">Total planned spend</div>
+                  <div class="v" id="plannerTotalSpendMetric">--</div>
+                  <div class="s">Across the full planned test length.</div>
+                </div>
+              </div>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Spend planning metric</th>
+                      <th class="num">Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="plannerSpendRows"></tbody>
+                </table>
+              </div>
+              <div class="note" id="plannerSpendNote"></div>
+            </div>
+
             <div class="table-wrap">
               <table>
                 <thead>
@@ -1219,7 +1361,12 @@ K2 = p-value output
 L2 = required n / arm output
 M2 = observed power output
 N2 = CI lower-bound output
-O2 = CI upper-bound output</div>
+O2 = CI upper-bound output
+P2 = required control N from planning helper
+Q2 = required experiment N from planning helper
+R2 = planned test length in days
+S2 = control unique reach per $1
+T2 = experiment unique reach per $1; leave blank to reuse control reach per $1</div>
 
             <div class="code-block">Control conversion rate:
 =LET(controlconv,B2,controlreach,C2,controlconv/controlreach)
@@ -1277,6 +1424,25 @@ Reach-growth days needed when your growth input is weekly:
 
 Reach-growth days needed when your growth input is monthly:
 =IFERROR(30.4375*MAX(0,ROUNDUP((L2-C2)/I2,0),ROUNDUP((L2-E2)/IF(J2="",I2,J2),0)),"")</div>
+
+            <div class="code-block">Planning-helper spend outputs:
+Control daily spend:
+=IFERROR(P2/S2/R2,"")
+
+Experiment daily spend:
+=IFERROR(Q2/IF(T2="",S2,T2)/R2,"")
+
+Total daily spend:
+=SUM(IFERROR(P2/S2/R2,0),IFERROR(Q2/IF(T2="",S2,T2)/R2,0))
+
+Control total spend:
+=IFERROR(P2/S2,"")
+
+Experiment total spend:
+=IFERROR(Q2/IF(T2="",S2,T2),"")
+
+Total planned spend:
+=SUM(IFERROR(P2/S2,0),IFERROR(Q2/IF(T2="",S2,T2),0))</div>
           </details>
 
           <div class="foot">
@@ -1390,6 +1556,15 @@ Reach-growth days needed when your growth input is monthly:
       plannerLift: document.getElementById('plannerLift'),
       plannerPower: document.getElementById('plannerPower'),
       plannerControlAllocation: document.getElementById('plannerControlAllocation'),
+      plannerDurationDays: document.getElementById('plannerDurationDays'),
+      plannerControlReachPerDollar: document.getElementById('plannerControlReachPerDollar'),
+      plannerExperimentReachPerDollar: document.getElementById('plannerExperimentReachPerDollar'),
+      plannerControlDailySpendMetric: document.getElementById('plannerControlDailySpendMetric'),
+      plannerExperimentDailySpendMetric: document.getElementById('plannerExperimentDailySpendMetric'),
+      plannerTotalDailySpendMetric: document.getElementById('plannerTotalDailySpendMetric'),
+      plannerTotalSpendMetric: document.getElementById('plannerTotalSpendMetric'),
+      plannerSpendRows: document.getElementById('plannerSpendRows'),
+      plannerSpendNote: document.getElementById('plannerSpendNote'),
       plannerRows: document.getElementById('plannerRows')
     };
 
@@ -1461,6 +1636,11 @@ Reach-growth days needed when your growth input is monthly:
     function formatNumber(x, digits = 0) {
       if (!Number.isFinite(x)) return '--';
       return x.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+    }
+
+    function formatCurrency(x, digits = 0) {
+      if (!Number.isFinite(x)) return '--';
+      return x.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: digits, minimumFractionDigits: digits });
     }
 
     function formatFlexible(x, maxDigits = 6) {
@@ -1569,6 +1749,9 @@ Reach-growth days needed when your growth input is monthly:
       setSelectByNumber(els.forecastPowerTarget, getAny('forecastPowerTarget', 'forecastPower', 'reachPowerTarget'));
       setSelectByNumber(els.plannerPower, getAny('plannerPower', 'samplePower'));
       setSelectByNumber(els.plannerControlAllocation, getAny('plannerControlAllocation', 'controlAllocation', 'controlShare'));
+      setValue(els.plannerDurationDays, getAny('plannerDurationDays', 'plannerDuration', 'testLengthDays', 'targetDays'));
+      setValue(els.plannerControlReachPerDollar, getAny('plannerControlReachPerDollar', 'controlReachPerDollar', 'controlReachPerUsd', 'controlReachPerDollar'));
+      setValue(els.plannerExperimentReachPerDollar, getAny('plannerExperimentReachPerDollar', 'experimentReachPerDollar', 'experimentReachPerUsd', 'variantReachPerDollar'));
 
       const unit = getAny('reachGrowthUnit', 'reachGrowthPeriod', 'growthUnit', 'period');
       if (unit) {
@@ -1862,6 +2045,11 @@ Reach-growth days needed when your growth input is monthly:
       const relativeLiftPct = asNum(els.plannerLift.value);
       const power = asNum(els.plannerPower.value);
       const controlAllocation = asNum(els.plannerControlAllocation.value);
+      const plannerDurationDays = asNum(els.plannerDurationDays.value);
+      const controlReachPerDollar = asOptionalNum(els.plannerControlReachPerDollar.value);
+      const experimentReachPerDollarRaw = asOptionalNum(els.plannerExperimentReachPerDollar.value);
+      const experimentReachPerDollar = Number.isFinite(experimentReachPerDollarRaw) ? experimentReachPerDollarRaw : controlReachPerDollar;
+      const usesControlReachPerDollarForExperiment = !Number.isFinite(experimentReachPerDollarRaw) && Number.isFinite(controlReachPerDollar);
       const ratio = controlAllocation > 0 ? (1 - controlAllocation) / controlAllocation : NaN;
       const alpha = (1 - input.confidenceLevel) / input.comparisons;
       const alphaForZ = input.tail === 'two' ? alpha / 2 : alpha;
@@ -1879,7 +2067,22 @@ Reach-growth days needed when your growth input is monthly:
         nControl = Math.ceil(Math.pow(term1 + term2, 2) / Math.pow(diff, 2));
         nExperiment = Math.ceil(ratio * nControl);
       }
-      return { baselinePct, relativeLiftPct, power, controlAllocation, ratio, alpha, alphaForZ, zAlpha, zPower, p1, p2, diff, nControl, nExperiment };
+      const durationOk = Number.isFinite(plannerDurationDays) && plannerDurationDays > 0;
+      const controlReachPerDollarOk = Number.isFinite(controlReachPerDollar) && controlReachPerDollar > 0;
+      const experimentReachPerDollarOk = Number.isFinite(experimentReachPerDollar) && experimentReachPerDollar > 0;
+      const controlDailyReachNeeded = Number.isFinite(nControl) && durationOk ? nControl / plannerDurationDays : NaN;
+      const experimentDailyReachNeeded = Number.isFinite(nExperiment) && durationOk ? nExperiment / plannerDurationDays : NaN;
+      const controlTotalSpend = Number.isFinite(nControl) && controlReachPerDollarOk ? nControl / controlReachPerDollar : NaN;
+      const experimentTotalSpend = Number.isFinite(nExperiment) && experimentReachPerDollarOk ? nExperiment / experimentReachPerDollar : NaN;
+      const controlDailySpend = Number.isFinite(controlTotalSpend) && durationOk ? controlTotalSpend / plannerDurationDays : NaN;
+      const experimentDailySpend = Number.isFinite(experimentTotalSpend) && durationOk ? experimentTotalSpend / plannerDurationDays : NaN;
+      const totalSpend = Number.isFinite(controlTotalSpend) && Number.isFinite(experimentTotalSpend) ? controlTotalSpend + experimentTotalSpend : NaN;
+      const totalDailySpend = Number.isFinite(controlDailySpend) && Number.isFinite(experimentDailySpend) ? controlDailySpend + experimentDailySpend : NaN;
+      return {
+        baselinePct, relativeLiftPct, power, controlAllocation, ratio, alpha, alphaForZ, zAlpha, zPower, p1, p2, diff, nControl, nExperiment,
+        plannerDurationDays, controlReachPerDollar, experimentReachPerDollarRaw, experimentReachPerDollar, usesControlReachPerDollarForExperiment,
+        controlDailyReachNeeded, experimentDailyReachNeeded, controlTotalSpend, experimentTotalSpend, controlDailySpend, experimentDailySpend, totalSpend, totalDailySpend
+      };
     }
 
     function renderTopInterpretation(input, out, power) {
@@ -1952,8 +2155,13 @@ Reach-growth days needed when your growth input is monthly:
       els.remainingNMetric.textContent = Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--';
 
       if (Number.isFinite(power.observedPower)) {
-        els.powerRiskNote.innerHTML = `Observed power is the estimated chance this test could detect an effect as large as the one currently observed. At ${formatPct(power.observedPower, 1)} observed power, you are accepting about ${formatPct(1 - power.observedPower, 1)} false-negative risk for an effect this large. False negative: the experiment actually drove incrementality, but the test was too noisy to prove it and showed no incrementality.`;
+        els.powerRiskNote.className = adequatelyPowered ? 'note' : 'note warn-note';
+        const powerStateSentence = adequatelyPowered
+          ? `This test is currently adequately powered against the selected ${formatPct(power.targetPower, 0)} target.`
+          : 'This test is currently underpowered.';
+        els.powerRiskNote.innerHTML = `${powerStateSentence} With ${formatPct(power.observedPower, 1)} observed power, the test has about a ${formatPct(power.observedPower, 1)} chance of detecting a true effect this large, based on the current sample size and assumptions. Equivalently, there is about a ${formatPct(1 - power.observedPower, 1)} false-negative risk, meaning the test may miss a real effect even if one exists. Observed power is a sample-strength diagnostic for the observed absolute effect; it does not mean there is a ${formatPct(power.observedPower, 1)} chance that the observed lift is real.`;
       } else {
+        els.powerRiskNote.className = 'note';
         els.powerRiskNote.innerHTML = 'Observed power cannot be estimated until the calculator has a non-zero observed effect and valid conversion rates.';
       }
 
@@ -2123,11 +2331,15 @@ Estimated time needed = max(control periods, experiment periods) = ${Number.isFi
 Limiting arm = ${forecast.limitingArm || '--'}.`
         },
         {
-          title: 'Planning helper sample-size math',
+          title: 'Planning helper sample-size and spend math',
           body: `Baseline rate = ${Number.isFinite(planner.p1) ? formatPct(planner.p1, d) : '--'}.
 Experiment rate at expected lift = baseline x (1 + lift) = ${Number.isFinite(planner.p2) ? formatPct(planner.p2, d) : '--'}.
 Control allocation = ${Number.isFinite(planner.controlAllocation) ? formatPct(planner.controlAllocation, 2) : '--'}; implied experiment/control ratio = (1 - control allocation) / control allocation = ${Number.isFinite(planner.ratio) ? formatNumber(planner.ratio, 4) : '--'}.
-The helper then uses the unequal-allocation two-proportion normal approximation to estimate required Control N = ${Number.isFinite(planner.nControl) ? formatNumber(planner.nControl) : '--'} and Experiment N = ${Number.isFinite(planner.nExperiment) ? formatNumber(planner.nExperiment) : '--'}.`
+The helper uses the unequal-allocation two-proportion normal approximation to estimate required Control N = ${Number.isFinite(planner.nControl) ? formatNumber(planner.nControl) : '--'} and Experiment N = ${Number.isFinite(planner.nExperiment) ? formatNumber(planner.nExperiment) : '--'}.
+If reach-per-dollar inputs are supplied, suggested daily spend is calculated as required reach / reach per $1 / target test length.
+Control daily spend = ${Number.isFinite(planner.nControl) ? formatNumber(planner.nControl) : '--'} / ${Number.isFinite(planner.controlReachPerDollar) ? formatNumber(planner.controlReachPerDollar, 2) : '--'} / ${Number.isFinite(planner.plannerDurationDays) ? formatNumber(planner.plannerDurationDays) : '--'} = ${Number.isFinite(planner.controlDailySpend) ? formatCurrency(planner.controlDailySpend, 0) : '--'}.
+Experiment daily spend = ${Number.isFinite(planner.nExperiment) ? formatNumber(planner.nExperiment) : '--'} / ${Number.isFinite(planner.experimentReachPerDollar) ? formatNumber(planner.experimentReachPerDollar, 2) : '--'} / ${Number.isFinite(planner.plannerDurationDays) ? formatNumber(planner.plannerDurationDays) : '--'} = ${Number.isFinite(planner.experimentDailySpend) ? formatCurrency(planner.experimentDailySpend, 0) : '--'}.
+Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? formatCurrency(planner.totalDailySpend, 0) : '--'}.`
         }
       ];
       els.steps.innerHTML = steps.map((s, idx) => `
@@ -2143,6 +2355,36 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
 
     function renderPlanner(input) {
       const planner = getPlannerEstimate(input);
+      const hasSpendInputs = Number.isFinite(planner.plannerDurationDays) && planner.plannerDurationDays > 0 && Number.isFinite(planner.controlReachPerDollar) && planner.controlReachPerDollar > 0 && Number.isFinite(planner.experimentReachPerDollar) && planner.experimentReachPerDollar > 0;
+
+      if (els.plannerControlDailySpendMetric) els.plannerControlDailySpendMetric.textContent = Number.isFinite(planner.controlDailySpend) ? formatCurrency(planner.controlDailySpend) : '--';
+      if (els.plannerExperimentDailySpendMetric) els.plannerExperimentDailySpendMetric.textContent = Number.isFinite(planner.experimentDailySpend) ? formatCurrency(planner.experimentDailySpend) : '--';
+      if (els.plannerTotalDailySpendMetric) els.plannerTotalDailySpendMetric.textContent = Number.isFinite(planner.totalDailySpend) ? formatCurrency(planner.totalDailySpend) : '--';
+      if (els.plannerTotalSpendMetric) els.plannerTotalSpendMetric.textContent = Number.isFinite(planner.totalSpend) ? formatCurrency(planner.totalSpend) : '--';
+
+      if (hasSpendInputs) {
+        const experimentReachText = planner.usesControlReachPerDollarForExperiment
+          ? 'using the same reach-per-dollar assumption for experiment'
+          : `using ${formatNumber(planner.experimentReachPerDollar, 2)} experiment unique reach per $1`;
+        els.plannerSpendNote.innerHTML = `Suggested spend uses ${formatNumber(planner.plannerDurationDays)} planned days, ${formatNumber(planner.controlReachPerDollar, 2)} control unique reach per $1, and ${experimentReachText}. Suggested total daily spend is <strong>${formatCurrency(planner.totalDailySpend)}</strong>.`;
+      } else {
+        els.plannerSpendNote.innerHTML = 'Enter planned test length and expected unique reach per $1 to translate required Audience Reach into suggested daily spend. Historical average reach per dollar is acceptable for a rough first pass, but a campaign-specific forecast is better when targeting, geo, bid, frequency cap, supply, or audience size differs from the historical average.';
+      }
+
+      els.plannerSpendRows.innerHTML = renderRows([
+        ['Planned test length', Number.isFinite(planner.plannerDurationDays) && planner.plannerDurationDays > 0 ? `${formatNumber(planner.plannerDurationDays)} days` : '--', 'Daily spend is total required spend divided by this many days.'],
+        ['Control unique reach per $1', Number.isFinite(planner.controlReachPerDollar) ? formatNumber(planner.controlReachPerDollar, 2) : '--', 'Expected incremental unique control Audience Reach per $1 of control spend.'],
+        ['Experiment unique reach per $1', Number.isFinite(planner.experimentReachPerDollar) ? formatNumber(planner.experimentReachPerDollar, 2) : '--', planner.usesControlReachPerDollarForExperiment ? 'Blank experiment input: using the control reach-per-dollar assumption.' : 'Expected incremental unique experiment Audience Reach per $1 of experiment spend.'],
+        ['Required control reach / day', Number.isFinite(planner.controlDailyReachNeeded) ? formatNumber(planner.controlDailyReachNeeded) : '--', 'Required control Audience Reach divided by planned test length.'],
+        ['Required experiment reach / day', Number.isFinite(planner.experimentDailyReachNeeded) ? formatNumber(planner.experimentDailyReachNeeded) : '--', 'Required experiment Audience Reach divided by planned test length.'],
+        ['Control total spend', Number.isFinite(planner.controlTotalSpend) ? formatCurrency(planner.controlTotalSpend) : '--', 'Required control Audience Reach divided by control unique reach per $1.'],
+        ['Experiment total spend', Number.isFinite(planner.experimentTotalSpend) ? formatCurrency(planner.experimentTotalSpend) : '--', 'Required experiment Audience Reach divided by experiment unique reach per $1.'],
+        ['Control daily spend', Number.isFinite(planner.controlDailySpend) ? formatCurrency(planner.controlDailySpend) : '--', 'Control total spend divided by planned test length.'],
+        ['Experiment daily spend', Number.isFinite(planner.experimentDailySpend) ? formatCurrency(planner.experimentDailySpend) : '--', 'Experiment total spend divided by planned test length.'],
+        ['Total daily spend', Number.isFinite(planner.totalDailySpend) ? formatCurrency(planner.totalDailySpend) : '--', 'Control daily spend plus experiment daily spend.'],
+        ['Total planned spend', Number.isFinite(planner.totalSpend) ? formatCurrency(planner.totalSpend) : '--', 'Control total spend plus experiment total spend.']
+      ]);
+
       els.plannerRows.innerHTML = renderRows([
         ['Baseline rate', Number.isFinite(planner.p1) ? formatPct(planner.p1, input.precision) : '--', 'Control conversion rate assumption.'],
         ['Experiment rate at MDE', Number.isFinite(planner.p2) ? formatPct(planner.p2, input.precision) : '--', 'Baseline rate multiplied by expected relative lift.'],
@@ -2256,6 +2498,9 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
       params.set('forecastPowerTarget', input.forecastPowerTarget);
       params.set('plannerPower', els.plannerPower.value);
       params.set('plannerControlAllocation', els.plannerControlAllocation.value);
+      params.set('plannerDurationDays', els.plannerDurationDays.value);
+      if (els.plannerControlReachPerDollar.value !== '') params.set('plannerControlReachPerDollar', els.plannerControlReachPerDollar.value);
+      if (els.plannerExperimentReachPerDollar.value !== '') params.set('plannerExperimentReachPerDollar', els.plannerExperimentReachPerDollar.value);
       params.set('reachGrowthUnit', input.reachGrowthUnit);
       params.set('precision', input.precision);
       const base = window.location.href.split('#')[0].split('?')[0];
@@ -2320,6 +2565,9 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
       els.plannerLift.value = '15';
       els.plannerPower.value = '0.80';
       els.plannerControlAllocation.value = '0.5000';
+      els.plannerDurationDays.value = '14';
+      els.plannerControlReachPerDollar.value = '';
+      els.plannerExperimentReachPerDollar.value = '';
       els.controlDailyReach.value = '';
       els.experimentDailyReach.value = '';
       render();
@@ -2346,7 +2594,8 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
       els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
       els.reachGrowthUnit, els.controlDailyReach, els.experimentDailyReach,
-      els.plannerBaseline, els.plannerLift, els.plannerPower, els.plannerControlAllocation
+      els.plannerBaseline, els.plannerLift, els.plannerPower, els.plannerControlAllocation,
+      els.plannerDurationDays, els.plannerControlReachPerDollar, els.plannerExperimentReachPerDollar
     ]) {
       el.addEventListener('input', render);
       el.addEventListener('change', render);
@@ -2366,8 +2615,34 @@ The helper then uses the unequal-allocation two-proportion normal approximation 
       setTimeout(() => { els.copySummaryBtn.textContent = old; }, 1200);
     });
 
+    function updateStickyHeaderHeight() {
+      const headerEl = document.querySelector('header');
+      if (!headerEl) return;
+      const rootStyle = getComputedStyle(document.documentElement);
+      const gap = parseFloat(rootStyle.getPropertyValue('--sticky-gap')) || 16;
+      const height = Math.ceil(headerEl.getBoundingClientRect().height);
+      const inputMaxHeight = Math.max(140, window.innerHeight - height - (gap * 2));
+      document.documentElement.style.setProperty('--sticky-header-height', height + 'px');
+      document.documentElement.style.setProperty('--sticky-input-max-height', inputMaxHeight + 'px');
+    }
+
+    const scheduleStickyHeaderHeightUpdate = () => {
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(updateStickyHeaderHeight);
+      } else {
+        updateStickyHeaderHeight();
+      }
+    };
+
+    window.addEventListener('resize', scheduleStickyHeaderHeightUpdate);
+    window.addEventListener('orientationchange', scheduleStickyHeaderHeightUpdate);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(scheduleStickyHeaderHeightUpdate).catch(() => {});
+    }
+
     loadFromUrl();
     render();
+    scheduleStickyHeaderHeightUpdate();
   </script>
 </body>
 </html>
