@@ -845,6 +845,228 @@
     .ci-visual.ci-negative .ci-interval { background: #9b1c1c; box-shadow: 0 6px 14px rgba(155,28,28,.16); }
     .ci-visual.ci-negative .ci-bound { background: #9b1c1c; }
     .ci-visual.ci-negative .legend-swatch { background: #9b1c1c; }
+
+
+    .trend-input-block {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      padding: 13px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .trend-input-block h3 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
+
+    .trend-data-box {
+      min-height: 150px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre;
+    }
+
+    .trend-status {
+      margin-top: 0;
+      font-size: 12px;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .58;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .trend-panel {
+      margin-top: 14px;
+    }
+
+    .trend-chart-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fbfdff;
+      padding: 12px;
+      overflow-x: auto;
+      margin-top: 12px;
+      position: relative;
+    }
+
+    .trend-tooltip {
+      position: fixed;
+      z-index: 100000;
+      display: none;
+      max-width: min(320px, calc(100vw - 28px));
+      padding: 8px 10px;
+      border-radius: 11px;
+      background: rgba(22, 32, 51, .96);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .24);
+      pointer-events: none;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .trend-tooltip.show {
+      display: block;
+    }
+
+    .trend-chart-empty {
+      padding: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .trend-chart svg {
+      display: block;
+      width: 100%;
+      min-width: 760px;
+      height: auto;
+    }
+
+    .trend-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-bottom: 10px;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .trend-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .trend-legend-line {
+      width: 24px;
+      height: 0;
+      border-top: 3px solid currentColor;
+      border-radius: 999px;
+    }
+
+    .trend-legend-bar {
+      width: 18px;
+      height: 12px;
+      border-radius: 4px;
+      background: currentColor;
+      opacity: .78;
+    }
+
+    .trend-series-lift,
+    .trend-swatch-lift { color: #173a9f; stroke: #173a9f; }
+    .trend-series-incremental,
+    .trend-swatch-incremental { color: #116932; stroke: #116932; }
+    .trend-series-confidence,
+    .trend-swatch-confidence { color: #9b1c1c; stroke: #9b1c1c; }
+    .trend-series-power,
+    .trend-swatch-power { color: #815900; stroke: #815900; }
+
+    .trend-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .trend-bar {
+      opacity: .68;
+      transition: opacity .12s ease, filter .12s ease;
+    }
+
+    .trend-bar:hover,
+    .trend-point:hover {
+      opacity: 1;
+      filter: drop-shadow(0 4px 7px rgba(24, 36, 66, .18));
+    }
+
+    .trend-point {
+      opacity: .96;
+    }
+
+    .trend-hit {
+      opacity: 0;
+      pointer-events: all;
+      cursor: pointer;
+    }
+
+    .trend-bar,
+    .trend-point {
+      cursor: pointer;
+    }
+
+    .trend-table-details {
+      margin-top: 12px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .trend-table-details > summary {
+      padding: 13px 14px;
+      background: #f7faff;
+      border-bottom: 1px solid transparent;
+    }
+
+    .trend-table-details[open] > summary {
+      border-bottom-color: var(--line);
+    }
+
+    .trend-table-details .table-wrap {
+      margin-top: 0;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .trend-line-dashed {
+      stroke-dasharray: 8 7;
+    }
+
+    .trend-axis,
+    .trend-grid,
+    .trend-tick {
+      stroke: #cbd5e1;
+      stroke-width: 1;
+    }
+
+    .trend-grid {
+      opacity: .72;
+    }
+
+    .trend-axis-label,
+    .trend-tick-label {
+      fill: #475569;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .trend-title-label {
+      fill: #162033;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .trend-note-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .trend-note-list li {
+      margin: 3px 0;
+    }
+
     .field-label-inline { display: inline; }
   </style>
 </head>
@@ -869,6 +1091,12 @@
 
           <div class="form-grid">
             <label>
+              Report name
+              <input id="reportName" type="text" value="A/B Test Report" placeholder="e.g. CTV UA Incrementality Test" />
+              <span class="hint">Used as the title for the downloaded static HTML report.</span>
+            </label>
+
+            <label>
               Experiment use case
               <select id="experimentType">
                 <option value="UA" selected>User Acquisition (UA)</option>
@@ -877,16 +1105,8 @@
               <span class="hint">Changes the conversion-field labels. Audience Reach is the denominator for both use cases.</span>
             </label>
 
-            <div class="two">
-              <label>
-                Control label
-                <input id="controlLabel" type="text" value="control" />
-              </label>
-              <label>
-                Experiment label
-                <input id="experimentLabel" type="text" value="experiment" />
-              </label>
-            </div>
+            <input id="controlLabel" type="hidden" value="control" />
+            <input id="experimentLabel" type="hidden" value="experiment" />
 
             <div id="reConversionNames" class="hidden">
               <label>
@@ -979,6 +1199,25 @@
               <textarea id="shareUrl" class="url-box" readonly></textarea>
               <span class="hint">Works with local files using the hash after <span class="mono">#</span>. You can also edit the URL directly.</span>
             </label>
+
+            <div class="trend-input-block">
+              <div>
+                <h3>Trend Data</h3>
+                <div class="hint">Paste cumulative daily data from Google Sheets as TSV or CSV. Headers are auto-detected.</div>
+              </div>
+              <label>
+                Google Sheet trend data
+                <textarea id="trendDataInput" class="trend-data-box" placeholder="Day of event_date&#9;Control Events (u)&#9;Control Installs&#9;Control Reach&#9;Experiment Events (u)&#9;Experiment Installs&#9;Experiment Reach"></textarea>
+                <span class="hint">UA uses Installs / Reach. RE uses Events / Reach. Rows should be cumulative by date.</span>
+              </label>
+              <div class="button-row">
+                <button id="loadTrendBtn" type="button">Load trend chart</button>
+                <button id="clearTrendBtn" class="secondary" type="button">Clear trend data</button>
+                <button id="downloadTrendReportBtn" class="secondary" type="button">Download static HTML report</button>
+              </div>
+              <div id="trendImportStatus" class="note trend-status">No trend data loaded.</div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -1055,6 +1294,71 @@
               </thead>
               <tbody id="summaryRows"></tbody>
             </table>
+          </div>
+
+
+
+          <div class="panel trend-panel" id="trendPanel">
+            <div class="panel-head">
+              <div>
+                <h3>Trend Chart</h3>
+                <div class="muted small" id="trendSubtitle">Paste cumulative Google Sheet data to chart lift, incrementality, confidence, and power over time.</div>
+              </div>
+              <span class="pill" id="trendPointCount">No trend data</span>
+            </div>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="k">Last trend date</div>
+                <div class="v" id="trendLastDateMetric">--</div>
+                <div class="s" id="trendLastDateSmall">Latest cumulative row.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="trendLiftMetricLabel">Rate lift</div>
+                <div class="v" id="trendLiftMetric">--</div>
+                <div class="s">Experiment rate vs control rate.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="trendIncrementalMetricLabel">% incremental</div>
+                <div class="v" id="trendIncrementalMetric">--</div>
+                <div class="s" id="trendIncrementalSmall">Incremental share of experiment conversions.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Calculated confidence %</div>
+                <div class="v" id="trendConfidenceMetric">--</div>
+                <div class="s">1 - decision p-value.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Observed power</div>
+                <div class="v" id="trendPowerMetric">--</div>
+                <div class="s">Observed effect, current settings.</div>
+              </div>
+            </div>
+            <div class="trend-chart-wrap">
+              <div id="trendChartEmpty" class="trend-chart-empty">Paste trend data in the Inputs panel, then click Load trend chart.</div>
+              <div id="trendChart" class="trend-chart hidden"></div>
+            </div>
+            <div class="note" id="trendNote">The chart uses the selected use case, confidence level, hypothesis/tail, and power target from the calculator inputs.</div>
+            <details class="trend-table-details hidden" id="trendTableWrap">
+              <summary>Raw trend data</summary>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th class="num" id="trendControlHeader">Control</th>
+                      <th class="num" id="trendExperimentHeader">Experiment</th>
+                      <th class="num">Control Reach</th>
+                      <th class="num">Experiment Reach</th>
+                      <th class="num">Rate lift</th>
+                      <th class="num">% incremental</th>
+                      <th class="num">Calculated confidence</th>
+                      <th class="num">Observed power</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trendRows"></tbody>
+                </table>
+              </div>
+            </details>
           </div>
 
           <div class="panel" id="confidenceIntervalPanel">
@@ -1455,6 +1759,7 @@ Total planned spend:
 
   <script>
     const els = {
+      reportName: document.getElementById('reportName'),
       experimentType: document.getElementById('experimentType'),
       controlLabel: document.getElementById('controlLabel'),
       experimentLabel: document.getElementById('experimentLabel'),
@@ -1565,7 +1870,37 @@ Total planned spend:
       plannerTotalSpendMetric: document.getElementById('plannerTotalSpendMetric'),
       plannerSpendRows: document.getElementById('plannerSpendRows'),
       plannerSpendNote: document.getElementById('plannerSpendNote'),
-      plannerRows: document.getElementById('plannerRows')
+      plannerRows: document.getElementById('plannerRows'),
+      trendDataInput: document.getElementById('trendDataInput'),
+      loadTrendBtn: document.getElementById('loadTrendBtn'),
+      clearTrendBtn: document.getElementById('clearTrendBtn'),
+      downloadTrendReportBtn: document.getElementById('downloadTrendReportBtn'),
+      trendImportStatus: document.getElementById('trendImportStatus'),
+      trendPanel: document.getElementById('trendPanel'),
+      trendSubtitle: document.getElementById('trendSubtitle'),
+      trendPointCount: document.getElementById('trendPointCount'),
+      trendLastDateMetric: document.getElementById('trendLastDateMetric'),
+      trendLastDateSmall: document.getElementById('trendLastDateSmall'),
+      trendLiftMetricLabel: document.getElementById('trendLiftMetricLabel'),
+      trendLiftMetric: document.getElementById('trendLiftMetric'),
+      trendIncrementalMetricLabel: document.getElementById('trendIncrementalMetricLabel'),
+      trendIncrementalMetric: document.getElementById('trendIncrementalMetric'),
+      trendIncrementalSmall: document.getElementById('trendIncrementalSmall'),
+      trendConfidenceMetric: document.getElementById('trendConfidenceMetric'),
+      trendPowerMetric: document.getElementById('trendPowerMetric'),
+      trendChartEmpty: document.getElementById('trendChartEmpty'),
+      trendChart: document.getElementById('trendChart'),
+      trendNote: document.getElementById('trendNote'),
+      trendTableWrap: document.getElementById('trendTableWrap'),
+      trendControlHeader: document.getElementById('trendControlHeader'),
+      trendExperimentHeader: document.getElementById('trendExperimentHeader'),
+      trendRows: document.getElementById('trendRows')
+    };
+
+
+    const trendState = {
+      raw: '',
+      last: { hasRaw: false, valid: false, rows: [], points: [], errors: [], warnings: [], columnMap: {} }
     };
 
     function erf(x) {
@@ -1721,6 +2056,7 @@ Total planned spend:
         const t = experimentType.toUpperCase();
         if (t === 'UA' || t === 'RE') els.experimentType.value = t;
       }
+      setValue(els.reportName, getAny('reportName', 'report_name', 'rname', 'reportTitle', 'title'));
       setValue(els.controlLabel, getAny('controlLabel', 'control_label', 'clabel'));
       setValue(els.experimentLabel, getAny('experimentLabel', 'experiment_label', 'elabel', 'variantLabel', 'variant_label', 'vlabel'));
       setValue(els.controlConversionName, getAny('controlConversionName', 'control_conversion_name', 'controlMetric'));
@@ -1792,6 +2128,7 @@ Total planned spend:
     }
 
     function getInputs() {
+      const reportName = els.reportName.value.trim() || 'A/B Test Report';
       const experimentType = els.experimentType.value === 'RE' ? 'RE' : 'UA';
       const controlConversions = asInt(els.controlConversions.value);
       const controlTrials = asInt(els.controlTrials.value);
@@ -1823,7 +2160,7 @@ Total planned spend:
       if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Forecast target power must be between 0 and 1.');
       if (Number.isFinite(controlDailyReach) && controlDailyReach < 0) errors.push('Control reach growth cannot be negative.');
       if (Number.isFinite(experimentDailyReach) && experimentDailyReach < 0) errors.push('Experiment reach growth cannot be negative.');
-      return { experimentType, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
+      return { reportName, experimentType, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
     }
 
     function updateCampaignModeUI(input) {
@@ -2399,6 +2736,787 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       ]);
     }
 
+
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+
+    function stripOuterQuotes(value) {
+      const s = String(value ?? '').trim();
+      if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1).replace(/""/g, '"').trim();
+      return s;
+    }
+
+    function parseCsvLine(line) {
+      const cells = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === ',' && !inQuotes) {
+          cells.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      cells.push(current.trim());
+      return cells.map(stripOuterQuotes);
+    }
+
+    function splitTrendLine(line, delimiter) {
+      if (delimiter === '\t') return line.split('\t').map(stripOuterQuotes);
+      return parseCsvLine(line);
+    }
+
+    function normalizeHeader(header) {
+      return String(header || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+
+    function findTrendColumn(headers, predicate) {
+      const normalized = headers.map(normalizeHeader);
+      for (let i = 0; i < normalized.length; i++) {
+        if (predicate(normalized[i], headers[i])) return i;
+      }
+      return -1;
+    }
+
+    function hasControlToken(n) {
+      return n.includes('control') || n.includes('holdout');
+    }
+
+    function hasExperimentToken(n) {
+      return n.includes('experiment') || n.includes('variant') || n.includes('treatment');
+    }
+
+    function detectTrendColumns(headers) {
+      const isEvent = (n) => n.includes('event') && !n.includes('date') && !n.includes('install') && !n.includes('reach');
+      const isInstall = (n) => n.includes('install');
+      const isReach = (n) => n.includes('reach') || n.includes('audience');
+      return {
+        date: findTrendColumn(headers, n => n.includes('eventdate') || n === 'date' || n.endsWith('date') || n.startsWith('date') || n.startsWith('day')),
+        controlEvents: findTrendColumn(headers, n => hasControlToken(n) && isEvent(n)),
+        controlInstalls: findTrendColumn(headers, n => hasControlToken(n) && isInstall(n)),
+        controlReach: findTrendColumn(headers, n => hasControlToken(n) && isReach(n)),
+        experimentEvents: findTrendColumn(headers, n => hasExperimentToken(n) && isEvent(n)),
+        experimentInstalls: findTrendColumn(headers, n => hasExperimentToken(n) && isInstall(n)),
+        experimentReach: findTrendColumn(headers, n => hasExperimentToken(n) && isReach(n))
+      };
+    }
+
+    function parseTrendDate(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return { ms: NaN, label: '--', shortLabel: '--' };
+      const monthMap = {
+        jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3,
+        may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, sept: 8,
+        september: 8, oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11
+      };
+      let match = raw.match(/^(\d{1,2})[-\/\s]([A-Za-z]{3,9})[-\/\s](\d{2,4})$/);
+      if (match) {
+        const day = Number(match[1]);
+        const month = monthMap[match[2].toLowerCase()];
+        let year = Number(match[3]);
+        if (year < 100) year += year >= 70 ? 1900 : 2000;
+        if (Number.isFinite(day) && Number.isFinite(month) && Number.isFinite(year)) {
+          const dt = new Date(year, month, day);
+          if (!Number.isNaN(dt.getTime())) {
+            return {
+              ms: dt.getTime(),
+              label: dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+              shortLabel: dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+            };
+          }
+        }
+      }
+      match = raw.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+      if (match) {
+        const dt = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+        if (!Number.isNaN(dt.getTime())) {
+          return {
+            ms: dt.getTime(),
+            label: dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+            shortLabel: dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+          };
+        }
+      }
+      const parsed = new Date(raw);
+      if (!Number.isNaN(parsed.getTime())) {
+        return {
+          ms: parsed.getTime(),
+          label: parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+          shortLabel: parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        };
+      }
+      return { ms: NaN, label: raw, shortLabel: raw };
+    }
+
+    function getTrendMetricMeta(input) {
+      if (input.experimentType === 'RE') {
+        return {
+          singular: 'event',
+          plural: 'events',
+          properPlural: 'Events',
+          conversionLabel: 'Event',
+          liftLabel: 'Event rate lift %',
+          incrementalLabel: '% incremental events',
+          controlKey: 'controlEvents',
+          experimentKey: 'experimentEvents'
+        };
+      }
+      return {
+        singular: 'install',
+        plural: 'installs',
+        properPlural: 'Installs',
+        conversionLabel: 'Install',
+        liftLabel: 'Install conversion rate lift %',
+        incrementalLabel: '% incremental installs',
+        controlKey: 'controlInstalls',
+        experimentKey: 'experimentInstalls'
+      };
+    }
+
+    function parseTrendData(raw) {
+      const text = String(raw || '').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+      if (!text) return { hasRaw: false, valid: false, headers: [], rows: [], errors: [], warnings: [], columnMap: {} };
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      if (lines.length < 2) {
+        return { hasRaw: true, valid: false, headers: [], rows: [], errors: ['Trend data needs a header row and at least one data row.'], warnings: [], columnMap: {} };
+      }
+      const delimiter = text.includes('\t') ? '\t' : ',';
+      const headers = splitTrendLine(lines[0], delimiter);
+      const columnMap = detectTrendColumns(headers);
+      const rows = [];
+      const warnings = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cells = splitTrendLine(lines[i], delimiter);
+        if (cells.every(cell => String(cell).trim() === '')) continue;
+        rows.push({ sourceRowNumber: i + 1, cells });
+      }
+      if (rows.length === 0) warnings.push('No non-empty data rows were found after the header.');
+      return { hasRaw: true, valid: true, delimiter, headers, rows, errors: [], warnings, columnMap };
+    }
+
+    function readTrendInt(row, index) {
+      if (!Number.isInteger(index) || index < 0) return NaN;
+      return asInt(row.cells[index]);
+    }
+
+    function calculateTrendData(input) {
+      const parsed = parseTrendData(trendState.raw);
+      if (!parsed.hasRaw) return parsed;
+      const meta = getTrendMetricMeta(input);
+      const errors = [...parsed.errors];
+      const warnings = [...parsed.warnings];
+      const requiredColumns = [
+        ['date', 'date'],
+        ['controlReach', 'Control Reach'],
+        ['experimentReach', 'Experiment Reach'],
+        [meta.controlKey, input.experimentType === 'RE' ? 'Control Events' : 'Control Installs'],
+        [meta.experimentKey, input.experimentType === 'RE' ? 'Experiment Events' : 'Experiment Installs']
+      ];
+      const missing = requiredColumns.filter(([key]) => !Number.isInteger(parsed.columnMap[key]) || parsed.columnMap[key] < 0).map(([, label]) => label);
+      if (missing.length) {
+        errors.push(`Could not auto-detect required column(s): ${missing.join(', ')}. Check the pasted headers.`);
+      }
+      if (errors.length) return { ...parsed, valid: false, errors, warnings, points: [] };
+
+      const points = [];
+      let skipped = 0;
+      for (const row of parsed.rows) {
+        const dateRaw = String(row.cells[parsed.columnMap.date] || '').trim();
+        const dateInfo = parseTrendDate(dateRaw);
+        const controlConversions = readTrendInt(row, parsed.columnMap[meta.controlKey]);
+        const experimentConversions = readTrendInt(row, parsed.columnMap[meta.experimentKey]);
+        const controlTrials = readTrendInt(row, parsed.columnMap.controlReach);
+        const experimentTrials = readTrendInt(row, parsed.columnMap.experimentReach);
+        const rowProblems = [];
+        if (!dateRaw) rowProblems.push('missing date');
+        if (!Number.isFinite(controlConversions) || controlConversions < 0) rowProblems.push('invalid control conversions');
+        if (!Number.isFinite(experimentConversions) || experimentConversions < 0) rowProblems.push('invalid experiment conversions');
+        if (!Number.isFinite(controlTrials) || controlTrials <= 0) rowProblems.push('invalid control reach');
+        if (!Number.isFinite(experimentTrials) || experimentTrials <= 0) rowProblems.push('invalid experiment reach');
+        if (Number.isFinite(controlConversions) && Number.isFinite(controlTrials) && controlConversions > controlTrials) rowProblems.push('control conversions exceed reach');
+        if (Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) rowProblems.push('experiment conversions exceed reach');
+        if (rowProblems.length) {
+          skipped++;
+          if (warnings.length < 6) warnings.push(`Skipped row ${row.sourceRowNumber}: ${rowProblems.join(', ')}.`);
+          continue;
+        }
+        const rowInput = {
+          ...input,
+          controlConversions,
+          controlTrials,
+          experimentConversions,
+          experimentTrials,
+          errors: []
+        };
+        const out = calculate(rowInput);
+        const power = calculatePowerForObservedEffect(rowInput, out, input.powerTarget);
+        const incremental = experimentConversions - (experimentTrials * out.p1);
+        const incrementalPct = experimentConversions !== 0 ? incremental / experimentConversions : NaN;
+        points.push({
+          sourceRowNumber: row.sourceRowNumber,
+          dateRaw,
+          dateMs: dateInfo.ms,
+          label: dateInfo.label,
+          shortLabel: dateInfo.shortLabel,
+          controlConversions,
+          experimentConversions,
+          controlTrials,
+          experimentTrials,
+          input: rowInput,
+          out,
+          power,
+          incremental,
+          incrementalPct,
+          liftPct: Number.isFinite(out.relativeLift) ? out.relativeLift * 100 : NaN,
+          incrementalPctDisplay: Number.isFinite(incrementalPct) ? incrementalPct * 100 : NaN,
+          confidencePct: Number.isFinite(out.statisticalConfidence) ? out.statisticalConfidence * 100 : NaN,
+          powerPct: Number.isFinite(power.observedPower) ? power.observedPower * 100 : NaN
+        });
+      }
+      if (skipped > 6) warnings.push(`Skipped ${skipped} rows total because of invalid or incomplete values.`);
+      if (points.length === 0) errors.push('No valid trend rows could be calculated.');
+      const allDatesValid = points.every(p => Number.isFinite(p.dateMs));
+      if (allDatesValid) points.sort((a, b) => a.dateMs - b.dateMs);
+      return { ...parsed, valid: errors.length === 0, errors, warnings, points, metricMeta: meta };
+    }
+
+    function formatAxisPctValue(value) {
+      if (!Number.isFinite(value)) return '--';
+      const abs = Math.abs(value);
+      const digits = abs >= 100 ? 0 : abs >= 10 ? 0 : abs >= 1 ? 1 : 2;
+      const sign = value > 0 ? '' : '';
+      return sign + value.toLocaleString(undefined, { maximumFractionDigits: digits }) + '%';
+    }
+
+    function domainForValues(values, includeZero = true, fixedMin = null, fixedMax = null) {
+      if (Number.isFinite(fixedMin) && Number.isFinite(fixedMax) && fixedMax > fixedMin) return [fixedMin, fixedMax];
+      const nums = values.filter(Number.isFinite);
+      if (includeZero) nums.push(0);
+      if (nums.length === 0) return [-1, 1];
+      let min = Math.min(...nums);
+      let max = Math.max(...nums);
+      if (min === max) {
+        const pad = Math.max(1, Math.abs(max) * 0.25);
+        min -= pad;
+        max += pad;
+      }
+      const pad = (max - min) * 0.12;
+      return [min - pad, max + pad];
+    }
+
+    function linearTicks(min, max, count) {
+      const ticks = [];
+      if (!(max > min) || count <= 1) return [min, max];
+      for (let i = 0; i < count; i++) ticks.push(min + (max - min) * (i / (count - 1)));
+      return ticks;
+    }
+
+    function buildSeriesPath(points, key, xScale, yScale) {
+      let path = '';
+      let open = false;
+      points.forEach((point, idx) => {
+        const value = point[key];
+        if (!Number.isFinite(value)) {
+          open = false;
+          return;
+        }
+        const x = xScale(idx).toFixed(2);
+        const y = yScale(value).toFixed(2);
+        path += `${open ? ' L' : 'M'}${x},${y}`;
+        open = true;
+      });
+      return path;
+    }
+
+    function buildTrendSvg(points, input) {
+      const meta = getTrendMetricMeta(input);
+      const width = 1100;
+      const height = 440;
+      const margin = { top: 36, right: 82, bottom: 76, left: 82 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      const leftValues = points.flatMap(p => [p.liftPct, p.incrementalPctDisplay]);
+      const [leftMin, leftMax] = domainForValues(leftValues, true);
+      const [rightMin, rightMax] = [0, 100];
+      const bandW = plotW / Math.max(points.length, 1);
+      const xScale = (idx) => margin.left + bandW * (idx + 0.5);
+      const yLeft = (value) => margin.top + (1 - ((value - leftMin) / (leftMax - leftMin))) * plotH;
+      const yRight = (value) => margin.top + (1 - ((value - rightMin) / (rightMax - rightMin))) * plotH;
+      const leftTicks = linearTicks(leftMin, leftMax, 6);
+      const rightTicks = [0, 25, 50, 75, 100];
+      const labelEvery = Math.max(1, Math.ceil(points.length / 8));
+      const xLabels = points.map((p, idx) => ({ p, idx })).filter(({ idx }) => idx === 0 || idx === points.length - 1 || idx % labelEvery === 0);
+      const confidencePath = buildSeriesPath(points, 'confidencePct', xScale, yRight);
+      const powerPath = buildSeriesPath(points, 'powerPct', xScale, yRight);
+      const zeroY = yLeft(0);
+      const yGrid = leftTicks.map(t => `<line class="trend-grid" x1="${margin.left}" x2="${width - margin.right}" y1="${yLeft(t).toFixed(2)}" y2="${yLeft(t).toFixed(2)}"></line>`).join('');
+      const leftTickLabels = leftTicks.map(t => `<text class="trend-tick-label" x="${margin.left - 12}" y="${(yLeft(t) + 4).toFixed(2)}" text-anchor="end">${escapeHtml(formatAxisPctValue(t))}</text>`).join('');
+      const rightTickLabels = rightTicks.map(t => `<text class="trend-tick-label" x="${width - margin.right + 12}" y="${(yRight(t) + 4).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisPctValue(t))}</text>`).join('');
+      const xTickLabels = xLabels.map(({ p, idx }) => {
+        const x = xScale(idx);
+        return `<line class="trend-tick" x1="${x.toFixed(2)}" x2="${x.toFixed(2)}" y1="${height - margin.bottom}" y2="${height - margin.bottom + 6}"></line><text class="trend-tick-label" x="${x.toFixed(2)}" y="${height - margin.bottom + 24}" text-anchor="middle">${escapeHtml(p.shortLabel)}</text>`;
+      }).join('');
+      const barGap = Math.max(3, Math.min(7, bandW * 0.08));
+      const groupW = Math.min(62, Math.max(12, bandW * 0.72));
+      const barW = Math.max(4, (groupW - barGap) / 2);
+      const zeroForBar = clamp(zeroY, margin.top, height - margin.bottom);
+      const barFor = (point, idx, key, offset, className, label) => {
+        const value = point[key];
+        if (!Number.isFinite(value)) return '';
+        const x = xScale(idx) - groupW / 2 + offset;
+        const y = yLeft(value);
+        const yTop = Math.min(y, zeroForBar);
+        const h = Math.max(1, Math.abs(y - zeroForBar));
+        const tooltip = `${point.label} - ${label}: ${formatAxisPctValue(value)}`;
+        const safeTooltip = escapeHtml(tooltip);
+        return `<rect class="trend-bar ${className}" x="${x.toFixed(2)}" y="${yTop.toFixed(2)}" width="${barW.toFixed(2)}" height="${h.toFixed(2)}" rx="4" fill="currentColor" data-trend-tooltip="${safeTooltip}" tabindex="0" aria-label="${safeTooltip}"></rect>`;
+      };
+      const liftBars = points.map((p, idx) => barFor(p, idx, 'liftPct', 0, 'trend-series-lift', meta.liftLabel)).join('');
+      const incrementalBars = points.map((p, idx) => barFor(p, idx, 'incrementalPctDisplay', barW + barGap, 'trend-series-incremental', meta.incrementalLabel)).join('');
+      const circlesFor = (key, yScale, className, label) => points.map((p, idx) => {
+        if (!Number.isFinite(p[key])) return '';
+        const tooltip = `${p.label} - ${label}: ${formatAxisPctValue(p[key])}`;
+        const safeTooltip = escapeHtml(tooltip);
+        const cx = xScale(idx).toFixed(2);
+        const cy = yScale(p[key]).toFixed(2);
+        return `<g class="trend-point-group" data-trend-tooltip="${safeTooltip}" tabindex="0" aria-label="${safeTooltip}"><circle class="trend-point ${className}" cx="${cx}" cy="${cy}" r="4.4" fill="currentColor"></circle><circle class="trend-hit" cx="${cx}" cy="${cy}" r="13" fill="transparent"></circle></g>`;
+      }).join('');
+      return `
+        <div class="trend-legend">
+          <span class="trend-legend-item trend-swatch-lift"><span class="trend-legend-bar"></span>${escapeHtml(meta.liftLabel)}</span>
+          <span class="trend-legend-item trend-swatch-incremental"><span class="trend-legend-bar"></span>${escapeHtml(meta.incrementalLabel)}</span>
+          <span class="trend-legend-item trend-swatch-confidence"><span class="trend-legend-line"></span>Calculated confidence %</span>
+          <span class="trend-legend-item trend-swatch-power"><span class="trend-legend-line"></span>Observed power %</span>
+        </div>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Trend chart showing lift and incremental percent as bars, with calculated confidence and observed power as lines over time">
+          <rect x="0" y="0" width="${width}" height="${height}" fill="#fbfdff"></rect>
+          ${yGrid}
+          <line class="trend-axis" x1="${margin.left}" x2="${margin.left}" y1="${margin.top}" y2="${height - margin.bottom}"></line>
+          <line class="trend-axis" x1="${width - margin.right}" x2="${width - margin.right}" y1="${margin.top}" y2="${height - margin.bottom}"></line>
+          <line class="trend-axis" x1="${margin.left}" x2="${width - margin.right}" y1="${height - margin.bottom}" y2="${height - margin.bottom}"></line>
+          ${zeroY >= margin.top && zeroY <= height - margin.bottom ? `<line x1="${margin.left}" x2="${width - margin.right}" y1="${zeroY.toFixed(2)}" y2="${zeroY.toFixed(2)}" stroke="#162033" stroke-width="1.5" stroke-dasharray="4 5"></line>` : ''}
+          ${leftTickLabels}
+          ${rightTickLabels}
+          ${xTickLabels}
+          <text class="trend-title-label" x="${margin.left}" y="22">Left axis: lift and incremental % bars</text>
+          <text class="trend-title-label" x="${width - margin.right}" y="22" text-anchor="end">Right axis: confidence and power % lines</text>
+          ${liftBars}
+          ${incrementalBars}
+          ${confidencePath ? `<path class="trend-line trend-line-dashed trend-series-confidence" d="${confidencePath}"></path>` : ''}
+          ${powerPath ? `<path class="trend-line trend-line-dashed trend-series-power" d="${powerPath}"></path>` : ''}
+          ${circlesFor('confidencePct', yRight, 'trend-series-confidence', 'Calculated confidence %')}
+          ${circlesFor('powerPct', yRight, 'trend-series-power', 'Observed power %')}
+        </svg>`;
+    }
+
+    function getTrendTooltipEl() {
+      let tooltip = document.getElementById('trendTooltip');
+      if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'trendTooltip';
+        tooltip.className = 'trend-tooltip';
+        tooltip.setAttribute('role', 'tooltip');
+        document.body.appendChild(tooltip);
+      }
+      return tooltip;
+    }
+
+    function placeTrendTooltip(tooltip, x, y) {
+      const pad = 14;
+      tooltip.style.left = '0px';
+      tooltip.style.top = '0px';
+      tooltip.classList.add('show');
+      const rect = tooltip.getBoundingClientRect();
+      let left = x + 14;
+      let top = y + 14;
+      if (left + rect.width + pad > window.innerWidth) left = x - rect.width - 14;
+      if (top + rect.height + pad > window.innerHeight) top = y - rect.height - 14;
+      tooltip.style.left = `${Math.max(pad, left)}px`;
+      tooltip.style.top = `${Math.max(pad, top)}px`;
+    }
+
+    function showTrendTooltip(text, x, y) {
+      if (!text) return;
+      const tooltip = getTrendTooltipEl();
+      tooltip.textContent = text;
+      placeTrendTooltip(tooltip, x, y);
+    }
+
+    function hideTrendTooltip() {
+      const tooltip = document.getElementById('trendTooltip');
+      if (tooltip) tooltip.classList.remove('show');
+    }
+
+    function closestTrendTooltipTarget(target, container) {
+      if (!target || !target.closest) return null;
+      const found = target.closest('[data-trend-tooltip]');
+      return found && container.contains(found) ? found : null;
+    }
+
+    function attachTrendTooltips(container) {
+      if (!container || container.dataset.trendTooltipsBound === '1') return;
+      container.dataset.trendTooltipsBound = '1';
+      container.addEventListener('mousemove', (event) => {
+        const target = closestTrendTooltipTarget(event.target, container);
+        if (!target) {
+          hideTrendTooltip();
+          return;
+        }
+        showTrendTooltip(target.getAttribute('data-trend-tooltip'), event.clientX, event.clientY);
+      });
+      container.addEventListener('mouseleave', hideTrendTooltip);
+      container.addEventListener('focusin', (event) => {
+        const target = closestTrendTooltipTarget(event.target, container);
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        showTrendTooltip(target.getAttribute('data-trend-tooltip'), rect.left + rect.width / 2, rect.top + rect.height / 2);
+      });
+      container.addEventListener('focusout', hideTrendTooltip);
+    }
+
+    function renderTrend(input) {
+      if (!els.trendPanel) return;
+      const trend = calculateTrendData(input);
+      trendState.last = trend;
+      const meta = getTrendMetricMeta(input);
+      els.trendLiftMetricLabel.textContent = meta.liftLabel;
+      els.trendIncrementalMetricLabel.textContent = meta.incrementalLabel;
+      els.trendControlHeader.textContent = `${displayArmLabel(input.controlLabel)} ${meta.properPlural}`;
+      els.trendExperimentHeader.textContent = `${displayArmLabel(input.experimentLabel)} ${meta.properPlural}`;
+
+      if (!trend.hasRaw) {
+        hideTrendTooltip();
+        els.trendImportStatus.className = 'note trend-status';
+        els.trendImportStatus.textContent = 'No trend data loaded.';
+        els.trendPointCount.textContent = 'No trend data';
+        els.trendSubtitle.textContent = 'Paste cumulative Google Sheet data to chart lift, incrementality, confidence, and power over time.';
+        els.trendChartEmpty.classList.remove('hidden');
+        els.trendChart.classList.add('hidden');
+        els.trendChart.innerHTML = '';
+        els.trendTableWrap.classList.add('hidden');
+        els.trendLastDateMetric.textContent = '--';
+        els.trendLiftMetric.textContent = '--';
+        els.trendIncrementalMetric.textContent = '--';
+        els.trendConfidenceMetric.textContent = '--';
+        els.trendPowerMetric.textContent = '--';
+        els.trendIncrementalSmall.textContent = `Incremental share of experiment ${meta.plural}.`;
+        els.trendNote.innerHTML = 'The chart uses the selected use case, confidence level, hypothesis/tail, and power target from the calculator inputs.';
+        if (els.downloadTrendReportBtn) els.downloadTrendReportBtn.disabled = true;
+        return;
+      }
+
+      if (!trend.valid || !trend.points || trend.points.length === 0) {
+        hideTrendTooltip();
+        const errorText = trend.errors.length ? trend.errors.join(' ') : 'Trend data could not be calculated.';
+        els.trendImportStatus.className = 'note warn-note trend-status';
+        els.trendImportStatus.textContent = errorText;
+        els.trendPointCount.textContent = 'Trend data error';
+        els.trendSubtitle.textContent = 'Check the pasted headers and values.';
+        els.trendChartEmpty.classList.remove('hidden');
+        els.trendChartEmpty.textContent = errorText;
+        els.trendChart.classList.add('hidden');
+        els.trendChart.innerHTML = '';
+        els.trendTableWrap.classList.add('hidden');
+        els.trendRows.innerHTML = '';
+        els.trendNote.innerHTML = trend.warnings.length ? `<ul class="trend-note-list">${trend.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : 'No valid trend points are available yet.';
+        if (els.downloadTrendReportBtn) els.downloadTrendReportBtn.disabled = true;
+        return;
+      }
+
+      const last = trend.points[trend.points.length - 1];
+      const warningMarkup = trend.warnings.length ? `<ul class="trend-note-list">${trend.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : '';
+      els.trendImportStatus.className = 'note trend-status';
+      els.trendImportStatus.innerHTML = `Loaded ${formatNumber(trend.points.length)} trend point${trend.points.length === 1 ? '' : 's'} using ${input.experimentType === 'RE' ? 'event' : 'install'} conversions.${warningMarkup}`;
+      if (els.downloadTrendReportBtn) els.downloadTrendReportBtn.disabled = false;
+      els.trendPointCount.textContent = `${formatNumber(trend.points.length)} points`;
+      els.trendSubtitle.textContent = `${input.experimentType === 'RE' ? 'RE event' : 'UA install'} trend from ${trend.points[0].label} through ${last.label}.`;
+      els.trendChartEmpty.classList.add('hidden');
+      els.trendChart.classList.remove('hidden');
+      els.trendChart.innerHTML = buildTrendSvg(trend.points, input);
+      attachTrendTooltips(els.trendChart);
+      els.trendTableWrap.classList.remove('hidden');
+      els.trendLastDateMetric.textContent = last.label;
+      els.trendLastDateSmall.textContent = 'Latest cumulative row in pasted trend data.';
+      els.trendLiftMetric.textContent = Number.isFinite(last.out.relativeLift) ? formatPct(last.out.relativeLift, input.precision) : '--';
+      els.trendIncrementalMetric.textContent = Number.isFinite(last.incrementalPct) ? formatPct(last.incrementalPct, input.precision) : '--';
+      els.trendIncrementalSmall.textContent = `${formatNumber(last.incremental, 1)} incremental ${meta.plural} vs expected at control rate.`;
+      els.trendConfidenceMetric.textContent = formatPct(last.out.statisticalConfidence, input.precision);
+      els.trendPowerMetric.textContent = Number.isFinite(last.power.observedPower) ? formatPct(last.power.observedPower, 1) : '--';
+      els.trendNote.innerHTML = `Left-axis bars show ${meta.liftLabel} and ${meta.incrementalLabel}. Right-axis lines show calculated confidence % and observed power %. Hover over any bar or line point to see its date, metric, and value. ${meta.liftLabel} is the percent difference between ${input.controlLabel} and ${input.experimentLabel} ${meta.singular} conversion rates. ${meta.incrementalLabel} is the percent of experiment ${meta.plural} estimated to be incremental versus the control-rate expectation. Confidence and power are recalculated independently for every date using the calculator's selected confidence level, tail, and power target.`;
+      els.trendRows.innerHTML = trend.points.map(p => `
+        <tr>
+          <td>${escapeHtml(p.label)}</td>
+          <td class="num">${formatNumber(p.controlConversions)}</td>
+          <td class="num">${formatNumber(p.experimentConversions)}</td>
+          <td class="num">${formatNumber(p.controlTrials)}</td>
+          <td class="num">${formatNumber(p.experimentTrials)}</td>
+          <td class="num">${Number.isFinite(p.out.relativeLift) ? formatPct(p.out.relativeLift, input.precision) : '--'}</td>
+          <td class="num">${Number.isFinite(p.incrementalPct) ? formatPct(p.incrementalPct, input.precision) : '--'}</td>
+          <td class="num">${formatPct(p.out.statisticalConfidence, input.precision)}</td>
+          <td class="num">${Number.isFinite(p.power.observedPower) ? formatPct(p.power.observedPower, 1) : '--'}</td>
+        </tr>`).join('');
+    }
+
+    function buildReportTableRows(rows) {
+      return rows.map(row => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td><td>${escapeHtml(row[2] || '')}</td></tr>`).join('');
+    }
+
+    function buildFrozenReportHtml(currentInput, currentOut, currentPower, trend) {
+      const hasTrend = trend && trend.valid && trend.points && trend.points.length;
+      const lastPoint = hasTrend ? trend.points[trend.points.length - 1] : null;
+      const reportInput = lastPoint ? lastPoint.input : currentInput;
+      const reportOut = lastPoint ? lastPoint.out : currentOut;
+      const reportPower = lastPoint ? lastPoint.power : currentPower;
+      const meta = getTrendMetricMeta(currentInput);
+      const d = currentInput.precision;
+      const reportName = currentInput.reportName || 'A/B Test Report';
+      const cumulativeDateLabel = lastPoint ? lastPoint.label : 'Current calculator inputs';
+      const reportTitle = `${reportName} - ${cumulativeDateLabel}`;
+      const generatedAt = new Date().toLocaleString();
+      const chartMarkup = hasTrend ? buildTrendSvg(trend.points, currentInput) : '<div class="empty">No trend data was loaded when this report was generated.</div>';
+      const trendRows = hasTrend ? trend.points.map(p => `
+        <tr>
+          <td>${escapeHtml(p.label)}</td>
+          <td class="num">${formatNumber(p.controlConversions)}</td>
+          <td class="num">${formatNumber(p.experimentConversions)}</td>
+          <td class="num">${formatNumber(p.controlTrials)}</td>
+          <td class="num">${formatNumber(p.experimentTrials)}</td>
+          <td class="num">${Number.isFinite(p.out.relativeLift) ? formatPct(p.out.relativeLift, d) : '--'}</td>
+          <td class="num">${Number.isFinite(p.incrementalPct) ? formatPct(p.incrementalPct, d) : '--'}</td>
+          <td class="num">${formatPct(p.out.statisticalConfidence, d)}</td>
+          <td class="num">${Number.isFinite(p.power.observedPower) ? formatPct(p.power.observedPower, 1) : '--'}</td>
+        </tr>`).join('') : '';
+      const settingsRows = buildReportTableRows([
+        ['Report generated', generatedAt, 'Local browser time.'],
+        ['Report name', currentInput.reportName || 'A/B Test Report', 'Used in the static report header.'],
+        ['Use case', currentInput.experimentType, currentInput.experimentType === 'RE' ? 'RE uses event conversions.' : 'UA uses install conversions.'],
+        ['Current calculator control input', `${formatNumber(currentInput.controlConversions)} conversions / ${formatNumber(currentInput.controlTrials)} reach`, 'Manual calculator input at report download time.'],
+        ['Current calculator experiment input', `${formatNumber(currentInput.experimentConversions)} conversions / ${formatNumber(currentInput.experimentTrials)} reach`, 'Manual calculator input at report download time.'],
+        ['Confidence level', formatPct(currentInput.confidenceLevel, 0), 'Used for p-value decisioning and confidence intervals.'],
+        ['Hypothesis / tail', currentInput.tail, 'Used for p-value and power calculations.'],
+        ['Power target', formatPct(currentInput.powerTarget, 0), 'Used for required sample size.']
+      ]);
+      const finalRows = buildReportTableRows([
+        ['Cumulative result date', lastPoint ? lastPoint.label : 'Current calculator inputs', hasTrend ? 'Latest valid row from pasted trend data.' : 'No trend data was loaded.'],
+        [`Control ${meta.plural}`, formatNumber(reportInput.controlConversions), `${formatNumber(reportInput.controlTrials)} control Audience Reach.`],
+        [`Experiment ${meta.plural}`, formatNumber(reportInput.experimentConversions), `${formatNumber(reportInput.experimentTrials)} experiment Audience Reach.`],
+        ['Control rate', formatPct(reportOut.p1, d), `${reportInput.controlConversions} / ${reportInput.controlTrials}.`],
+        ['Experiment rate', formatPct(reportOut.p2, d), `${reportInput.experimentConversions} / ${reportInput.experimentTrials}.`],
+        ['Relative lift', Number.isFinite(reportOut.relativeLift) ? formatPct(reportOut.relativeLift, d) : '--', `${currentInput.experimentLabel} rate versus ${currentInput.controlLabel} rate.`],
+        ['Absolute difference', formatPctPoint(reportOut.diff, d), 'Experiment rate minus control rate.'],
+        ['P-value', formatFlexible(reportOut.pForDecision, Math.max(6, d + 3)), 'Decision p-value.'],
+        ['Calculated confidence %', formatPct(reportOut.statisticalConfidence, d), '1 - decision p-value.'],
+        ['Observed power', Number.isFinite(reportPower.observedPower) ? formatPct(reportPower.observedPower, 1) : '--', 'Post-hoc view based on the observed absolute effect size.'],
+        ['False-negative risk', Number.isFinite(reportPower.observedPower) ? formatPct(1 - reportPower.observedPower, 1) : '--', 'Approximate risk of missing an effect this large.'],
+        ['Difference CI', `${formatPctPoint(reportOut.ciLow, d)} to ${formatPctPoint(reportOut.ciHigh, d)}`, 'Confidence interval for experiment - control.'],
+        [meta.incrementalLabel, lastPoint && Number.isFinite(lastPoint.incrementalPct) ? formatPct(lastPoint.incrementalPct, d) : '--', lastPoint ? `${formatNumber(lastPoint.incremental, 1)} incremental ${meta.plural} versus expected at control rate.` : 'Available when trend data is loaded.']
+      ]);
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(reportTitle)}</title>
+  <style>
+    :root { --ink:#162033; --muted:#64748b; --line:#dbe3ef; --bg:#f6f8fb; --panel:#fff; --accent:#3157d5; --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:var(--sans); color:var(--ink); background:linear-gradient(180deg,#fff,var(--bg)); line-height:1.45; }
+    main { width:min(1600px,calc(100% - 36px)); margin:0 auto; padding:28px 0 48px; }
+    header { margin-bottom:18px; }
+    h1 { margin:0; font-size:clamp(28px,4vw,44px); letter-spacing:-.035em; line-height:1.05; }
+    h2 { margin:0 0 12px; font-size:20px; }
+    .subhead { color:var(--muted); margin-top:8px; max-width:980px; }
+    .card { background:rgba(255,255,255,.96); border:1px solid var(--line); border-radius:18px; padding:18px; box-shadow:0 14px 34px rgba(24,36,66,.08); margin:14px 0; }
+    .metric-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-bottom:12px; }
+    .metric { border:1px solid var(--line); border-radius:16px; padding:14px; background:#fbfdff; }
+    .k { color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.055em; }
+    .v { margin-top:7px; font-size:24px; font-weight:900; letter-spacing:-.03em; line-height:1.08; overflow-wrap:anywhere; }
+    .s { margin-top:6px; color:var(--muted); font-size:12px; }
+    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:16px; margin-top:12px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; min-width:760px; }
+    th,td { padding:11px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { background:#f7faff; color:#334155; font-size:12px; text-transform:uppercase; letter-spacing:.055em; }
+    tr:last-child td { border-bottom:0; }
+    td.num { font-family:var(--mono); text-align:right; }
+    .note { border-left:4px solid var(--accent); background:#f2f6ff; padding:12px 13px; border-radius:12px; color:#26406f; font-size:13px; margin-top:12px; }
+    .empty { padding:22px; color:var(--muted); text-align:center; font-weight:700; }
+    .trend-chart-wrap { border:1px solid var(--line); border-radius:16px; background:#fbfdff; padding:12px; overflow-x:auto; margin-top:12px; position:relative; }
+    .trend-tooltip { position:fixed; z-index:100000; display:none; max-width:min(320px,calc(100vw - 28px)); padding:8px 10px; border-radius:11px; background:rgba(22,32,51,.96); color:#fff; box-shadow:0 12px 28px rgba(15,23,42,.24); pointer-events:none; font-size:12px; font-weight:800; line-height:1.35; white-space:nowrap; }
+    .trend-tooltip.show { display:block; }
+    .trend-chart svg { display:block; width:100%; min-width:760px; height:auto; }
+    .trend-legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin-bottom:10px; color:#334155; font-size:12px; font-weight:800; }
+    .trend-legend-item { display:inline-flex; align-items:center; gap:7px; }
+    .trend-legend-line { width:24px; height:0; border-top:3px solid currentColor; border-radius:999px; }
+    .trend-legend-bar { width:18px; height:12px; border-radius:4px; background:currentColor; opacity:.78; }
+    .trend-series-lift,.trend-swatch-lift { color:#173a9f; stroke:#173a9f; }
+    .trend-series-incremental,.trend-swatch-incremental { color:#116932; stroke:#116932; }
+    .trend-series-confidence,.trend-swatch-confidence { color:#9b1c1c; stroke:#9b1c1c; }
+    .trend-series-power,.trend-swatch-power { color:#815900; stroke:#815900; }
+    .trend-line { fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .trend-bar { opacity:.68; transition:opacity .12s ease, filter .12s ease; }
+    .trend-bar:hover,.trend-point:hover { opacity:1; filter:drop-shadow(0 4px 7px rgba(24,36,66,.18)); }
+    .trend-point { opacity:.96; }
+    .trend-hit { opacity:0; pointer-events:all; cursor:pointer; }
+    .trend-bar,.trend-point { cursor:pointer; }
+    details.trend-table-details { border:1px solid var(--line); border-radius:16px; background:#fff; overflow:hidden; margin-top:12px; }
+    details.trend-table-details > summary { cursor:pointer; font-weight:900; padding:13px 14px; background:#f7faff; }
+    details.trend-table-details[open] > summary { border-bottom:1px solid var(--line); }
+    details.trend-table-details .table-wrap { margin-top:0; border:0; border-radius:0; }
+    .trend-line-dashed { stroke-dasharray:8 7; }
+    .trend-axis,.trend-grid,.trend-tick { stroke:#cbd5e1; stroke-width:1; }
+    .trend-grid { opacity:.72; }
+    .trend-axis-label,.trend-tick-label { fill:#475569; font-family:var(--sans); font-size:12px; font-weight:750; }
+    .trend-title-label { fill:#162033; font-family:var(--sans); font-size:13px; font-weight:900; }
+    @media print { body { background:#fff; } .card { box-shadow:none; break-inside:avoid; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>${escapeHtml(reportTitle)}</h1>
+      <div class="subhead">Static export from the A/B Test Significance Calculator. Inputs and outputs are hard-coded in this report and are not editable.</div>
+    </header>
+
+    <section class="card">
+      <h2>Last Cumulative Result</h2>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">Date</div><div class="v">${escapeHtml(lastPoint ? lastPoint.label : 'Current')}</div><div class="s">${hasTrend ? 'Latest trend row.' : 'Current calculator inputs.'}</div></div>
+        <div class="metric"><div class="k">Relative lift</div><div class="v">${Number.isFinite(reportOut.relativeLift) ? formatPct(reportOut.relativeLift, d) : '--'}</div><div class="s">Experiment rate vs control rate.</div></div>
+        <div class="metric"><div class="k">Calculated confidence %</div><div class="v">${formatPct(reportOut.statisticalConfidence, d)}</div><div class="s">1 - decision p-value.</div></div>
+        <div class="metric"><div class="k">Observed power</div><div class="v">${Number.isFinite(reportPower.observedPower) ? formatPct(reportPower.observedPower, 1) : '--'}</div><div class="s">${Number.isFinite(reportPower.observedPower) ? formatPct(1 - reportPower.observedPower, 1) + ' false-negative risk.' : 'Not available.'}</div></div>
+        <div class="metric"><div class="k">${escapeHtml(meta.incrementalLabel)}</div><div class="v">${lastPoint && Number.isFinite(lastPoint.incrementalPct) ? formatPct(lastPoint.incrementalPct, d) : '--'}</div><div class="s">Share of experiment ${escapeHtml(meta.plural)} estimated incremental.</div></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${finalRows}</tbody></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Original Calculator Inputs and Settings</h2>
+      <div class="table-wrap"><table><thead><tr><th>Input</th><th>Value</th><th>Notes</th></tr></thead><tbody>${settingsRows}</tbody></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Trend Chart</h2>
+      <div class="note">Left-axis bars show ${escapeHtml(meta.liftLabel)} and ${escapeHtml(meta.incrementalLabel)}. Right-axis lines show calculated confidence % and observed power %. Hover over any bar or line point to see its value.</div>
+      <div class="trend-chart-wrap"><div class="trend-chart">${chartMarkup}</div></div>
+    </section>
+
+    <section class="card">
+      <h2>Trend Data</h2>
+      <details class="trend-table-details">
+        <summary>Raw trend data</summary>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th class="num">Control ${escapeHtml(meta.properPlural)}</th><th class="num">Experiment ${escapeHtml(meta.properPlural)}</th><th class="num">Control Reach</th><th class="num">Experiment Reach</th><th class="num">Rate lift</th><th class="num">% incremental</th><th class="num">Confidence</th><th class="num">Power</th></tr></thead><tbody>${trendRows || '<tr><td colspan="9">No trend data loaded.</td></tr>'}</tbody></table></div>
+      </details>
+    </section>
+  </main>
+  <script>
+    (function () {
+      function tooltipEl() {
+        var tooltip = document.getElementById('trendTooltip');
+        if (!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.id = 'trendTooltip';
+          tooltip.className = 'trend-tooltip';
+          tooltip.setAttribute('role', 'tooltip');
+          document.body.appendChild(tooltip);
+        }
+        return tooltip;
+      }
+      function place(tooltip, x, y) {
+        var pad = 14;
+        tooltip.style.left = '0px';
+        tooltip.style.top = '0px';
+        tooltip.classList.add('show');
+        var rect = tooltip.getBoundingClientRect();
+        var left = x + 14;
+        var top = y + 14;
+        if (left + rect.width + pad > window.innerWidth) left = x - rect.width - 14;
+        if (top + rect.height + pad > window.innerHeight) top = y - rect.height - 14;
+        tooltip.style.left = Math.max(pad, left) + 'px';
+        tooltip.style.top = Math.max(pad, top) + 'px';
+      }
+      function hide() {
+        var tooltip = document.getElementById('trendTooltip');
+        if (tooltip) tooltip.classList.remove('show');
+      }
+      function closest(target, container) {
+        if (!target || !target.closest) return null;
+        var found = target.closest('[data-trend-tooltip]');
+        return found && container.contains(found) ? found : null;
+      }
+      function bind(container) {
+        if (!container || container.dataset.trendTooltipsBound === '1') return;
+        container.dataset.trendTooltipsBound = '1';
+        container.addEventListener('mousemove', function (event) {
+          var target = closest(event.target, container);
+          if (!target) { hide(); return; }
+          var tooltip = tooltipEl();
+          tooltip.textContent = target.getAttribute('data-trend-tooltip') || '';
+          place(tooltip, event.clientX, event.clientY);
+        });
+        container.addEventListener('mouseleave', hide);
+        container.addEventListener('focusin', function (event) {
+          var target = closest(event.target, container);
+          if (!target) return;
+          var rect = target.getBoundingClientRect();
+          var tooltip = tooltipEl();
+          tooltip.textContent = target.getAttribute('data-trend-tooltip') || '';
+          place(tooltip, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        });
+        container.addEventListener('focusout', hide);
+      }
+      document.querySelectorAll('.trend-chart').forEach(bind);
+    })();
+  <\/script>
+</body>
+</html>`;
+    }
+
+    function downloadTextFile(filename, content, mimeType = 'text/html') {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function safeFilenamePart(value) {
+      return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'ab-test';
+    }
+
+    function downloadFrozenTrendReport() {
+      if (els.trendDataInput) trendState.raw = els.trendDataInput.value;
+      const input = getInputs();
+      if (input.errors.length) {
+        els.errorBox.style.display = 'block';
+        els.errorBox.innerHTML = input.errors.join('<br>');
+        return false;
+      }
+      const out = calculate(input);
+      const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const trend = calculateTrendData(input);
+      const lastPoint = trend.valid && trend.points && trend.points.length ? trend.points[trend.points.length - 1] : null;
+      const html = buildFrozenReportHtml(input, out, power, trend);
+      const suffix = lastPoint ? safeFilenamePart(lastPoint.label) : 'current-inputs';
+      const reportNameSlug = safeFilenamePart(input.reportName || 'A/B Test Report');
+      downloadTextFile(`${reportNameSlug}-${suffix}.html`, html);
+      return true;
+    }
+
     function render() {
       const input = getInputs();
       updateCampaignModeUI(input);
@@ -2458,6 +3576,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         [`Required n / arm @ ${formatPct(input.powerTarget, 0)} power`, Number.isFinite(powerForRows.requiredPerArm) ? formatNumber(powerForRows.requiredPerArm) : '--', 'Equal-sized arms required to confirm the observed absolute lift under the selected test direction.']
       ]);
 
+      renderTrend(input);
+
       const isExperimentHigher = out.diff > 0;
       if (input.tail === 'greater') {
         els.directionNote.innerHTML = isExperimentHigher
@@ -2481,6 +3601,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
 
     function updateUrl(input) {
       const params = new URLSearchParams();
+      params.set('reportName', input.reportName);
       params.set('experimentType', input.experimentType);
       params.set('control', `${input.controlConversions},${input.controlTrials}`);
       params.set('experiment', `${input.experimentConversions},${input.experimentTrials}`);
@@ -2545,6 +3666,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     }
 
     function resetExample() {
+      els.reportName.value = 'A/B Test Report';
       els.experimentType.value = 'UA';
       els.controlLabel.value = 'control';
       els.experimentLabel.value = 'experiment';
@@ -2570,6 +3692,9 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.plannerExperimentReachPerDollar.value = '';
       els.controlDailyReach.value = '';
       els.experimentDailyReach.value = '';
+      if (els.trendDataInput) els.trendDataInput.value = '';
+      trendState.raw = '';
+      trendState.last = { hasRaw: false, valid: false, rows: [], points: [], errors: [], warnings: [], columnMap: {} };
       render();
     }
 
@@ -2589,7 +3714,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     }
 
     for (const el of [
-      els.experimentType, els.controlLabel, els.experimentLabel, els.controlConversionName,
+      els.reportName, els.experimentType, els.controlLabel, els.experimentLabel, els.controlConversionName,
       els.experimentConversionName, els.controlConversions, els.controlTrials,
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
       els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
@@ -2613,6 +3738,43 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const ok = await copyText(window.lastSummaryText || '');
       els.copySummaryBtn.textContent = ok ? 'Copied summary' : 'Copy failed';
       setTimeout(() => { els.copySummaryBtn.textContent = old; }, 1200);
+    });
+
+
+    els.loadTrendBtn.addEventListener('click', () => {
+      trendState.raw = els.trendDataInput.value;
+      render();
+    });
+
+    els.trendDataInput.addEventListener('input', () => {
+      trendState.raw = els.trendDataInput.value;
+      render();
+    });
+
+    els.trendDataInput.addEventListener('change', () => {
+      trendState.raw = els.trendDataInput.value;
+      render();
+    });
+
+    els.trendDataInput.addEventListener('paste', () => {
+      setTimeout(() => {
+        trendState.raw = els.trendDataInput.value;
+        render();
+      }, 0);
+    });
+
+    els.clearTrendBtn.addEventListener('click', () => {
+      els.trendDataInput.value = '';
+      trendState.raw = '';
+      trendState.last = { hasRaw: false, valid: false, rows: [], points: [], errors: [], warnings: [], columnMap: {} };
+      render();
+    });
+
+    els.downloadTrendReportBtn.addEventListener('click', () => {
+      const old = els.downloadTrendReportBtn.textContent;
+      const ok = downloadFrozenTrendReport();
+      els.downloadTrendReportBtn.textContent = ok ? 'Report downloaded' : 'Report unavailable';
+      setTimeout(() => { els.downloadTrendReportBtn.textContent = old; }, 1500);
     });
 
     function updateStickyHeaderHeight() {
