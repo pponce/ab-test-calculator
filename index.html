@@ -3918,12 +3918,14 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
 
     function updateUrl(input) {
       const params = new URLSearchParams();
+      // Keep the most important share parameters first in the generated URL.
+      // loadFromUrl() reads by key, so incoming URLs still work regardless of parameter order.
       params.set('reportName', input.reportName);
       params.set('experimentType', input.experimentType);
-      params.set('eventCountsUnique', input.eventCountsUnique ? '1' : '0');
-      params.set('showUaEventChart', input.showUaEventChart ? '1' : '0');
       params.set('control', `${input.controlConversions},${input.controlTrials}`);
       params.set('experiment', `${input.experimentConversions},${input.experimentTrials}`);
+      params.set('eventCountsUnique', input.eventCountsUnique ? '1' : '0');
+      params.set('showUaEventChart', input.showUaEventChart ? '1' : '0');
       params.set('controlLabel', input.controlLabel);
       params.set('experimentLabel', input.experimentLabel);
       if (input.experimentType === 'RE') {
