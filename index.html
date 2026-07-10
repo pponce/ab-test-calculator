@@ -1609,7 +1609,7 @@
             </div>
 
             <details open>
-              <summary id="reachForecastSummary">Reach growth forecast: time to 80% power</summary>
+              <summary id="reachForecastSummary">Audience reach timing helper: time to reach power %</summary>
               <div class="planner-grid">
                 <label>
                   Reach growth estimate unit
@@ -1619,18 +1619,6 @@
                     <option value="month">Monthly</option>
                   </select>
                   <span class="hint">Choose whether the reach-growth inputs below are per day, week, or month.</span>
-                </label>
-                <label>
-                  Forecast target power
-                  <select id="forecastPowerTarget">
-                    <option value="0.70">70%</option>
-                    <option value="0.75">75%</option>
-                    <option value="0.80" selected>80%</option>
-                    <option value="0.85">85%</option>
-                    <option value="0.90">90%</option>
-                    <option value="0.95">95%</option>
-                  </select>
-                  <span class="hint">Used only for the reach-growth timing estimate.</span>
                 </label>
                 <label>
                   <span id="controlReachGrowthLabel">Control new Audience Reach per day</span>
@@ -1678,12 +1666,16 @@
                 <span class="hint">Percent lift, e.g. 15 means +15%.</span>
               </label>
               <label>
-                Power
+                Forecast target power
                 <select id="plannerPower">
                   <option value="0.70">70%</option>
+                  <option value="0.75">75%</option>
                   <option value="0.80" selected>80%</option>
+                  <option value="0.85">85%</option>
                   <option value="0.90">90%</option>
+                  <option value="0.95">95%</option>
                 </select>
+                <span class="hint">Used by the sample-size planner, audience reach timing helper, and media spend planner.</span>
               </label>
               <label>
                 % Control Allocation
@@ -1799,7 +1791,7 @@ D2 = experiment conversions
 E2 = experiment Audience Reach
 F2 = confidence level, e.g. 0.90
 G2 = tail, one of: greater, less, two
-H2 = target power, e.g. 0.80
+H2 = target power for statistical power panel, e.g. 0.80
 I2 = control reach growth per selected period
 J2 = experiment reach growth per selected period; leave blank to reuse control growth
 K2 = p-value output
@@ -1989,7 +1981,6 @@ Total planned spend:
       powerRows: document.getElementById('powerRows'),
       reachForecastSummary: document.getElementById('reachForecastSummary'),
       reachGrowthUnit: document.getElementById('reachGrowthUnit'),
-      forecastPowerTarget: document.getElementById('forecastPowerTarget'),
       controlReachGrowthLabel: document.getElementById('controlReachGrowthLabel'),
       experimentReachGrowthLabel: document.getElementById('experimentReachGrowthLabel'),
       controlReachGrowthHint: document.getElementById('controlReachGrowthHint'),
@@ -2182,6 +2173,7 @@ Total planned spend:
     }
 
     function setSelectByNumber(selectEl, value) {
+      if (!selectEl) return;
       if (value === null || value === undefined || value === '') return;
       const numeric = asNum(value);
       const normalized = numeric > 1 ? numeric / 100 : numeric;
@@ -2246,8 +2238,7 @@ Total planned spend:
 
       setSelectByNumber(els.confidenceLevel, getAny('confidence', 'conf', 'confidenceLevel', 'abba:intervalConfidenceLevel'));
       setSelectByNumber(els.powerTarget, getAny('powerTarget', 'targetPower', 'requiredPower'));
-      setSelectByNumber(els.forecastPowerTarget, getAny('forecastPowerTarget', 'forecastPower', 'reachPowerTarget'));
-      setSelectByNumber(els.plannerPower, getAny('plannerPower', 'samplePower'));
+      setSelectByNumber(els.plannerPower, getAny('plannerPower', 'samplePower', 'forecastPowerTarget', 'forecastPower', 'reachPowerTarget'));
       setSelectByNumber(els.plannerControlAllocation, getAny('plannerControlAllocation', 'controlAllocation', 'controlShare'));
       setValue(els.plannerDurationDays, getAny('plannerDurationDays', 'plannerDuration', 'testLengthDays', 'targetDays'));
       setValue(els.plannerControlReachPerDollar, getAny('plannerControlReachPerDollar', 'controlReachPerDollar', 'controlReachPerUsd', 'controlReachPerDollar'));
@@ -2305,7 +2296,7 @@ Total planned spend:
       const comparisons = 1;
       const precision = Math.max(0, Math.min(8, asInt(els.precision.value) || 3));
       const powerTarget = asNum(els.powerTarget.value);
-      const forecastPowerTarget = asNum(els.forecastPowerTarget.value);
+      const forecastPowerTarget = asNum(els.plannerPower.value);
       const reachGrowthUnit = ['day', 'week', 'month'].includes(els.reachGrowthUnit.value) ? els.reachGrowthUnit.value : 'day';
       const controlLabel = els.controlLabel.value.trim() || 'control';
       const experimentLabel = els.experimentLabel.value.trim() || 'experiment';
@@ -2697,7 +2688,7 @@ Total planned spend:
       const unit = forecast.unit;
       const periodLabel = `per ${unit.singular}`;
 
-      els.reachForecastSummary.textContent = `Reach growth forecast: time to ${formatPct(input.forecastPowerTarget, 0)} power`;
+      els.reachForecastSummary.textContent = 'Audience reach timing helper: time to reach power %';
       els.controlReachGrowthLabel.textContent = `${displayArmLabel(input.controlLabel)} new Audience Reach ${periodLabel}`;
       els.experimentReachGrowthLabel.textContent = `${displayArmLabel(input.experimentLabel)} new Audience Reach ${periodLabel}`;
       els.controlReachGrowthHint.textContent = `Average incremental unique reach added ${periodLabel} in control.`;
@@ -3937,7 +3928,6 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       params.set('confidence', input.confidenceLevel);
       params.set('tail', input.tail);
       params.set('powerTarget', input.powerTarget);
-      params.set('forecastPowerTarget', input.forecastPowerTarget);
       params.set('plannerPower', els.plannerPower.value);
       params.set('plannerControlAllocation', els.plannerControlAllocation.value);
       params.set('plannerDurationDays', els.plannerDurationDays.value);
@@ -4005,7 +3995,6 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.comparisons.value = '1';
       els.precision.value = '3';
       els.powerTarget.value = '0.80';
-      els.forecastPowerTarget.value = '0.80';
       els.reachGrowthUnit.value = 'day';
       els.plannerBaseline.value = '0.084';
       els.plannerLift.value = '15';
@@ -4041,7 +4030,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.controlLabel, els.experimentLabel, els.controlConversionName,
       els.experimentConversionName, els.controlConversions, els.controlTrials,
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
-      els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
+      els.comparisons, els.precision, els.powerTarget,
       els.reachGrowthUnit, els.controlDailyReach, els.experimentDailyReach,
       els.plannerBaseline, els.plannerLift, els.plannerPower, els.plannerControlAllocation,
       els.plannerDurationDays, els.plannerControlReachPerDollar, els.plannerExperimentReachPerDollar
