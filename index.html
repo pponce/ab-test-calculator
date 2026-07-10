@@ -862,6 +862,46 @@
       letter-spacing: -.01em;
     }
 
+    .trend-data-field {
+      display: grid;
+      gap: 5px;
+      font-size: 13px;
+      color: #334155;
+      font-weight: 650;
+    }
+
+    .trend-columns-scroll {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable;
+      border: 1px dashed #cad6e5;
+      border-radius: 12px;
+      background: #fff;
+      padding: 9px 10px;
+      margin-top: 4px;
+    }
+
+    .trend-columns-scroll span {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #dbe5f6;
+      border-radius: 999px;
+      background: #f8fbff;
+      color: #334155;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+      padding: 6px 8px;
+      white-space: nowrap;
+    }
+
     .trend-data-box {
       min-height: 150px;
       resize: vertical;
@@ -869,6 +909,11 @@
       font-size: 12px;
       line-height: 1.45;
       white-space: pre;
+      overflow-x: auto;
+      overflow-y: auto;
+      overflow-wrap: normal;
+      word-break: normal;
+      tab-size: 4;
     }
 
     .trend-status {
@@ -1067,6 +1112,37 @@
       margin: 3px 0;
     }
 
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid #dbe5f6;
+      background: #f8fbff;
+      border-radius: 14px;
+      padding: 11px 12px;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: auto;
+      min-width: 18px;
+      height: 18px;
+      margin: 2px 0 0;
+      padding: 0;
+      box-shadow: none;
+      accent-color: var(--accent);
+    }
+
+    .checkbox-label .checkbox-copy {
+      display: grid;
+      gap: 2px;
+    }
+
+    .trend-extra-chart {
+      margin-top: 16px;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+
     .field-label-inline { display: inline; }
   </style>
 </head>
@@ -1103,6 +1179,22 @@
                 <option value="RE">Re-engagement (RE)</option>
               </select>
               <span class="hint">Changes the conversion-field labels. Audience Reach is the denominator for both use cases.</span>
+            </label>
+
+            <label class="checkbox-label">
+              <input id="eventCountsUnique" type="checkbox" checked />
+              <span class="checkbox-copy">
+                <span>Are event counts unique?</span>
+                <span class="hint">Checked = Yes, use event columns ending in <span class="mono">(u)</span>. Unchecked = No, use event columns ending in <span class="mono">(r)</span>. This applies to event counts only; UA install counts are always treated as unique.</span>
+              </span>
+            </label>
+
+            <label id="showUaEventChartRow" class="checkbox-label">
+              <input id="showUaEventChart" type="checkbox" />
+              <span class="checkbox-copy">
+                <span>Show A event chart?</span>
+                <span class="hint">When UA is selected, keep the install trend chart and add a second A-event trend chart using the selected event-count setting above.</span>
+              </span>
             </label>
 
             <input id="controlLabel" type="hidden" value="control" />
@@ -1205,11 +1297,23 @@
                 <h3>Trend Data</h3>
                 <div class="hint">Paste cumulative daily data from Google Sheets as TSV or CSV. Headers are auto-detected.</div>
               </div>
-              <label>
-                Google Sheet trend data
-                <textarea id="trendDataInput" class="trend-data-box" placeholder="Day of event_date&#9;Control Events (u)&#9;Control Installs&#9;Control Reach&#9;Experiment Events (u)&#9;Experiment Installs&#9;Experiment Reach"></textarea>
-                <span class="hint">UA uses Installs / Reach. RE uses Events / Reach. Rows should be cumulative by date.</span>
-              </label>
+              <div class="trend-data-field">
+                <label for="trendDataInput">Google Sheet trend data</label>
+                <span class="hint">Expected columns; scroll right to see every supported header before pasting. Extra columns are allowed and ignored.</span>
+                <div class="trend-columns-scroll" tabindex="0" aria-label="Expected trend data columns">
+                  <span>Day of event_date</span>
+                  <span>Control Events (u)</span>
+                  <span>Control Events (r)</span>
+                  <span>Control Installs</span>
+                  <span>Control Reach</span>
+                  <span>Experiment Events (u)</span>
+                  <span>Experiment Events (r)</span>
+                  <span>Experiment Installs</span>
+                  <span>Experiment Reach</span>
+                </div>
+                <textarea id="trendDataInput" class="trend-data-box" wrap="off" placeholder="Day of event_date&#9;Control Events (u)&#9;Control Events (r)&#9;Control Installs&#9;Control Reach&#9;Experiment Events (u)&#9;Experiment Events (r)&#9;Experiment Installs&#9;Experiment Reach"></textarea>
+                <span class="hint">UA install charts use Installs / Reach. RE charts and optional UA A-event charts use Events / Reach based on whether event counts are marked unique. Rows should be cumulative by date.</span>
+              </div>
               <div class="button-row">
                 <button id="loadTrendBtn" type="button">Load trend chart</button>
                 <button id="clearTrendBtn" class="secondary" type="button">Clear trend data</button>
@@ -1337,9 +1441,10 @@
               <div id="trendChartEmpty" class="trend-chart-empty">Paste trend data in the Inputs panel, then click Load trend chart.</div>
               <div id="trendChart" class="trend-chart hidden"></div>
             </div>
+
             <div class="note" id="trendNote">The chart uses the selected use case, confidence level, hypothesis/tail, and power target from the calculator inputs.</div>
             <details class="trend-table-details hidden" id="trendTableWrap">
-              <summary>Raw trend data</summary>
+              <summary id="trendTableSummary">Raw Install trend data</summary>
               <div class="table-wrap compact-table">
                 <table>
                   <thead>
@@ -1359,6 +1464,42 @@
                 </table>
               </div>
             </details>
+            <div class="trend-extra-chart hidden" id="uaEventTrendPanel">
+              <div class="panel-head">
+                <div>
+                  <h3>A Event Trend Chart</h3>
+                  <div class="muted small" id="uaEventTrendSubtitle">Optional UA event trend chart.</div>
+                </div>
+                <span class="pill" id="uaEventTrendPointCount">No event data</span>
+              </div>
+              <div class="trend-chart-wrap">
+                <div id="uaEventTrendChartEmpty" class="trend-chart-empty">Enable Show A event chart and provide event columns to render this chart.</div>
+                <div id="uaEventTrendChart" class="trend-chart hidden"></div>
+              </div>
+              <div class="note" id="uaEventTrendNote">This chart uses event columns instead of install columns.</div>
+              <details class="trend-table-details hidden" id="uaEventTrendTableWrap">
+                <summary>Raw A event trend data</summary>
+                <div class="table-wrap compact-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th class="num" id="uaEventTrendControlHeader">Control Events</th>
+                        <th class="num" id="uaEventTrendExperimentHeader">Experiment Events</th>
+                        <th class="num">Control Reach</th>
+                        <th class="num">Experiment Reach</th>
+                        <th class="num">Rate lift</th>
+                        <th class="num">% incremental</th>
+                        <th class="num">Calculated confidence</th>
+                        <th class="num">Observed power</th>
+                      </tr>
+                    </thead>
+                    <tbody id="uaEventTrendRows"></tbody>
+                  </table>
+                </div>
+              </details>
+            </div>
+
           </div>
 
           <div class="panel" id="confidenceIntervalPanel">
@@ -1761,6 +1902,9 @@ Total planned spend:
     const els = {
       reportName: document.getElementById('reportName'),
       experimentType: document.getElementById('experimentType'),
+      eventCountsUnique: document.getElementById('eventCountsUnique'),
+      showUaEventChartRow: document.getElementById('showUaEventChartRow'),
+      showUaEventChart: document.getElementById('showUaEventChart'),
       controlLabel: document.getElementById('controlLabel'),
       experimentLabel: document.getElementById('experimentLabel'),
       reConversionNames: document.getElementById('reConversionNames'),
@@ -1892,9 +2036,20 @@ Total planned spend:
       trendChart: document.getElementById('trendChart'),
       trendNote: document.getElementById('trendNote'),
       trendTableWrap: document.getElementById('trendTableWrap'),
+      trendTableSummary: document.getElementById('trendTableSummary'),
       trendControlHeader: document.getElementById('trendControlHeader'),
       trendExperimentHeader: document.getElementById('trendExperimentHeader'),
-      trendRows: document.getElementById('trendRows')
+      trendRows: document.getElementById('trendRows'),
+      uaEventTrendPanel: document.getElementById('uaEventTrendPanel'),
+      uaEventTrendSubtitle: document.getElementById('uaEventTrendSubtitle'),
+      uaEventTrendPointCount: document.getElementById('uaEventTrendPointCount'),
+      uaEventTrendChartEmpty: document.getElementById('uaEventTrendChartEmpty'),
+      uaEventTrendChart: document.getElementById('uaEventTrendChart'),
+      uaEventTrendNote: document.getElementById('uaEventTrendNote'),
+      uaEventTrendTableWrap: document.getElementById('uaEventTrendTableWrap'),
+      uaEventTrendControlHeader: document.getElementById('uaEventTrendControlHeader'),
+      uaEventTrendExperimentHeader: document.getElementById('uaEventTrendExperimentHeader'),
+      uaEventTrendRows: document.getElementById('uaEventTrendRows')
     };
 
 
@@ -2050,6 +2205,15 @@ Total planned spend:
       const setValue = (el, value) => {
         if (value !== null && value !== undefined && value !== '') el.value = value;
       };
+      const setCheckbox = (el, value, defaultValue) => {
+        if (!el) return;
+        if (value === null || value === undefined || value === '') {
+          el.checked = defaultValue;
+          return;
+        }
+        const normalized = String(value).trim().toLowerCase();
+        el.checked = ['1', 'true', 'yes', 'y', 'on', 'checked'].includes(normalized);
+      };
 
       const experimentType = getAny('experimentType', 'useCase', 'campaignType', 'type');
       if (experimentType) {
@@ -2057,6 +2221,8 @@ Total planned spend:
         if (t === 'UA' || t === 'RE') els.experimentType.value = t;
       }
       setValue(els.reportName, getAny('reportName', 'report_name', 'rname', 'reportTitle', 'title'));
+      setCheckbox(els.eventCountsUnique, getAny('eventCountsUnique', 'eventsUnique', 'uniqueEvents', 'areEventCountsUnique'), true);
+      setCheckbox(els.showUaEventChart, getAny('showUaEventChart', 'showEventChart', 'showAEventChart', 'uaEventChart'), false);
       setValue(els.controlLabel, getAny('controlLabel', 'control_label', 'clabel'));
       setValue(els.experimentLabel, getAny('experimentLabel', 'experiment_label', 'elabel', 'variantLabel', 'variant_label', 'vlabel'));
       setValue(els.controlConversionName, getAny('controlConversionName', 'control_conversion_name', 'controlMetric'));
@@ -2130,6 +2296,8 @@ Total planned spend:
     function getInputs() {
       const reportName = els.reportName.value.trim() || 'A/B Test Report';
       const experimentType = els.experimentType.value === 'RE' ? 'RE' : 'UA';
+      const eventCountsUnique = els.eventCountsUnique ? els.eventCountsUnique.checked : true;
+      const showUaEventChart = experimentType === 'UA' && els.showUaEventChart ? els.showUaEventChart.checked : false;
       const controlConversions = asInt(els.controlConversions.value);
       const controlTrials = asInt(els.controlTrials.value);
       const experimentConversions = asInt(els.experimentConversions.value);
@@ -2153,20 +2321,22 @@ Total planned spend:
       if (!Number.isFinite(experimentConversions) || experimentConversions < 0) errors.push('Experiment conversions must be a non-negative number.');
       if (!Number.isFinite(controlTrials) || controlTrials <= 0) errors.push('Control Audience Reach must be greater than zero.');
       if (!Number.isFinite(experimentTrials) || experimentTrials <= 0) errors.push('Experiment Audience Reach must be greater than zero.');
-      if (Number.isFinite(controlConversions) && Number.isFinite(controlTrials) && controlConversions > controlTrials) errors.push('Control conversions cannot exceed Control Audience Reach.');
-      if (Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) errors.push('Experiment conversions cannot exceed Experiment Audience Reach.');
+      const manualCountsMustBeWithinReach = experimentType === 'UA' || eventCountsUnique;
+      if (manualCountsMustBeWithinReach && Number.isFinite(controlConversions) && Number.isFinite(controlTrials) && controlConversions > controlTrials) errors.push('Control conversions cannot exceed Control Audience Reach.');
+      if (manualCountsMustBeWithinReach && Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) errors.push('Experiment conversions cannot exceed Experiment Audience Reach.');
       if (!(confidenceLevel > 0 && confidenceLevel < 1)) errors.push('Confidence level must be between 0 and 1.');
       if (!(powerTarget > 0 && powerTarget < 1)) errors.push('Power target must be between 0 and 1.');
       if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Forecast target power must be between 0 and 1.');
       if (Number.isFinite(controlDailyReach) && controlDailyReach < 0) errors.push('Control reach growth cannot be negative.');
       if (Number.isFinite(experimentDailyReach) && experimentDailyReach < 0) errors.push('Experiment reach growth cannot be negative.');
-      return { reportName, experimentType, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
+      return { reportName, experimentType, eventCountsUnique, showUaEventChart, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
     }
 
     function updateCampaignModeUI(input) {
       const controlArm = displayArmLabel(input.controlLabel);
       const experimentArm = displayArmLabel(input.experimentLabel);
       els.reConversionNames.classList.toggle('hidden', input.experimentType !== 'RE');
+      if (els.showUaEventChartRow) els.showUaEventChartRow.classList.toggle('hidden', input.experimentType !== 'UA');
       els.controlConversionFieldLabel.textContent = controlConversionDisplayName(input);
       els.experimentConversionFieldLabel.textContent = experimentConversionDisplayName(input);
       els.controlAudienceFieldLabel.textContent = `${controlArm} Audience Reach`;
@@ -2801,12 +2971,16 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const isEvent = (n) => n.includes('event') && !n.includes('date') && !n.includes('install') && !n.includes('reach');
       const isInstall = (n) => n.includes('install');
       const isReach = (n) => n.includes('reach') || n.includes('audience');
+      const isUniqueEvent = (n) => isEvent(n) && (n.includes('eventsu') || n.includes('uniqueevent') || n.includes('eventunique') || n.includes('unique'));
+      const isRawEvent = (n) => isEvent(n) && (n.includes('eventsr') || n.includes('rawevent') || n.includes('eventraw') || n.includes('repeated') || n.includes('repeat'));
       return {
         date: findTrendColumn(headers, n => n.includes('eventdate') || n === 'date' || n.endsWith('date') || n.startsWith('date') || n.startsWith('day')),
-        controlEvents: findTrendColumn(headers, n => hasControlToken(n) && isEvent(n)),
+        controlEventsUnique: findTrendColumn(headers, n => hasControlToken(n) && isUniqueEvent(n)),
+        controlEventsRaw: findTrendColumn(headers, n => hasControlToken(n) && isRawEvent(n)),
         controlInstalls: findTrendColumn(headers, n => hasControlToken(n) && isInstall(n)),
         controlReach: findTrendColumn(headers, n => hasControlToken(n) && isReach(n)),
-        experimentEvents: findTrendColumn(headers, n => hasExperimentToken(n) && isEvent(n)),
+        experimentEventsUnique: findTrendColumn(headers, n => hasExperimentToken(n) && isUniqueEvent(n)),
+        experimentEventsRaw: findTrendColumn(headers, n => hasExperimentToken(n) && isRawEvent(n)),
         experimentInstalls: findTrendColumn(headers, n => hasExperimentToken(n) && isInstall(n)),
         experimentReach: findTrendColumn(headers, n => hasExperimentToken(n) && isReach(n))
       };
@@ -2859,20 +3033,29 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return { ms: NaN, label: raw, shortLabel: raw };
     }
 
-    function getTrendMetricMeta(input) {
-      if (input.experimentType === 'RE') {
+    function getTrendMetricMeta(input, chartKind = null) {
+      const useEvent = chartKind === 'event' || (chartKind !== 'install' && input.experimentType === 'RE');
+      if (useEvent) {
+        const unique = input.eventCountsUnique !== false;
+        const suffix = unique ? '(u)' : '(r)';
+        const keySuffix = unique ? 'Unique' : 'Raw';
         return {
+          chartKind: 'event',
           singular: 'event',
           plural: 'events',
-          properPlural: 'Events',
-          conversionLabel: 'Event',
+          properPlural: `Events ${suffix}`,
+          conversionLabel: `Event ${suffix}`,
           liftLabel: 'Event rate lift %',
           incrementalLabel: '% incremental events',
-          controlKey: 'controlEvents',
-          experimentKey: 'experimentEvents'
+          controlKey: `controlEvents${keySuffix}`,
+          experimentKey: `experimentEvents${keySuffix}`,
+          controlRequiredLabel: `Control Events ${suffix}`,
+          experimentRequiredLabel: `Experiment Events ${suffix}`,
+          sourceLabel: unique ? 'unique event counts' : 'raw/repeated event counts'
         };
       }
       return {
+        chartKind: 'install',
         singular: 'install',
         plural: 'installs',
         properPlural: 'Installs',
@@ -2880,7 +3063,10 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         liftLabel: 'Install conversion rate lift %',
         incrementalLabel: '% incremental installs',
         controlKey: 'controlInstalls',
-        experimentKey: 'experimentInstalls'
+        experimentKey: 'experimentInstalls',
+        controlRequiredLabel: 'Control Installs',
+        experimentRequiredLabel: 'Experiment Installs',
+        sourceLabel: 'install counts'
       };
     }
 
@@ -2910,24 +3096,24 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return asInt(row.cells[index]);
     }
 
-    function calculateTrendData(input) {
-      const parsed = parseTrendData(trendState.raw);
-      if (!parsed.hasRaw) return parsed;
-      const meta = getTrendMetricMeta(input);
-      const errors = [...parsed.errors];
-      const warnings = [...parsed.warnings];
+    function calculateTrendSeriesFromParsed(parsed, input, chartKind) {
+      const meta = getTrendMetricMeta(input, chartKind);
+      const errors = [...(parsed.errors || [])];
+      const warnings = [];
       const requiredColumns = [
         ['date', 'date'],
         ['controlReach', 'Control Reach'],
         ['experimentReach', 'Experiment Reach'],
-        [meta.controlKey, input.experimentType === 'RE' ? 'Control Events' : 'Control Installs'],
-        [meta.experimentKey, input.experimentType === 'RE' ? 'Experiment Events' : 'Experiment Installs']
+        [meta.controlKey, meta.controlRequiredLabel],
+        [meta.experimentKey, meta.experimentRequiredLabel]
       ];
-      const missing = requiredColumns.filter(([key]) => !Number.isInteger(parsed.columnMap[key]) || parsed.columnMap[key] < 0).map(([, label]) => label);
+      const missing = requiredColumns
+        .filter(([key]) => !Number.isInteger(parsed.columnMap[key]) || parsed.columnMap[key] < 0)
+        .map(([, label]) => label);
       if (missing.length) {
-        errors.push(`Could not auto-detect required column(s): ${missing.join(', ')}. Check the pasted headers.`);
+        errors.push(`Could not auto-detect required column(s): ${missing.join(', ')}. Check the pasted headers. Extra columns are allowed, but these required columns must be present for this chart.`);
       }
-      if (errors.length) return { ...parsed, valid: false, errors, warnings, points: [] };
+      if (errors.length) return { valid: false, errors, warnings, points: [], metricMeta: meta, chartKind };
 
       const points = [];
       let skipped = 0;
@@ -2939,13 +3125,14 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         const controlTrials = readTrendInt(row, parsed.columnMap.controlReach);
         const experimentTrials = readTrendInt(row, parsed.columnMap.experimentReach);
         const rowProblems = [];
+        const rawEventChart = meta.chartKind === 'event' && input.eventCountsUnique === false;
         if (!dateRaw) rowProblems.push('missing date');
-        if (!Number.isFinite(controlConversions) || controlConversions < 0) rowProblems.push('invalid control conversions');
-        if (!Number.isFinite(experimentConversions) || experimentConversions < 0) rowProblems.push('invalid experiment conversions');
+        if (!Number.isFinite(controlConversions) || controlConversions < 0) rowProblems.push(`invalid control ${meta.plural}`);
+        if (!Number.isFinite(experimentConversions) || experimentConversions < 0) rowProblems.push(`invalid experiment ${meta.plural}`);
         if (!Number.isFinite(controlTrials) || controlTrials <= 0) rowProblems.push('invalid control reach');
         if (!Number.isFinite(experimentTrials) || experimentTrials <= 0) rowProblems.push('invalid experiment reach');
-        if (Number.isFinite(controlConversions) && Number.isFinite(controlTrials) && controlConversions > controlTrials) rowProblems.push('control conversions exceed reach');
-        if (Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) rowProblems.push('experiment conversions exceed reach');
+        if (!rawEventChart && Number.isFinite(controlConversions) && Number.isFinite(controlTrials) && controlConversions > controlTrials) rowProblems.push(`control ${meta.plural} exceed reach`);
+        if (!rawEventChart && Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) rowProblems.push(`experiment ${meta.plural} exceed reach`);
         if (rowProblems.length) {
           skipped++;
           if (warnings.length < 6) warnings.push(`Skipped row ${row.sourceRowNumber}: ${rowProblems.join(', ')}.`);
@@ -2961,6 +3148,9 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         };
         const out = calculate(rowInput);
         const power = calculatePowerForObservedEffect(rowInput, out, input.powerTarget);
+        if (rawEventChart && (out.p1 > 1 || out.p2 > 1) && warnings.length < 6) {
+          warnings.push(`Row ${row.sourceRowNumber}: raw event rate exceeds 100%; lift and incrementality can still display, but confidence/power may be unavailable because the z-test assumes rates between 0% and 100%.`);
+        }
         const incremental = experimentConversions - (experimentTrials * out.p1);
         const incrementalPct = experimentConversions !== 0 ? incremental / experimentConversions : NaN;
         points.push({
@@ -2974,6 +3164,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
           controlTrials,
           experimentTrials,
           input: rowInput,
+          metricMeta: meta,
           out,
           power,
           incremental,
@@ -2985,10 +3176,52 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         });
       }
       if (skipped > 6) warnings.push(`Skipped ${skipped} rows total because of invalid or incomplete values.`);
-      if (points.length === 0) errors.push('No valid trend rows could be calculated.');
+      if (points.length === 0) errors.push(`No valid ${meta.sourceLabel} trend rows could be calculated.`);
       const allDatesValid = points.every(p => Number.isFinite(p.dateMs));
       if (allDatesValid) points.sort((a, b) => a.dateMs - b.dateMs);
-      return { ...parsed, valid: errors.length === 0, errors, warnings, points, metricMeta: meta };
+      return { valid: errors.length === 0, errors, warnings, points, metricMeta: meta, chartKind };
+    }
+
+    function prefixTrendMessages(prefix, messages) {
+      return (messages || []).map(message => `${prefix}: ${message}`);
+    }
+
+    function uniqueTrendMessages(messages) {
+      const seen = new Set();
+      return (messages || []).filter(message => {
+        if (seen.has(message)) return false;
+        seen.add(message);
+        return true;
+      });
+    }
+
+    function calculateTrendData(input) {
+      const parsed = parseTrendData(trendState.raw);
+      if (!parsed.hasRaw) return { ...parsed, primary: null, event: null, points: [], metricMeta: getTrendMetricMeta(input) };
+      const primaryKind = input.experimentType === 'RE' ? 'event' : 'install';
+      const primary = calculateTrendSeriesFromParsed(parsed, input, primaryKind);
+      const event = input.experimentType === 'UA' && input.showUaEventChart
+        ? calculateTrendSeriesFromParsed(parsed, input, 'event')
+        : null;
+      const errors = uniqueTrendMessages([
+        ...prefixTrendMessages(primary.metricMeta.chartKind === 'event' ? 'Event trend chart' : 'Install trend chart', primary.errors)
+      ]);
+      const warnings = uniqueTrendMessages([
+        ...(parsed.warnings || []),
+        ...prefixTrendMessages(primary.metricMeta.chartKind === 'event' ? 'Event trend chart' : 'Install trend chart', primary.warnings),
+        ...(event && !event.valid ? prefixTrendMessages('A event trend chart', event.errors) : []),
+        ...(event ? prefixTrendMessages('A event trend chart', event.warnings) : [])
+      ]);
+      return {
+        ...parsed,
+        valid: primary.valid,
+        errors,
+        warnings,
+        points: primary.points,
+        metricMeta: primary.metricMeta,
+        primary,
+        event
+      };
     }
 
     function formatAxisPctValue(value) {
@@ -3039,8 +3272,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return path;
     }
 
-    function buildTrendSvg(points, input) {
-      const meta = getTrendMetricMeta(input);
+    function buildTrendSvg(points, input, metaOverride = null) {
+      const meta = metaOverride || (points && points[0] && points[0].metricMeta) || getTrendMetricMeta(input);
       const width = 1100;
       const height = 440;
       const margin = { top: 36, right: 82, bottom: 76, left: 82 };
@@ -3185,18 +3418,92 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       container.addEventListener('focusout', hideTrendTooltip);
     }
 
+    function shouldShowUaEventTrend(input) {
+      return input.experimentType === 'UA' && !!input.showUaEventChart;
+    }
+
+    function formatTrendRows(points, input) {
+      return points.map(p => `
+        <tr>
+          <td>${escapeHtml(p.label)}</td>
+          <td class="num">${formatNumber(p.controlConversions)}</td>
+          <td class="num">${formatNumber(p.experimentConversions)}</td>
+          <td class="num">${formatNumber(p.controlTrials)}</td>
+          <td class="num">${formatNumber(p.experimentTrials)}</td>
+          <td class="num">${Number.isFinite(p.out.relativeLift) ? formatPct(p.out.relativeLift, input.precision) : '--'}</td>
+          <td class="num">${Number.isFinite(p.incrementalPct) ? formatPct(p.incrementalPct, input.precision) : '--'}</td>
+          <td class="num">${Number.isFinite(p.out.statisticalConfidence) ? formatPct(p.out.statisticalConfidence, input.precision) : '--'}</td>
+          <td class="num">${Number.isFinite(p.power.observedPower) ? formatPct(p.power.observedPower, 1) : '--'}</td>
+        </tr>`).join('');
+    }
+
+    function renderOptionalUaEventTrend(input, eventTrend, hasRaw) {
+      if (!els.uaEventTrendPanel) return true;
+      const shouldShow = shouldShowUaEventTrend(input);
+      els.uaEventTrendPanel.classList.toggle('hidden', !shouldShow);
+      if (!shouldShow) {
+        els.uaEventTrendChart.innerHTML = '';
+        return true;
+      }
+      const meta = getTrendMetricMeta(input, 'event');
+      els.uaEventTrendControlHeader.textContent = `${displayArmLabel(input.controlLabel)} ${meta.properPlural}`;
+      els.uaEventTrendExperimentHeader.textContent = `${displayArmLabel(input.experimentLabel)} ${meta.properPlural}`;
+      if (!hasRaw) {
+        els.uaEventTrendSubtitle.textContent = 'Paste cumulative Google Sheet data to render this optional A-event chart.';
+        els.uaEventTrendPointCount.textContent = 'No event data';
+        els.uaEventTrendChartEmpty.textContent = 'Paste trend data in the Inputs panel, then click Load trend chart.';
+        els.uaEventTrendChartEmpty.classList.remove('hidden');
+        els.uaEventTrendChart.classList.add('hidden');
+        els.uaEventTrendChart.innerHTML = '';
+        els.uaEventTrendTableWrap.classList.add('hidden');
+        els.uaEventTrendRows.innerHTML = '';
+        els.uaEventTrendNote.className = 'note';
+        els.uaEventTrendNote.textContent = `This optional UA chart uses ${meta.controlRequiredLabel} and ${meta.experimentRequiredLabel}.`;
+        return false;
+      }
+      if (!eventTrend || !eventTrend.valid || !eventTrend.points || eventTrend.points.length === 0) {
+        const errorText = eventTrend && eventTrend.errors && eventTrend.errors.length ? eventTrend.errors.join(' ') : 'A event trend data could not be calculated.';
+        els.uaEventTrendSubtitle.textContent = 'Check the pasted event headers and values.';
+        els.uaEventTrendPointCount.textContent = 'Event chart error';
+        els.uaEventTrendChartEmpty.textContent = errorText;
+        els.uaEventTrendChartEmpty.classList.remove('hidden');
+        els.uaEventTrendChart.classList.add('hidden');
+        els.uaEventTrendChart.innerHTML = '';
+        els.uaEventTrendTableWrap.classList.add('hidden');
+        els.uaEventTrendRows.innerHTML = '';
+        els.uaEventTrendNote.className = 'note warn-note';
+        els.uaEventTrendNote.textContent = errorText;
+        return false;
+      }
+      const last = eventTrend.points[eventTrend.points.length - 1];
+      const warningMarkup = eventTrend.warnings.length ? `<ul class="trend-note-list">${eventTrend.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : '';
+      els.uaEventTrendSubtitle.textContent = `A event trend using ${meta.sourceLabel} from ${eventTrend.points[0].label} through ${last.label}.`;
+      els.uaEventTrendPointCount.textContent = `${formatNumber(eventTrend.points.length)} points`;
+      els.uaEventTrendChartEmpty.classList.add('hidden');
+      els.uaEventTrendChart.classList.remove('hidden');
+      els.uaEventTrendChart.innerHTML = buildTrendSvg(eventTrend.points, input, meta);
+      attachTrendTooltips(els.uaEventTrendChart);
+      els.uaEventTrendTableWrap.classList.remove('hidden');
+      els.uaEventTrendNote.className = 'note';
+      els.uaEventTrendNote.innerHTML = `Left-axis bars show ${meta.liftLabel} and ${meta.incrementalLabel}. Right-axis lines show calculated confidence % and observed power %. This chart uses ${meta.controlRequiredLabel} and ${meta.experimentRequiredLabel}.${warningMarkup}`;
+      els.uaEventTrendRows.innerHTML = formatTrendRows(eventTrend.points, input);
+      return true;
+    }
+
     function renderTrend(input) {
       if (!els.trendPanel) return;
       const trend = calculateTrendData(input);
       trendState.last = trend;
-      const meta = getTrendMetricMeta(input);
+      const meta = trend.metricMeta || getTrendMetricMeta(input);
       els.trendLiftMetricLabel.textContent = meta.liftLabel;
       els.trendIncrementalMetricLabel.textContent = meta.incrementalLabel;
+      if (els.trendTableSummary) els.trendTableSummary.textContent = meta.chartKind === 'install' ? 'Raw Install trend data' : 'Raw Event trend data';
       els.trendControlHeader.textContent = `${displayArmLabel(input.controlLabel)} ${meta.properPlural}`;
       els.trendExperimentHeader.textContent = `${displayArmLabel(input.experimentLabel)} ${meta.properPlural}`;
 
       if (!trend.hasRaw) {
         hideTrendTooltip();
+        renderOptionalUaEventTrend(input, null, false);
         els.trendImportStatus.className = 'note trend-status';
         els.trendImportStatus.textContent = 'No trend data loaded.';
         els.trendPointCount.textContent = 'No trend data';
@@ -3215,6 +3522,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         if (els.downloadTrendReportBtn) els.downloadTrendReportBtn.disabled = true;
         return;
       }
+
+      const eventReady = renderOptionalUaEventTrend(input, trend.event, true);
 
       if (!trend.valid || !trend.points || trend.points.length === 0) {
         hideTrendTooltip();
@@ -3236,14 +3545,14 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
 
       const last = trend.points[trend.points.length - 1];
       const warningMarkup = trend.warnings.length ? `<ul class="trend-note-list">${trend.warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>` : '';
-      els.trendImportStatus.className = 'note trend-status';
-      els.trendImportStatus.innerHTML = `Loaded ${formatNumber(trend.points.length)} trend point${trend.points.length === 1 ? '' : 's'} using ${input.experimentType === 'RE' ? 'event' : 'install'} conversions.${warningMarkup}`;
-      if (els.downloadTrendReportBtn) els.downloadTrendReportBtn.disabled = false;
+      els.trendImportStatus.className = eventReady ? 'note trend-status' : 'note warn-note trend-status';
+      els.trendImportStatus.innerHTML = `Loaded ${formatNumber(trend.points.length)} trend point${trend.points.length === 1 ? '' : 's'} using ${meta.sourceLabel}.${warningMarkup}`;
+      if (els.downloadTrendReportBtn) els.downloadTrendReportBtn.disabled = !eventReady;
       els.trendPointCount.textContent = `${formatNumber(trend.points.length)} points`;
       els.trendSubtitle.textContent = `${input.experimentType === 'RE' ? 'RE event' : 'UA install'} trend from ${trend.points[0].label} through ${last.label}.`;
       els.trendChartEmpty.classList.add('hidden');
       els.trendChart.classList.remove('hidden');
-      els.trendChart.innerHTML = buildTrendSvg(trend.points, input);
+      els.trendChart.innerHTML = buildTrendSvg(trend.points, input, meta);
       attachTrendTooltips(els.trendChart);
       els.trendTableWrap.classList.remove('hidden');
       els.trendLastDateMetric.textContent = last.label;
@@ -3251,21 +3560,10 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.trendLiftMetric.textContent = Number.isFinite(last.out.relativeLift) ? formatPct(last.out.relativeLift, input.precision) : '--';
       els.trendIncrementalMetric.textContent = Number.isFinite(last.incrementalPct) ? formatPct(last.incrementalPct, input.precision) : '--';
       els.trendIncrementalSmall.textContent = `${formatNumber(last.incremental, 1)} incremental ${meta.plural} vs expected at control rate.`;
-      els.trendConfidenceMetric.textContent = formatPct(last.out.statisticalConfidence, input.precision);
+      els.trendConfidenceMetric.textContent = Number.isFinite(last.out.statisticalConfidence) ? formatPct(last.out.statisticalConfidence, input.precision) : '--';
       els.trendPowerMetric.textContent = Number.isFinite(last.power.observedPower) ? formatPct(last.power.observedPower, 1) : '--';
       els.trendNote.innerHTML = `Left-axis bars show ${meta.liftLabel} and ${meta.incrementalLabel}. Right-axis lines show calculated confidence % and observed power %. Hover over any bar or line point to see its date, metric, and value. ${meta.liftLabel} is the percent difference between ${input.controlLabel} and ${input.experimentLabel} ${meta.singular} conversion rates. ${meta.incrementalLabel} is the percent of experiment ${meta.plural} estimated to be incremental versus the control-rate expectation. Confidence and power are recalculated independently for every date using the calculator's selected confidence level, tail, and power target.`;
-      els.trendRows.innerHTML = trend.points.map(p => `
-        <tr>
-          <td>${escapeHtml(p.label)}</td>
-          <td class="num">${formatNumber(p.controlConversions)}</td>
-          <td class="num">${formatNumber(p.experimentConversions)}</td>
-          <td class="num">${formatNumber(p.controlTrials)}</td>
-          <td class="num">${formatNumber(p.experimentTrials)}</td>
-          <td class="num">${Number.isFinite(p.out.relativeLift) ? formatPct(p.out.relativeLift, input.precision) : '--'}</td>
-          <td class="num">${Number.isFinite(p.incrementalPct) ? formatPct(p.incrementalPct, input.precision) : '--'}</td>
-          <td class="num">${formatPct(p.out.statisticalConfidence, input.precision)}</td>
-          <td class="num">${Number.isFinite(p.power.observedPower) ? formatPct(p.power.observedPower, 1) : '--'}</td>
-        </tr>`).join('');
+      els.trendRows.innerHTML = formatTrendRows(trend.points, input);
     }
 
     function buildReportTableRows(rows) {
@@ -3279,28 +3577,41 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const reportOut = lastPoint ? lastPoint.out : currentOut;
       const reportPower = lastPoint ? lastPoint.power : currentPower;
       const meta = getTrendMetricMeta(currentInput);
+      const eventMeta = getTrendMetricMeta(currentInput, 'event');
+      const hasUaEventTrend = trend && trend.event && trend.event.valid && trend.event.points && trend.event.points.length;
       const d = currentInput.precision;
       const reportName = currentInput.reportName || 'A/B Test Report';
       const cumulativeDateLabel = lastPoint ? lastPoint.label : 'Current calculator inputs';
       const reportTitle = `${reportName} - ${cumulativeDateLabel}`;
       const generatedAt = new Date().toLocaleString();
-      const chartMarkup = hasTrend ? buildTrendSvg(trend.points, currentInput) : '<div class="empty">No trend data was loaded when this report was generated.</div>';
-      const trendRows = hasTrend ? trend.points.map(p => `
-        <tr>
-          <td>${escapeHtml(p.label)}</td>
-          <td class="num">${formatNumber(p.controlConversions)}</td>
-          <td class="num">${formatNumber(p.experimentConversions)}</td>
-          <td class="num">${formatNumber(p.controlTrials)}</td>
-          <td class="num">${formatNumber(p.experimentTrials)}</td>
-          <td class="num">${Number.isFinite(p.out.relativeLift) ? formatPct(p.out.relativeLift, d) : '--'}</td>
-          <td class="num">${Number.isFinite(p.incrementalPct) ? formatPct(p.incrementalPct, d) : '--'}</td>
-          <td class="num">${formatPct(p.out.statisticalConfidence, d)}</td>
-          <td class="num">${Number.isFinite(p.power.observedPower) ? formatPct(p.power.observedPower, 1) : '--'}</td>
-        </tr>`).join('') : '';
+      const chartMarkup = hasTrend ? buildTrendSvg(trend.points, currentInput, meta) : '<div class="empty">No trend data was loaded when this report was generated.</div>';
+      const trendRows = hasTrend ? formatTrendRows(trend.points, currentInput) : '';
+      const primaryTrendDataTitle = meta.chartKind === 'install' ? 'Install Trend Data' : 'Event Trend Data';
+      const primaryTrendSummary = meta.chartKind === 'install' ? 'Raw Install trend data' : 'Raw Event trend data';
+      const uaEventChartMarkup = hasUaEventTrend ? buildTrendSvg(trend.event.points, currentInput, eventMeta) : '<div class="empty">No valid A-event trend data was loaded when this report was generated.</div>';
+      const uaEventTrendRows = hasUaEventTrend ? formatTrendRows(trend.event.points, currentInput) : '';
+      const uaEventErrorNote = currentInput.experimentType === 'UA' && currentInput.showUaEventChart && trend && trend.event && !trend.event.valid && trend.event.errors.length ? `<div class="note">${escapeHtml(trend.event.errors.join(' '))}</div>` : '';
+      const uaEventReportSection = currentInput.experimentType === 'UA' && currentInput.showUaEventChart ? `
+    <section class="card">
+      <h2>A Event Trend Chart</h2>
+      <div class="note">Left-axis bars show ${escapeHtml(eventMeta.liftLabel)} and ${escapeHtml(eventMeta.incrementalLabel)}. Right-axis lines show calculated confidence % and observed power %. This chart uses ${escapeHtml(eventMeta.controlRequiredLabel)} and ${escapeHtml(eventMeta.experimentRequiredLabel)}.</div>
+      ${uaEventErrorNote}
+      <div class="trend-chart-wrap"><div class="trend-chart">${uaEventChartMarkup}</div></div>
+    </section>
+
+    <section class="card">
+      <h2>A Event Trend Data</h2>
+      <details class="trend-table-details">
+        <summary>Raw A event trend data</summary>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th class="num">Control ${escapeHtml(eventMeta.properPlural)}</th><th class="num">Experiment ${escapeHtml(eventMeta.properPlural)}</th><th class="num">Control Reach</th><th class="num">Experiment Reach</th><th class="num">Rate lift</th><th class="num">% incremental</th><th class="num">Confidence</th><th class="num">Power</th></tr></thead><tbody>${uaEventTrendRows || '<tr><td colspan="9">No valid A-event trend data loaded.</td></tr>'}</tbody></table></div>
+      </details>
+    </section>` : '';
       const settingsRows = buildReportTableRows([
         ['Report generated', generatedAt, 'Local browser time.'],
         ['Report name', currentInput.reportName || 'A/B Test Report', 'Used in the static report header.'],
         ['Use case', currentInput.experimentType, currentInput.experimentType === 'RE' ? 'RE uses event conversions.' : 'UA uses install conversions.'],
+        ['Event counts are unique?', currentInput.eventCountsUnique ? 'Yes' : 'No', `Event charts use ${eventMeta.controlRequiredLabel} and ${eventMeta.experimentRequiredLabel}. Install counts for UA are always treated as unique.`],
+        ['Show A event chart?', currentInput.experimentType === 'UA' ? (currentInput.showUaEventChart ? 'Yes' : 'No') : 'Not applicable', 'When enabled for UA, the report includes a second A-event trend chart.'],
         ['Current calculator control input', `${formatNumber(currentInput.controlConversions)} conversions / ${formatNumber(currentInput.controlTrials)} reach`, 'Manual calculator input at report download time.'],
         ['Current calculator experiment input', `${formatNumber(currentInput.experimentConversions)} conversions / ${formatNumber(currentInput.experimentTrials)} reach`, 'Manual calculator input at report download time.'],
         ['Confidence level', formatPct(currentInput.confidenceLevel, 0), 'Used for p-value decisioning and confidence intervals.'],
@@ -3412,12 +3723,14 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     </section>
 
     <section class="card">
-      <h2>Trend Data</h2>
+      <h2>${escapeHtml(primaryTrendDataTitle)}</h2>
       <details class="trend-table-details">
-        <summary>Raw trend data</summary>
+        <summary>${escapeHtml(primaryTrendSummary)}</summary>
         <div class="table-wrap"><table><thead><tr><th>Date</th><th class="num">Control ${escapeHtml(meta.properPlural)}</th><th class="num">Experiment ${escapeHtml(meta.properPlural)}</th><th class="num">Control Reach</th><th class="num">Experiment Reach</th><th class="num">Rate lift</th><th class="num">% incremental</th><th class="num">Confidence</th><th class="num">Power</th></tr></thead><tbody>${trendRows || '<tr><td colspan="9">No trend data loaded.</td></tr>'}</tbody></table></div>
       </details>
     </section>
+
+    ${uaEventReportSection}
   </main>
   <script>
     (function () {
@@ -3509,6 +3822,10 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const out = calculate(input);
       const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
       const trend = calculateTrendData(input);
+      if (!trend.valid || (shouldShowUaEventTrend(input) && (!trend.event || !trend.event.valid || !trend.event.points || trend.event.points.length === 0))) {
+        renderTrend(input);
+        return false;
+      }
       const lastPoint = trend.valid && trend.points && trend.points.length ? trend.points[trend.points.length - 1] : null;
       const html = buildFrozenReportHtml(input, out, power, trend);
       const suffix = lastPoint ? safeFilenamePart(lastPoint.label) : 'current-inputs';
@@ -3603,6 +3920,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const params = new URLSearchParams();
       params.set('reportName', input.reportName);
       params.set('experimentType', input.experimentType);
+      params.set('eventCountsUnique', input.eventCountsUnique ? '1' : '0');
+      params.set('showUaEventChart', input.showUaEventChart ? '1' : '0');
       params.set('control', `${input.controlConversions},${input.controlTrials}`);
       params.set('experiment', `${input.experimentConversions},${input.experimentTrials}`);
       params.set('controlLabel', input.controlLabel);
@@ -3668,6 +3987,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     function resetExample() {
       els.reportName.value = 'A/B Test Report';
       els.experimentType.value = 'UA';
+      if (els.eventCountsUnique) els.eventCountsUnique.checked = true;
+      if (els.showUaEventChart) els.showUaEventChart.checked = false;
       els.controlLabel.value = 'control';
       els.experimentLabel.value = 'experiment';
       els.controlConversionName.value = 'A - Event';
@@ -3714,7 +4035,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     }
 
     for (const el of [
-      els.reportName, els.experimentType, els.controlLabel, els.experimentLabel, els.controlConversionName,
+      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.controlLabel, els.experimentLabel, els.controlConversionName,
       els.experimentConversionName, els.controlConversions, els.controlTrials,
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
       els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
