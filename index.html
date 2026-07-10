@@ -1289,7 +1289,7 @@
             <label>
               Prefilled URL
               <textarea id="shareUrl" class="url-box" readonly></textarea>
-              <span class="hint">Works with local files using the hash after <span class="mono">#</span>. You can also edit the URL directly.</span>
+              <span class="hint">Generated links use standard query parameters after <span class="mono">?</span>. Older hash links using <span class="mono">#</span> still load.</span>
             </label>
 
             <div class="trend-input-block">
@@ -2174,12 +2174,10 @@ Total planned spend:
     }
 
     function mergedParams() {
-      const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash ? window.location.hash.slice(1) : '';
-      if (hash) {
-        const hashParams = new URLSearchParams(hash);
-        for (const [k, v] of hashParams.entries()) params.set(k, v);
-      }
+      const params = new URLSearchParams(hash);
+      const queryParams = new URLSearchParams(window.location.search);
+      for (const [k, v] of queryParams.entries()) params.set(k, v);
       return params;
     }
 
@@ -3948,10 +3946,11 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       params.set('reachGrowthUnit', input.reachGrowthUnit);
       params.set('precision', input.precision);
       const base = window.location.href.split('#')[0].split('?')[0];
-      const url = `${base}#${params.toString()}`;
+      const query = params.toString();
+      const url = `${base}?${query}`;
       els.shareUrl.value = url;
       if (history.replaceState) {
-        history.replaceState(null, '', `#${params.toString()}`);
+        history.replaceState(null, '', `?${query}`);
       }
     }
 
