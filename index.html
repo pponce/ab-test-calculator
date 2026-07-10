@@ -1144,6 +1144,18 @@
     }
 
     .field-label-inline { display: inline; }
+
+    .forecast-subsection {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .forecast-subsection h4 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
   </style>
 </head>
 <body>
@@ -1306,14 +1318,23 @@
                   <span>Control Events (r)</span>
                   <span>Control Installs</span>
                   <span>Control Reach</span>
+                  <span>Cumulative Control Spend</span>
+                  <span>Cumulative Experiment Spend</span>
                   <span>Experiment Events (u)</span>
                   <span>Experiment Events (r)</span>
                   <span>Experiment Installs</span>
                   <span>Experiment Reach</span>
                 </div>
-                <textarea id="trendDataInput" class="trend-data-box" wrap="off" placeholder="Day of event_date&#9;Control Events (u)&#9;Control Events (r)&#9;Control Installs&#9;Control Reach&#9;Experiment Events (u)&#9;Experiment Events (r)&#9;Experiment Installs&#9;Experiment Reach"></textarea>
-                <span class="hint">UA install charts use Installs / Reach. RE charts and optional UA A-event charts use Events / Reach based on whether event counts are marked unique. Rows should be cumulative by date.</span>
+                <textarea id="trendDataInput" class="trend-data-box" wrap="off" placeholder="Day of event_date&#9;Control Events (u)&#9;Control Events (r)&#9;Control Installs&#9;Control Reach&#9;Cumulative Control Spend&#9;Cumulative Experiment Spend&#9;Experiment Events (u)&#9;Experiment Events (r)&#9;Experiment Installs&#9;Experiment Reach"></textarea>
+                <span class="hint">UA install charts use Installs / Reach. RE charts and optional UA A-event charts use Events / Reach based on whether event counts are marked unique. Rows should be cumulative by date. Optional cumulative spend columns unlock spend/day and reach-per-dollar forecast insights.</span>
               </div>
+              <label class="checkbox-label">
+                <input id="includeForecastTimingReport" type="checkbox" checked />
+                <span class="checkbox-copy">
+                  <span>Include Forecast ETA timing in static HTML report output?</span>
+                  <span class="hint">Checked = the downloaded static HTML report includes the Forecasted Time to reach Confidence and Power section when valid trend data is loaded.</span>
+                </span>
+              </label>
               <div class="button-row">
                 <button id="loadTrendBtn" type="button">Load trend chart</button>
                 <button id="clearTrendBtn" class="secondary" type="button">Clear trend data</button>
@@ -1502,6 +1523,136 @@
 
           </div>
 
+          <div class="panel hidden" id="forecastedTimePanel">
+            <div class="panel-head">
+              <div>
+                <h3>Forecasted Time to reach Confidence and Power</h3>
+                <div class="muted small" id="forecastedTimeSubtitle">Forecasts use the latest observed conversion rates and control/experiment reach growth from pasted cumulative trend data.</div>
+              </div>
+              <span class="pill" id="forecastedTimePill">Trend required</span>
+            </div>
+            <div class="note" id="forecastedTimeAssumptionNote">These estimates are based on current observed control and experiment reach-growth and conversion-rate data. Increases in campaign spend that lead to faster incremental unique reach will change the forecasts; spend that mostly increases frequency or reaches the same users may not shorten the ETA. Changes in conversion rates or conversion lag will also change confidence timing and power requirements.</div>
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="k">Latest trend date</div>
+                <div class="v" id="forecastedLatestDateMetric">--</div>
+                <div class="s">Forecasts are anchored to the latest cumulative row.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Latest calculated confidence</div>
+                <div class="v" id="forecastedCurrentConfidenceMetric">--</div>
+                <div class="s" id="forecastedCurrentConfidenceSmall">1 - decision p-value.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Latest observed power</div>
+                <div class="v" id="forecastedCurrentPowerMetric">--</div>
+                <div class="s" id="forecastedCurrentPowerSmall">Observed effect, current settings.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="forecastedConservativeConfidenceLabel">Conservative confidence ETA</div>
+                <div class="v" id="forecastedConservativeConfidenceMetric">--</div>
+                <div class="s" id="forecastedConservativeConfidenceSmall">Equal n/arm confidence logic.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="forecastedLessConfidenceLabel">Less-conservative confidence ETA</div>
+                <div class="v" id="forecastedLessConfidenceMetric">--</div>
+                <div class="s" id="forecastedLessConfidenceSmall">Uses actual projected arm sizes.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="forecastedConservativePowerLabel">Conservative power ETA</div>
+                <div class="v" id="forecastedConservativePowerMetric">--</div>
+                <div class="s" id="forecastedConservativePowerSmall">Equal n/arm helper logic.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="forecastedLessPowerLabel">Less-conservative power ETA</div>
+                <div class="v" id="forecastedLessPowerMetric">--</div>
+                <div class="s" id="forecastedLessPowerSmall">Uses actual arm sizes.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="forecastedShortestBothLabel">Shortest ETA to reach both</div>
+                <div class="v" id="forecastedShortestBothMetric">--</div>
+                <div class="s" id="forecastedShortestBothSmall">Confidence and power targets.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="forecastedLongestBothLabel">Longest ETA to reach both</div>
+                <div class="v" id="forecastedLongestBothMetric">--</div>
+                <div class="s" id="forecastedLongestBothSmall">Confidence and power targets.</div>
+              </div>
+            </div>
+
+            <div class="forecast-subsection">
+              <h4>Confidence forecast estimates</h4>
+              <div class="note" id="forecastedConfidenceNote">--</div>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Confidence forecast scenario</th>
+                      <th class="num">Conservative equal n/arm estimate</th>
+                      <th class="num">Less-conservative projected estimate</th>
+                      <th>Commentary</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastedConfidenceRows"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="forecast-subsection hidden" id="forecastedSpendBlock">
+              <h4 id="forecastedSpendTitle">Spend and reach efficiency</h4>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Arm</th>
+                      <th class="num">Avg daily spend growth</th>
+                      <th class="num">Avg new reach/day</th>
+                      <th class="num">Approx reach per $1</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastedSpendRows"></tbody>
+                </table>
+              </div>
+              <div class="note" id="forecastedSpendNote">Spend insights are shown only when cumulative spend columns are present.</div>
+            </div>
+
+            <div class="forecast-subsection">
+              <h4>Power forecast estimates</h4>
+              <div class="note" id="forecastedPowerNote">--</div>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Reach-growth window</th>
+                      <th class="num">Control avg new reach/day</th>
+                      <th class="num">Experiment avg new reach/day</th>
+                      <th class="num" id="forecastedConservativePowerHeader">Conservative helper estimate</th>
+                      <th class="num" id="forecastedLessPowerHeader">Less-conservative estimate</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastedPowerRows"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="forecast-subsection">
+              <h4>Conservative vs less-conservative estimates</h4>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Estimate type</th>
+                      <th>Full-window timing</th>
+                      <th>How it is calculated</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastedComparisonRows"></tbody>
+                </table>
+              </div>
+              <div class="note" id="forecastedMethodNote">--</div>
+            </div>
+          </div>
+
           <div class="panel" id="confidenceIntervalPanel">
             <div class="panel-head">
               <div>
@@ -1621,8 +1772,8 @@
                   <span class="hint">Choose whether the reach-growth inputs below are per day, week, or month.</span>
                 </label>
                 <label>
-                  Forecast target power
-                  <select id="forecastPowerTarget">
+                  Power target
+                  <select id="forecastPowerTarget" disabled>
                     <option value="0.70">70%</option>
                     <option value="0.75">75%</option>
                     <option value="0.80" selected>80%</option>
@@ -1630,7 +1781,7 @@
                     <option value="0.90">90%</option>
                     <option value="0.95">95%</option>
                   </select>
-                  <span class="hint">Used only for the audience-reach timing estimate.</span>
+                  <span class="hint">Synced to the main Power % input on the left.</span>
                 </label>
                 <label>
                   <span id="controlReachGrowthLabel">Control new Audience Reach per day</span>
@@ -1909,6 +2060,7 @@ Total planned spend:
       eventCountsUnique: document.getElementById('eventCountsUnique'),
       showUaEventChartRow: document.getElementById('showUaEventChartRow'),
       showUaEventChart: document.getElementById('showUaEventChart'),
+      includeForecastTimingReport: document.getElementById('includeForecastTimingReport'),
       controlLabel: document.getElementById('controlLabel'),
       experimentLabel: document.getElementById('experimentLabel'),
       reConversionNames: document.getElementById('reConversionNames'),
@@ -2053,7 +2205,46 @@ Total planned spend:
       uaEventTrendTableWrap: document.getElementById('uaEventTrendTableWrap'),
       uaEventTrendControlHeader: document.getElementById('uaEventTrendControlHeader'),
       uaEventTrendExperimentHeader: document.getElementById('uaEventTrendExperimentHeader'),
-      uaEventTrendRows: document.getElementById('uaEventTrendRows')
+      uaEventTrendRows: document.getElementById('uaEventTrendRows'),
+      forecastedTimePanel: document.getElementById('forecastedTimePanel'),
+      forecastedTimeSubtitle: document.getElementById('forecastedTimeSubtitle'),
+      forecastedTimeAssumptionNote: document.getElementById('forecastedTimeAssumptionNote'),
+      forecastedTimePill: document.getElementById('forecastedTimePill'),
+      forecastedLatestDateMetric: document.getElementById('forecastedLatestDateMetric'),
+      forecastedCurrentConfidenceMetric: document.getElementById('forecastedCurrentConfidenceMetric'),
+      forecastedCurrentConfidenceSmall: document.getElementById('forecastedCurrentConfidenceSmall'),
+      forecastedCurrentPowerMetric: document.getElementById('forecastedCurrentPowerMetric'),
+      forecastedCurrentPowerSmall: document.getElementById('forecastedCurrentPowerSmall'),
+      forecastedConservativeConfidenceLabel: document.getElementById('forecastedConservativeConfidenceLabel'),
+      forecastedConservativeConfidenceMetric: document.getElementById('forecastedConservativeConfidenceMetric'),
+      forecastedConservativeConfidenceSmall: document.getElementById('forecastedConservativeConfidenceSmall'),
+      forecastedLessConfidenceLabel: document.getElementById('forecastedLessConfidenceLabel'),
+      forecastedLessConfidenceMetric: document.getElementById('forecastedLessConfidenceMetric'),
+      forecastedLessConfidenceSmall: document.getElementById('forecastedLessConfidenceSmall'),
+      forecastedConservativePowerLabel: document.getElementById('forecastedConservativePowerLabel'),
+      forecastedConservativePowerMetric: document.getElementById('forecastedConservativePowerMetric'),
+      forecastedConservativePowerSmall: document.getElementById('forecastedConservativePowerSmall'),
+      forecastedLessPowerLabel: document.getElementById('forecastedLessPowerLabel'),
+      forecastedLessPowerMetric: document.getElementById('forecastedLessPowerMetric'),
+      forecastedLessPowerSmall: document.getElementById('forecastedLessPowerSmall'),
+      forecastedShortestBothLabel: document.getElementById('forecastedShortestBothLabel'),
+      forecastedShortestBothMetric: document.getElementById('forecastedShortestBothMetric'),
+      forecastedShortestBothSmall: document.getElementById('forecastedShortestBothSmall'),
+      forecastedLongestBothLabel: document.getElementById('forecastedLongestBothLabel'),
+      forecastedLongestBothMetric: document.getElementById('forecastedLongestBothMetric'),
+      forecastedLongestBothSmall: document.getElementById('forecastedLongestBothSmall'),
+      forecastedConfidenceNote: document.getElementById('forecastedConfidenceNote'),
+      forecastedConfidenceRows: document.getElementById('forecastedConfidenceRows'),
+      forecastedSpendBlock: document.getElementById('forecastedSpendBlock'),
+      forecastedSpendTitle: document.getElementById('forecastedSpendTitle'),
+      forecastedSpendRows: document.getElementById('forecastedSpendRows'),
+      forecastedSpendNote: document.getElementById('forecastedSpendNote'),
+      forecastedPowerNote: document.getElementById('forecastedPowerNote'),
+      forecastedConservativePowerHeader: document.getElementById('forecastedConservativePowerHeader'),
+      forecastedLessPowerHeader: document.getElementById('forecastedLessPowerHeader'),
+      forecastedPowerRows: document.getElementById('forecastedPowerRows'),
+      forecastedComparisonRows: document.getElementById('forecastedComparisonRows'),
+      forecastedMethodNote: document.getElementById('forecastedMethodNote')
     };
 
 
@@ -2118,6 +2309,14 @@ Total planned spend:
 
     function asNum(input) {
       const n = Number(String(input).replace(/,/g, ''));
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function asSpendNum(input) {
+      const raw = String(input || '').trim();
+      if (!raw) return NaN;
+      const normalized = raw.replace(/[,$]/g, '').replace(/^\((.*)\)$/, '-$1');
+      const n = Number(normalized);
       return Number.isFinite(n) ? n : NaN;
     }
 
@@ -2226,6 +2425,7 @@ Total planned spend:
       setValue(els.reportName, getAny('reportName', 'report_name', 'rname', 'reportTitle', 'title'));
       setCheckbox(els.eventCountsUnique, getAny('eventCountsUnique', 'eventsUnique', 'uniqueEvents', 'areEventCountsUnique'), true);
       setCheckbox(els.showUaEventChart, getAny('showUaEventChart', 'showEventChart', 'showAEventChart', 'uaEventChart'), false);
+      setCheckbox(els.includeForecastTimingReport, getAny('includeForecastTimingReport', 'includeForecastEtaTiming', 'includeForecastETA', 'forecastEtaReport'), true);
       setValue(els.controlLabel, getAny('controlLabel', 'control_label', 'clabel'));
       setValue(els.experimentLabel, getAny('experimentLabel', 'experiment_label', 'elabel', 'variantLabel', 'variant_label', 'vlabel'));
       setValue(els.controlConversionName, getAny('controlConversionName', 'control_conversion_name', 'controlMetric'));
@@ -2301,6 +2501,7 @@ Total planned spend:
       const experimentType = els.experimentType.value === 'RE' ? 'RE' : 'UA';
       const eventCountsUnique = els.eventCountsUnique ? els.eventCountsUnique.checked : true;
       const showUaEventChart = experimentType === 'UA' && els.showUaEventChart ? els.showUaEventChart.checked : false;
+      const includeForecastTimingReport = els.includeForecastTimingReport ? els.includeForecastTimingReport.checked : true;
       const controlConversions = asInt(els.controlConversions.value);
       const controlTrials = asInt(els.controlTrials.value);
       const experimentConversions = asInt(els.experimentConversions.value);
@@ -2310,7 +2511,8 @@ Total planned spend:
       const comparisons = 1;
       const precision = Math.max(0, Math.min(8, asInt(els.precision.value) || 3));
       const powerTarget = asNum(els.powerTarget.value);
-      const forecastPowerTarget = asNum(els.forecastPowerTarget.value);
+      if (els.forecastPowerTarget) els.forecastPowerTarget.value = els.powerTarget.value;
+      const forecastPowerTarget = powerTarget;
       const reachGrowthUnit = ['day', 'week', 'month'].includes(els.reachGrowthUnit.value) ? els.reachGrowthUnit.value : 'day';
       const controlLabel = els.controlLabel.value.trim() || 'control';
       const experimentLabel = els.experimentLabel.value.trim() || 'experiment';
@@ -2329,10 +2531,10 @@ Total planned spend:
       if (manualCountsMustBeWithinReach && Number.isFinite(experimentConversions) && Number.isFinite(experimentTrials) && experimentConversions > experimentTrials) errors.push('Experiment conversions cannot exceed Experiment Audience Reach.');
       if (!(confidenceLevel > 0 && confidenceLevel < 1)) errors.push('Confidence level must be between 0 and 1.');
       if (!(powerTarget > 0 && powerTarget < 1)) errors.push('Power target must be between 0 and 1.');
-      if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Forecast target power must be between 0 and 1.');
+      if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Power target must be between 0 and 1.');
       if (Number.isFinite(controlDailyReach) && controlDailyReach < 0) errors.push('Control reach growth cannot be negative.');
       if (Number.isFinite(experimentDailyReach) && experimentDailyReach < 0) errors.push('Experiment reach growth cannot be negative.');
-      return { reportName, experimentType, eventCountsUnique, showUaEventChart, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
+      return { reportName, experimentType, eventCountsUnique, showUaEventChart, includeForecastTimingReport, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
     }
 
     function updateCampaignModeUI(input) {
@@ -2733,7 +2935,7 @@ Total planned spend:
       }
 
       els.reachForecastRows.innerHTML = renderRows([
-        [`Required Audience Reach / arm @ ${formatPct(input.forecastPowerTarget, 0)} power`, Number.isFinite(required) ? formatNumber(required) : '--', 'Calculated using the observed absolute effect, selected confidence, selected tail, and forecast target power.'],
+        [`Required Audience Reach / arm @ ${formatPct(input.forecastPowerTarget, 0)} power`, Number.isFinite(required) ? formatNumber(required) : '--', 'Calculated using the observed absolute effect, selected confidence, selected tail, and the main Power % target.'],
         ['Growth input unit', displayArmLabel(unit.singular), `Reach-growth inputs are interpreted as new unique reach ${periodLabel}.`],
         [`Current ${input.controlLabel} Audience Reach`, formatNumber(input.controlTrials), 'Current control denominator.'],
         [`Current ${input.experimentLabel} Audience Reach`, formatNumber(input.experimentTrials), 'Current experiment denominator.'],
@@ -2982,6 +3184,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         controlEventsRaw: findTrendColumn(headers, n => hasControlToken(n) && isRawEvent(n)),
         controlInstalls: findTrendColumn(headers, n => hasControlToken(n) && isInstall(n)),
         controlReach: findTrendColumn(headers, n => hasControlToken(n) && isReach(n)),
+        controlSpend: findTrendColumn(headers, n => hasControlToken(n) && (n.includes('spend') || n.includes('cost'))),
+        experimentSpend: findTrendColumn(headers, n => hasExperimentToken(n) && (n.includes('spend') || n.includes('cost'))),
         experimentEventsUnique: findTrendColumn(headers, n => hasExperimentToken(n) && isUniqueEvent(n)),
         experimentEventsRaw: findTrendColumn(headers, n => hasExperimentToken(n) && isRawEvent(n)),
         experimentInstalls: findTrendColumn(headers, n => hasExperimentToken(n) && isInstall(n)),
@@ -3099,6 +3303,11 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return asInt(row.cells[index]);
     }
 
+    function readTrendNum(row, index) {
+      if (!Number.isInteger(index) || index < 0) return NaN;
+      return asSpendNum(row.cells[index]);
+    }
+
     function calculateTrendSeriesFromParsed(parsed, input, chartKind) {
       const meta = getTrendMetricMeta(input, chartKind);
       const errors = [...(parsed.errors || [])];
@@ -3127,6 +3336,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         const experimentConversions = readTrendInt(row, parsed.columnMap[meta.experimentKey]);
         const controlTrials = readTrendInt(row, parsed.columnMap.controlReach);
         const experimentTrials = readTrendInt(row, parsed.columnMap.experimentReach);
+        const controlSpend = readTrendNum(row, parsed.columnMap.controlSpend);
+        const experimentSpend = readTrendNum(row, parsed.columnMap.experimentSpend);
         const rowProblems = [];
         const rawEventChart = meta.chartKind === 'event' && input.eventCountsUnique === false;
         if (!dateRaw) rowProblems.push('missing date');
@@ -3166,6 +3377,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
           experimentConversions,
           controlTrials,
           experimentTrials,
+          controlSpend,
+          experimentSpend,
           input: rowInput,
           metricMeta: meta,
           out,
@@ -3569,6 +3782,603 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.trendRows.innerHTML = formatTrendRows(trend.points, input);
     }
 
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    function formatDateFromBaseDays(baseMs, days) {
+      if (!Number.isFinite(days)) return '--';
+      if (!Number.isFinite(baseMs)) return formatDateFromDays(days);
+      const dt = new Date(baseMs + Math.max(0, Math.ceil(days)) * DAY_MS);
+      return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function formatForecastTiming(days, baseMs) {
+      if (!Number.isFinite(days)) return '--';
+      if (days <= 0) return `Already at target; ${formatDateFromBaseDays(baseMs, 0)}`;
+      return `${formatDurationFromDays(days)}; ${formatDateFromBaseDays(baseMs, days)}`;
+    }
+
+    function getElapsedDays(firstPoint, lastPoint, fallbackDays = NaN) {
+      if (firstPoint && lastPoint && Number.isFinite(firstPoint.dateMs) && Number.isFinite(lastPoint.dateMs)) {
+        const days = (lastPoint.dateMs - firstPoint.dateMs) / DAY_MS;
+        if (days > 0) return days;
+      }
+      return Number.isFinite(fallbackDays) && fallbackDays > 0 ? fallbackDays : NaN;
+    }
+
+    function pointForWindowStart(points, windowDays) {
+      const last = points[points.length - 1];
+      if (!last) return null;
+      if (!Number.isFinite(windowDays)) return points[0] || null;
+      if (Number.isFinite(last.dateMs)) {
+        const cutoff = last.dateMs - windowDays * DAY_MS;
+        let candidate = points[0];
+        for (const point of points) {
+          if (Number.isFinite(point.dateMs) && point.dateMs <= cutoff) candidate = point;
+        }
+        return candidate || points[0] || null;
+      }
+      const idx = Math.max(0, points.length - 1 - Math.round(windowDays));
+      return points[idx] || points[0] || null;
+    }
+
+    function calcWindowReachStats(points, windowDays) {
+      if (!points || points.length < 2) return null;
+      const first = pointForWindowStart(points, windowDays);
+      const last = points[points.length - 1];
+      const fallbackDays = Number.isFinite(windowDays) ? Math.min(windowDays, Math.max(1, points.length - 1)) : Math.max(1, points.length - 1);
+      const days = getElapsedDays(first, last, fallbackDays);
+      if (!first || !last || !(days > 0)) return null;
+      const controlReachPerDay = (last.controlTrials - first.controlTrials) / days;
+      const experimentReachPerDay = (last.experimentTrials - first.experimentTrials) / days;
+      return { first, last, days, controlReachPerDay, experimentReachPerDay };
+    }
+
+    function conservativePowerForecastDays(baseInput, baseOut, targetPower, controlReachPerDay, experimentReachPerDay) {
+      const power = calculatePowerForObservedEffect(baseInput, baseOut, targetPower);
+      const required = power.requiredPerArm;
+      const controlDays = Number.isFinite(required) && controlReachPerDay > 0 ? Math.max(0, Math.ceil((required - baseInput.controlTrials) / controlReachPerDay)) : NaN;
+      const experimentDays = Number.isFinite(required) && experimentReachPerDay > 0 ? Math.max(0, Math.ceil((required - baseInput.experimentTrials) / experimentReachPerDay)) : NaN;
+      const days = Number.isFinite(controlDays) && Number.isFinite(experimentDays) ? Math.max(controlDays, experimentDays) : NaN;
+      const limitingArm = Number.isFinite(days) ? (controlDays >= experimentDays ? baseInput.controlLabel : baseInput.experimentLabel) : '--';
+      return { days, controlDays, experimentDays, limitingArm, required };
+    }
+
+    function projectedInputAtDay(baseInput, controlRate, experimentRate, controlReachPerDay, experimentReachPerDay, day, tailOverride = null) {
+      const controlTrials = baseInput.controlTrials + controlReachPerDay * day;
+      const experimentTrials = baseInput.experimentTrials + experimentReachPerDay * day;
+      return {
+        ...baseInput,
+        tail: tailOverride || baseInput.tail,
+        controlTrials,
+        experimentTrials,
+        controlConversions: controlRate * controlTrials,
+        experimentConversions: experimentRate * experimentTrials,
+        errors: []
+      };
+    }
+
+    function lessConservativePowerForecastDays(baseInput, targetPower, controlReachPerDay, experimentReachPerDay, maxDays = 36500) {
+      const controlRate = baseInput.controlConversions / baseInput.controlTrials;
+      const experimentRate = baseInput.experimentConversions / baseInput.experimentTrials;
+      if (!(Number.isFinite(controlRate) && Number.isFinite(experimentRate)) || controlRate === experimentRate) {
+        return { days: NaN, reason: 'Observed rates are tied, so a power forecast cannot be calculated.' };
+      }
+      if (!(controlReachPerDay > 0) && !(experimentReachPerDay > 0)) {
+        return { days: NaN, reason: 'Reach growth is zero, so future power cannot increase.' };
+      }
+      const reachesTarget = (day) => {
+        const projected = projectedInputAtDay(baseInput, controlRate, experimentRate, Math.max(0, controlReachPerDay), Math.max(0, experimentReachPerDay), day);
+        const projectedOut = calculate(projected);
+        const projectedPower = calculatePowerForObservedEffect(projected, projectedOut, targetPower);
+        return Number.isFinite(projectedPower.observedPower) && projectedPower.observedPower >= targetPower;
+      };
+      if (reachesTarget(0)) return { days: 0 };
+      let hi = 1;
+      while (hi <= maxDays && !reachesTarget(hi)) hi *= 2;
+      if (hi > maxDays) return { days: NaN, reason: `Target power was not reached within ${formatNumber(maxDays)} projected days.` };
+      let lo = Math.floor(hi / 2);
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (reachesTarget(mid)) hi = mid;
+        else lo = mid;
+      }
+      return { days: hi };
+    }
+
+    function confidenceForecastDays(baseInput, targetConfidence, scenarioTail, controlReachPerDay, experimentReachPerDay, maxDays = 36500) {
+      const controlRate = baseInput.controlConversions / baseInput.controlTrials;
+      const experimentRate = baseInput.experimentConversions / baseInput.experimentTrials;
+      const diff = experimentRate - controlRate;
+      if (scenarioTail === 'greater' && !(diff > 0)) {
+        return { days: NaN, finite: false, reason: 'No finite estimate if current rates persist, because experiment is not above control.' };
+      }
+      if (scenarioTail === 'less' && !(diff < 0)) {
+        return { days: NaN, finite: false, reason: 'No finite estimate if current rates persist, because experiment is not below control.' };
+      }
+      if (scenarioTail === 'two' && diff === 0) {
+        return { days: NaN, finite: false, reason: 'No finite estimate if current rates persist, because the observed rates are tied.' };
+      }
+      if (!(controlReachPerDay > 0) && !(experimentReachPerDay > 0)) {
+        return { days: NaN, finite: false, reason: 'No finite estimate because reach growth is zero.' };
+      }
+      const alpha = 1 - targetConfidence;
+      const reachesTarget = (day) => {
+        const projected = projectedInputAtDay(baseInput, controlRate, experimentRate, Math.max(0, controlReachPerDay), Math.max(0, experimentReachPerDay), day, scenarioTail);
+        projected.confidenceLevel = targetConfidence;
+        const projectedOut = calculate(projected);
+        return Number.isFinite(projectedOut.pForDecision) && projectedOut.pForDecision <= alpha;
+      };
+      if (reachesTarget(0)) return { days: 0, finite: true };
+      let hi = 1;
+      while (hi <= maxDays && !reachesTarget(hi)) hi *= 2;
+      if (hi > maxDays) {
+        return { days: NaN, finite: false, reason: `Target confidence was not reached within ${formatNumber(maxDays)} projected days.` };
+      }
+      let lo = Math.floor(hi / 2);
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (reachesTarget(mid)) hi = mid;
+        else lo = mid;
+      }
+      return { days: hi, finite: true };
+    }
+
+    function calcSpendEfficiency(points) {
+      if (!points || points.length < 2) return { hasSpend: false, rows: [] };
+      const first = points[0];
+      const last = points[points.length - 1];
+      const days = getElapsedDays(first, last, Math.max(1, points.length - 1));
+      if (!(days > 0)) return { hasSpend: false, rows: [] };
+      const makeArm = (label, startSpend, endSpend, startReach, endReach) => {
+        if (!(Number.isFinite(startSpend) && Number.isFinite(endSpend))) return null;
+        const spendDelta = endSpend - startSpend;
+        const reachDelta = endReach - startReach;
+        const avgDailySpend = spendDelta / days;
+        const avgDailyReach = reachDelta / days;
+        const reachPerDollar = spendDelta > 0 ? reachDelta / spendDelta : NaN;
+        if (!Number.isFinite(avgDailySpend) || !Number.isFinite(avgDailyReach)) return null;
+        return { label, avgDailySpend, avgDailyReach, reachPerDollar };
+      };
+      const rows = [
+        makeArm('Control', first.controlSpend, last.controlSpend, first.controlTrials, last.controlTrials),
+        makeArm('Experiment', first.experimentSpend, last.experimentSpend, first.experimentTrials, last.experimentTrials)
+      ].filter(Boolean);
+      return { hasSpend: rows.length > 0, rows, first, last, days };
+    }
+
+    function tailScenarioText(tail) {
+      if (tail === 'greater') return 'Experiment > Control';
+      if (tail === 'less') return 'Experiment < Control';
+      return 'Experiment != Control';
+    }
+
+    function confidenceForecastDirectionReason(controlRate, experimentRate, scenarioTail) {
+      const diff = experimentRate - controlRate;
+      if (!(Number.isFinite(controlRate) && Number.isFinite(experimentRate))) return 'No finite estimate because the latest observed rates are not valid.';
+      if (!(controlRate >= 0 && controlRate <= 1 && experimentRate >= 0 && experimentRate <= 1)) return 'No finite estimate because the z-test requires rates between 0% and 100%.';
+      if (scenarioTail === 'greater' && !(diff > 0)) return 'No finite estimate if current rates persist, because experiment is not above control.';
+      if (scenarioTail === 'less' && !(diff < 0)) return 'No finite estimate if current rates persist, because experiment is not below control.';
+      if (scenarioTail === 'two' && diff === 0) return 'No finite estimate if current rates persist, because the observed rates are tied.';
+      return '';
+    }
+
+    function requiredEqualNForConfidence(baseInput, targetConfidence, scenarioTail, maxN = 10000000000) {
+      const controlRate = baseInput.controlConversions / baseInput.controlTrials;
+      const experimentRate = baseInput.experimentConversions / baseInput.experimentTrials;
+      const reason = confidenceForecastDirectionReason(controlRate, experimentRate, scenarioTail);
+      if (reason) return { required: NaN, finite: false, reason };
+      const alpha = 1 - targetConfidence;
+      if (!(alpha > 0 && alpha < 1)) return { required: NaN, finite: false, reason: 'No finite estimate because the target confidence level is invalid.' };
+      const reachesTargetAtN = (n) => {
+        const projected = {
+          ...baseInput,
+          tail: scenarioTail,
+          confidenceLevel: targetConfidence,
+          controlTrials: n,
+          experimentTrials: n,
+          controlConversions: controlRate * n,
+          experimentConversions: experimentRate * n,
+          errors: []
+        };
+        const projectedOut = calculate(projected);
+        return Number.isFinite(projectedOut.pForDecision) && projectedOut.pForDecision <= alpha;
+      };
+      if (reachesTargetAtN(1)) return { required: 1, finite: true };
+      let lo = 1;
+      let hi = Math.max(2, Math.ceil(Math.min(baseInput.controlTrials, baseInput.experimentTrials)));
+      if (!Number.isFinite(hi) || hi < 2) hi = 2;
+      while (hi <= maxN && !reachesTargetAtN(hi)) {
+        lo = hi;
+        hi *= 2;
+      }
+      if (hi > maxN) return { required: NaN, finite: false, reason: `Equal n/arm confidence target was not reached by ${formatNumber(maxN)} projected reach per arm.` };
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (reachesTargetAtN(mid)) hi = mid;
+        else lo = mid;
+      }
+      return { required: hi, finite: true };
+    }
+
+    function daysUntilReachTarget(currentReach, reachPerDay, requiredReach) {
+      if (!Number.isFinite(requiredReach)) return NaN;
+      if (currentReach >= requiredReach) return 0;
+      return reachPerDay > 0 ? Math.max(0, Math.ceil((requiredReach - currentReach) / reachPerDay)) : NaN;
+    }
+
+    function conservativeConfidenceForecastDays(baseInput, targetConfidence, scenarioTail, controlReachPerDay, experimentReachPerDay) {
+      const target = requiredEqualNForConfidence(baseInput, targetConfidence, scenarioTail);
+      if (!target.finite) return { days: NaN, finite: false, reason: target.reason, required: target.required };
+      const required = target.required;
+      const controlDays = daysUntilReachTarget(baseInput.controlTrials, controlReachPerDay, required);
+      const experimentDays = daysUntilReachTarget(baseInput.experimentTrials, experimentReachPerDay, required);
+      const days = Number.isFinite(controlDays) && Number.isFinite(experimentDays) ? Math.max(controlDays, experimentDays) : NaN;
+      const limitingArm = Number.isFinite(days) ? (controlDays >= experimentDays ? baseInput.controlLabel : baseInput.experimentLabel) : '--';
+      if (!Number.isFinite(days)) {
+        return { days: NaN, finite: false, reason: 'No finite estimate because an arm below the equal n/arm confidence target has no positive reach growth.', required, controlDays, experimentDays, limitingArm };
+      }
+      return { days, finite: true, required, controlDays, experimentDays, limitingArm };
+    }
+
+    function finiteForecastDays(forecast) {
+      if (!forecast || forecast.finite === false) return NaN;
+      return Number.isFinite(forecast.days) ? forecast.days : NaN;
+    }
+
+    function formatForecastObjectTiming(forecast, baseMs) {
+      const days = finiteForecastDays(forecast);
+      if (Number.isFinite(days)) return formatForecastTiming(days, baseMs);
+      return forecast && forecast.reason ? forecast.reason : 'No finite estimate';
+    }
+
+    function formatEtaMetricValue(days) {
+      if (!Number.isFinite(days)) return 'No finite ETA';
+      return days <= 0 ? 'Already at target' : `${formatNumber(days)} days`;
+    }
+
+    function formatEtaMetricSmall(days, baseMs, fallbackText) {
+      if (!Number.isFinite(days)) return fallbackText || 'No finite estimate from current assumptions.';
+      if (days <= 0) return `Current data already clears this threshold; ${formatDateFromBaseDays(baseMs, 0)}.`;
+      return `${formatNumber(days / 7, 1)} weeks / ${formatNumber(days / 30.4375, 1)} months; ${formatDateFromBaseDays(baseMs, days)}`;
+    }
+
+    function combineConfidenceAndPowerDays(confidenceForecast, powerForecast, methodLabel) {
+      const confidenceDays = finiteForecastDays(confidenceForecast);
+      const powerDays = finiteForecastDays(powerForecast);
+      if (Number.isFinite(confidenceDays) && Number.isFinite(powerDays)) {
+        const days = Math.max(confidenceDays, powerDays);
+        return {
+          methodLabel,
+          days,
+          finite: true,
+          confidenceDays,
+          powerDays,
+          limitingTarget: confidenceDays >= powerDays ? 'confidence' : 'power'
+        };
+      }
+      const missing = [];
+      if (!Number.isFinite(confidenceDays)) missing.push('confidence');
+      if (!Number.isFinite(powerDays)) missing.push('power');
+      return {
+        methodLabel,
+        days: NaN,
+        finite: false,
+        confidenceDays,
+        powerDays,
+        limitingTarget: '--',
+        reason: `No finite combined ETA because the ${missing.join(' and ')} target has no finite ETA under the current assumptions.`
+      };
+    }
+
+    function pickShortestLongestBoth(combinedRows) {
+      const finite = (combinedRows || []).filter(row => row && row.finite && Number.isFinite(row.days)).sort((a, b) => a.days - b.days);
+      return {
+        shortest: finite.length ? finite[0] : null,
+        longest: finite.length ? finite[finite.length - 1] : null
+      };
+    }
+
+    function buildForecastedTimeModel(input, trend) {
+      if (!trend || !trend.valid || !trend.points || trend.points.length < 2) return { valid: false };
+      const points = trend.points;
+      const first = points[0];
+      const last = points[points.length - 1];
+      const latestInput = {
+        ...input,
+        controlConversions: last.controlConversions,
+        controlTrials: last.controlTrials,
+        experimentConversions: last.experimentConversions,
+        experimentTrials: last.experimentTrials,
+        errors: []
+      };
+      const latestOut = calculate(latestInput);
+      const latestPower = calculatePowerForObservedEffect(latestInput, latestOut, input.powerTarget);
+      const fullStats = calcWindowReachStats(points, null);
+      // Forecasted Time to reach Confidence and Power intentionally uses the main Power % input.
+      const targetPower = input.powerTarget;
+      const targetConfidence = input.confidenceLevel;
+      const latestDateMs = Number.isFinite(last.dateMs) ? last.dateMs : NaN;
+      const noStatsConfidence = { days: NaN, finite: false, reason: 'Reach growth could not be estimated.' };
+      const confidenceScenarios = [
+        { label: `${formatPct(targetConfidence, 0)} confidence for Experiment > Control`, tail: 'greater' },
+        { label: `${formatPct(targetConfidence, 0)} confidence for Experiment < Control`, tail: 'less' },
+        { label: `${formatPct(targetConfidence, 0)} two-sided confidence for experiment differs from control`, tail: 'two' }
+      ].map(scenario => {
+        const conservative = fullStats
+          ? conservativeConfidenceForecastDays(latestInput, targetConfidence, scenario.tail, fullStats.controlReachPerDay, fullStats.experimentReachPerDay)
+          : noStatsConfidence;
+        const less = fullStats
+          ? confidenceForecastDays(latestInput, targetConfidence, scenario.tail, fullStats.controlReachPerDay, fullStats.experimentReachPerDay)
+          : noStatsConfidence;
+        const conservativeTiming = formatForecastObjectTiming(conservative, latestDateMs);
+        const lessTiming = formatForecastObjectTiming(less, latestDateMs);
+        let commentary;
+        if (conservative.finite || less.finite) {
+          const requiredText = conservative && Number.isFinite(conservative.required) ? ` Conservative equal n/arm target is about ${formatNumber(conservative.required)} reach per arm.` : '';
+          commentary = `Uses latest observed rates (${formatPct(latestOut.p1, input.precision)} control, ${formatPct(latestOut.p2, input.precision)} experiment) and full-window reach growth.${requiredText}`;
+        } else {
+          commentary = less.reason || conservative.reason || 'No finite estimate under the current assumptions.';
+        }
+        return { ...scenario, conservative, less, conservativeTiming, lessTiming, commentary };
+      });
+
+      const windowDefs = [
+        { key: 'full', label: `Full window: ${first.shortLabel} -> ${last.shortLabel}`, days: null },
+        { key: 'last7', label: 'Last 7 days', days: 7 },
+        { key: 'last3', label: 'Last 3 days', days: 3 },
+        { key: 'last1', label: 'Last 1 day', days: 1 }
+      ];
+      const powerRows = windowDefs.map(def => {
+        const stats = calcWindowReachStats(points, def.days);
+        if (!stats) return { ...def, stats: null };
+        const conservative = conservativePowerForecastDays(latestInput, latestOut, targetPower, stats.controlReachPerDay, stats.experimentReachPerDay);
+        const less = lessConservativePowerForecastDays(latestInput, targetPower, stats.controlReachPerDay, stats.experimentReachPerDay);
+        return { ...def, stats, conservative, less };
+      });
+      const fullPower = powerRows.find(row => row.key === 'full') || null;
+      const selectedConfidenceScenario = confidenceScenarios.find(row => row.tail === latestInput.tail) || confidenceScenarios[0] || null;
+      const conservativeBoth = combineConfidenceAndPowerDays(selectedConfidenceScenario && selectedConfidenceScenario.conservative, fullPower && fullPower.conservative, 'Conservative');
+      const lessBoth = combineConfidenceAndPowerDays(selectedConfidenceScenario && selectedConfidenceScenario.less, fullPower && fullPower.less, 'Less-conservative');
+      const bothForecasts = [conservativeBoth, lessBoth];
+      const bothRange = pickShortestLongestBoth(bothForecasts);
+      const spend = calcSpendEfficiency(points);
+      return {
+        valid: true,
+        points,
+        first,
+        last,
+        latestInput,
+        latestOut,
+        latestPower,
+        fullStats,
+        targetPower,
+        targetConfidence,
+        latestDateMs,
+        confidenceScenarios,
+        selectedConfidenceScenario,
+        powerRows,
+        fullPower,
+        conservativeBoth,
+        lessBoth,
+        bothForecasts,
+        shortestBoth: bothRange.shortest,
+        longestBoth: bothRange.longest,
+        spend,
+        metricMeta: trend.metricMeta
+      };
+    }
+
+    function renderForecastedConfidenceRows(rows) {
+      return (rows || []).map(row => `
+        <tr>
+          <td>${escapeHtml(row.label)}</td>
+          <td class="num">${escapeHtml(row.conservativeTiming || '--')}</td>
+          <td class="num">${escapeHtml(row.lessTiming || '--')}</td>
+          <td>${escapeHtml(row.commentary)}</td>
+        </tr>`).join('');
+    }
+
+    function renderForecastedSpendRows(rows) {
+      return (rows || []).map(row => `
+        <tr>
+          <td>${escapeHtml(row.label)}</td>
+          <td class="num">${formatCurrency(row.avgDailySpend, 0)}/day</td>
+          <td class="num">${formatNumber(row.avgDailyReach, 0)}/day</td>
+          <td class="num">${Number.isFinite(row.reachPerDollar) ? formatNumber(row.reachPerDollar, 1) + ' reach / $' : '--'}</td>
+        </tr>`).join('');
+    }
+
+    function renderForecastedPowerRows(rows, baseMs) {
+      return (rows || []).map(row => {
+        if (!row.stats) {
+          return `<tr><td>${escapeHtml(row.label)}</td><td class="num">--</td><td class="num">--</td><td class="num">--</td><td class="num">--</td></tr>`;
+        }
+        const conservativeTiming = row.conservative && Number.isFinite(row.conservative.days) ? formatForecastTiming(row.conservative.days, baseMs) : '--';
+        const lessTiming = row.less && Number.isFinite(row.less.days) ? formatForecastTiming(row.less.days, baseMs) : (row.less && row.less.reason ? row.less.reason : '--');
+        return `
+          <tr>
+            <td>${escapeHtml(row.label)}</td>
+            <td class="num">${formatNumber(row.stats.controlReachPerDay, 0)}/day</td>
+            <td class="num">${formatNumber(row.stats.experimentReachPerDay, 0)}/day</td>
+            <td class="num">${escapeHtml(conservativeTiming)}</td>
+            <td class="num">${escapeHtml(lessTiming)}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function renderForecastedTimeSection(input) {
+      if (!els.forecastedTimePanel) return;
+      const model = buildForecastedTimeModel(input, trendState.last);
+      if (!model.valid) {
+        els.forecastedTimePanel.classList.add('hidden');
+        return;
+      }
+      const d = input.precision;
+      const last = model.last;
+      const fullPower = model.fullPower;
+      const selectedConfidence = model.selectedConfidenceScenario || null;
+      const conservativeConfidenceDays = selectedConfidence ? finiteForecastDays(selectedConfidence.conservative) : NaN;
+      const lessConfidenceDays = selectedConfidence ? finiteForecastDays(selectedConfidence.less) : NaN;
+      const conservativeDays = fullPower && fullPower.conservative ? fullPower.conservative.days : NaN;
+      const lessDays = fullPower && fullPower.less ? fullPower.less.days : NaN;
+      const limitingArm = fullPower && fullPower.conservative ? fullPower.conservative.limitingArm : '--';
+      const required = fullPower && fullPower.conservative ? fullPower.conservative.required : NaN;
+      const selectedTailText = tailScenarioText(input.tail);
+
+      els.forecastedTimePanel.classList.remove('hidden');
+      els.forecastedTimePill.textContent = `${formatNumber(model.points.length)} trend points`;
+      els.forecastedTimeSubtitle.textContent = 'Forecasts use the latest observed conversion rates and control/experiment reach growth from pasted cumulative trend data.';
+      if (els.forecastedTimeAssumptionNote) {
+        els.forecastedTimeAssumptionNote.innerHTML = `These estimates are based on current observed control and experiment reach-growth and conversion-rate data. Increases in campaign spend that lead to faster incremental unique reach will change the forecasts; spend that mostly increases frequency or reaches the same users may not shorten the ETA. Changes in conversion rates or conversion lag will also change confidence timing and power requirements.`;
+      }
+      els.forecastedLatestDateMetric.textContent = last.label;
+      els.forecastedCurrentConfidenceMetric.textContent = Number.isFinite(model.latestOut.statisticalConfidence) ? formatPct(model.latestOut.statisticalConfidence, d) : '--';
+      els.forecastedCurrentConfidenceSmall.textContent = `Latest p-value ${formatFlexible(model.latestOut.pForDecision, Math.max(6, d + 3))}.`;
+      els.forecastedCurrentPowerMetric.textContent = Number.isFinite(model.latestPower.observedPower) ? formatPct(model.latestPower.observedPower, 1) : '--';
+      els.forecastedCurrentPowerSmall.textContent = `Target power ${formatPct(input.powerTarget, 0)}.`;
+
+      if (els.forecastedConservativeConfidenceLabel) els.forecastedConservativeConfidenceLabel.textContent = `Conservative ETA @ ${formatPct(model.targetConfidence, 0)} confidence`;
+      if (els.forecastedLessConfidenceLabel) els.forecastedLessConfidenceLabel.textContent = `Less-conservative ETA @ ${formatPct(model.targetConfidence, 0)} confidence`;
+      if (els.forecastedConservativeConfidenceMetric) els.forecastedConservativeConfidenceMetric.textContent = formatEtaMetricValue(conservativeConfidenceDays);
+      if (els.forecastedConservativeConfidenceSmall) els.forecastedConservativeConfidenceSmall.textContent = formatEtaMetricSmall(conservativeConfidenceDays, model.latestDateMs, selectedConfidence && selectedConfidence.conservative && selectedConfidence.conservative.reason ? selectedConfidence.conservative.reason : `Selected tail: ${selectedTailText}.`);
+      if (els.forecastedLessConfidenceMetric) els.forecastedLessConfidenceMetric.textContent = formatEtaMetricValue(lessConfidenceDays);
+      if (els.forecastedLessConfidenceSmall) els.forecastedLessConfidenceSmall.textContent = formatEtaMetricSmall(lessConfidenceDays, model.latestDateMs, selectedConfidence && selectedConfidence.less && selectedConfidence.less.reason ? selectedConfidence.less.reason : `Selected tail: ${selectedTailText}.`);
+
+      els.forecastedConservativePowerLabel.textContent = `Conservative ETA @ ${formatPct(model.targetPower, 0)} power`;
+      els.forecastedLessPowerLabel.textContent = `Less-conservative ETA @ ${formatPct(model.targetPower, 0)} power`;
+      els.forecastedConservativePowerMetric.textContent = Number.isFinite(conservativeDays) ? `${formatNumber(conservativeDays)} days` : '--';
+      els.forecastedConservativePowerSmall.textContent = Number.isFinite(conservativeDays) ? `${formatNumber(conservativeDays / 7, 1)} weeks / ${formatNumber(conservativeDays / 30.4375, 1)} months; ${formatDateFromBaseDays(model.latestDateMs, conservativeDays)}` : 'Equal n/arm helper logic.';
+      els.forecastedLessPowerMetric.textContent = Number.isFinite(lessDays) ? `${formatNumber(lessDays)} days` : '--';
+      els.forecastedLessPowerSmall.textContent = Number.isFinite(lessDays) ? `${formatNumber(lessDays / 7, 1)} weeks / ${formatNumber(lessDays / 30.4375, 1)} months; ${formatDateFromBaseDays(model.latestDateMs, lessDays)}` : 'Uses actual projected arm sizes.';
+
+      if (els.forecastedShortestBothLabel) els.forecastedShortestBothLabel.textContent = `Shortest ETA to reach both ${formatPct(model.targetConfidence, 0)} confidence and ${formatPct(model.targetPower, 0)} power`;
+      if (els.forecastedLongestBothLabel) els.forecastedLongestBothLabel.textContent = `Longest ETA to reach both ${formatPct(model.targetConfidence, 0)} confidence and ${formatPct(model.targetPower, 0)} power`;
+      if (els.forecastedShortestBothMetric) els.forecastedShortestBothMetric.textContent = model.shortestBoth ? formatEtaMetricValue(model.shortestBoth.days) : 'No finite ETA';
+      if (els.forecastedShortestBothSmall) els.forecastedShortestBothSmall.textContent = model.shortestBoth ? `${model.shortestBoth.methodLabel}; limited by ${model.shortestBoth.limitingTarget}; ${formatEtaMetricSmall(model.shortestBoth.days, model.latestDateMs, '')}` : `Selected tail: ${selectedTailText}.`;
+      if (els.forecastedLongestBothMetric) els.forecastedLongestBothMetric.textContent = model.longestBoth ? formatEtaMetricValue(model.longestBoth.days) : 'No finite ETA';
+      if (els.forecastedLongestBothSmall) els.forecastedLongestBothSmall.textContent = model.longestBoth ? `${model.longestBoth.methodLabel}; limited by ${model.longestBoth.limitingTarget}; ${formatEtaMetricSmall(model.longestBoth.days, model.latestDateMs, '')}` : `Selected tail: ${selectedTailText}.`;
+
+      els.forecastedConfidenceNote.innerHTML = `Using the latest observed rates as the forward assumption, confidence timing depends on the future p-value. The two top confidence ETA cards use the selected hypothesis/tail (<strong>${escapeHtml(selectedTailText)}</strong>) and the selected confidence level (<strong>${formatPct(model.targetConfidence, 0)}</strong>). The table below also shows alternate confidence scenarios. If the current observed direction is opposite a scenario, that scenario has no finite estimate unless future rates change.`;
+      els.forecastedConfidenceRows.innerHTML = renderForecastedConfidenceRows(model.confidenceScenarios);
+
+      if (model.spend && model.spend.hasSpend) {
+        els.forecastedSpendBlock.classList.remove('hidden');
+        els.forecastedSpendTitle.textContent = `Spend and reach efficiency from ${model.first.shortLabel} to ${model.last.shortLabel}`;
+        els.forecastedSpendRows.innerHTML = renderForecastedSpendRows(model.spend.rows);
+        if (els.forecastedSpendNote) {
+          els.forecastedSpendNote.innerHTML = `Avg daily spend growth = (latest cumulative spend - first cumulative spend) / elapsed days. Approx reach per $1 = avg new reach/day / avg daily spend growth. Spend insights are hidden automatically when cumulative spend columns are not provided.`;
+        }
+      } else {
+        els.forecastedSpendBlock.classList.add('hidden');
+        els.forecastedSpendRows.innerHTML = '';
+      }
+
+      els.forecastedConservativePowerHeader.textContent = `Conservative helper estimate to ${formatPct(model.targetPower, 0)} power`;
+      els.forecastedLessPowerHeader.textContent = `Less-conservative estimate to ${formatPct(model.targetPower, 0)} power`;
+      els.forecastedPowerRows.innerHTML = renderForecastedPowerRows(model.powerRows, model.latestDateMs);
+
+      if (els.forecastedComparisonRows) {
+        const conservativeFullTiming = Number.isFinite(conservativeDays) ? formatForecastTiming(conservativeDays, model.latestDateMs) : '--';
+        const lessFullTiming = Number.isFinite(lessDays) ? formatForecastTiming(lessDays, model.latestDateMs) : '--';
+        const conservativeConfidenceTiming = selectedConfidence ? formatForecastObjectTiming(selectedConfidence.conservative, model.latestDateMs) : '--';
+        const lessConfidenceTiming = selectedConfidence ? formatForecastObjectTiming(selectedConfidence.less, model.latestDateMs) : '--';
+        const conservativeBothTiming = model.conservativeBoth && model.conservativeBoth.finite ? formatForecastTiming(model.conservativeBoth.days, model.latestDateMs) : (model.conservativeBoth ? model.conservativeBoth.reason : '--');
+        const lessBothTiming = model.lessBoth && model.lessBoth.finite ? formatForecastTiming(model.lessBoth.days, model.latestDateMs) : (model.lessBoth ? model.lessBoth.reason : '--');
+        const shortestBothTiming = model.shortestBoth ? formatForecastTiming(model.shortestBoth.days, model.latestDateMs) : 'No finite combined ETA';
+        const longestBothTiming = model.longestBoth ? formatForecastTiming(model.longestBoth.days, model.latestDateMs) : 'No finite combined ETA';
+        els.forecastedComparisonRows.innerHTML = renderRows([
+          ['Conservative selected-tail confidence estimate', conservativeConfidenceTiming, `Solves the equal n/arm reach needed for ${formatPct(model.targetConfidence, 0)} confidence under the selected tail (${selectedTailText}), then waits until both arms reach that same threshold.`],
+          ['Less-conservative selected-tail confidence estimate', lessConfidenceTiming, `Projects actual future control and experiment reach, keeps latest observed rates fixed, and checks when the selected-tail p-value clears ${formatPct(model.targetConfidence, 0)} confidence.`],
+          ['Conservative current-helper power estimate', conservativeFullTiming, `Calculates required n/arm at ${formatPct(model.targetPower, 0)} power, then waits until both arms individually reach that same Audience Reach threshold. The slower arm determines the date.`],
+          ['Less-conservative unequal-growth power estimate', lessFullTiming, `Projects actual future control and experiment reach using observed reach-growth rates, keeps latest observed conversion rates fixed, and checks when projected observed power reaches ${formatPct(model.targetPower, 0)}.`],
+          ['Conservative ETA to reach both targets', conservativeBothTiming, `Takes the later of the conservative confidence ETA and conservative power ETA.`],
+          ['Less-conservative ETA to reach both targets', lessBothTiming, `Takes the later of the less-conservative confidence ETA and less-conservative power ETA.`],
+          ['Shortest ETA to reach both targets', shortestBothTiming, `Earliest finite combined ETA across the conservative and less-conservative methods.`],
+          ['Longest ETA to reach both targets', longestBothTiming, `Latest finite combined ETA across the conservative and less-conservative methods.`]
+        ]);
+      }
+      if (els.forecastedMethodNote) {
+        els.forecastedMethodNote.innerHTML = `Power timing and confidence timing answer different questions. Power timing estimates when the test should have enough sample to detect an effect this large. Confidence timing estimates when the future p-value would clear the selected confidence threshold if the latest observed rates persist. The combined ETA to reach both targets takes the later of the confidence ETA and power ETA within each method. These are forward projections, not guarantees of future conversion rate, reach growth, spend efficiency, or conversion-lag behavior.`;
+      }
+
+      if (Number.isFinite(conservativeDays)) {
+        const conservativeDuration = formatDurationFromDays(conservativeDays);
+        const conservativeDate = formatDateFromBaseDays(model.latestDateMs, conservativeDays);
+        const lessText = Number.isFinite(lessDays)
+          ? ` The less-conservative projection reaches ${formatPct(model.targetPower, 0)} observed power in about ${formatDurationFromDays(lessDays)}, landing around ${formatDateFromBaseDays(model.latestDateMs, lessDays)}.`
+          : '';
+        els.forecastedPowerNote.innerHTML = `Using the full observed window, the conservative current-helper logic estimates roughly <strong>${formatNumber(conservativeDays)} more days</strong>, or <strong>${conservativeDuration}</strong>, from the latest trend date. Anchored to ${last.label}, that lands around <strong>${conservativeDate}</strong>. The limiting arm is <strong>${escapeHtml(limitingArm)}</strong>, because the helper requires both arms to reach the same required n/arm target of about <strong>${formatNumber(required)}</strong>.${lessText}<br><br><strong>Conservative method:</strong> uses the current helper logic: calculate required n/arm for the observed absolute effect, then wait until both arms individually reach that same n/arm target. <strong>Less-conservative method:</strong> projects actual unequal arm sizes forward using the observed reach-growth rates and latest observed conversion rates, then checks when observed power reaches the selected target. It can be earlier when one arm is already much larger or growing faster.`;
+      } else {
+        els.forecastedPowerNote.innerHTML = 'Power timing cannot be forecast from the trend data until the calculator can estimate required n/arm and positive reach growth for both arms.';
+      }
+    }
+
+    function buildForecastedTimeReportSection(currentInput, trend) {
+      const model = buildForecastedTimeModel(currentInput, trend);
+      if (!model.valid) return '';
+      const d = currentInput.precision;
+      const fullPower = model.fullPower;
+      const selectedConfidence = model.selectedConfidenceScenario || null;
+      const conservativeConfidenceDays = selectedConfidence ? finiteForecastDays(selectedConfidence.conservative) : NaN;
+      const lessConfidenceDays = selectedConfidence ? finiteForecastDays(selectedConfidence.less) : NaN;
+      const conservativeDays = fullPower && fullPower.conservative ? fullPower.conservative.days : NaN;
+      const lessDays = fullPower && fullPower.less ? fullPower.less.days : NaN;
+      const limitingArm = fullPower && fullPower.conservative ? fullPower.conservative.limitingArm : '--';
+      const required = fullPower && fullPower.conservative ? fullPower.conservative.required : NaN;
+      const selectedTailText = tailScenarioText(currentInput.tail);
+      const confidenceRows = renderForecastedConfidenceRows(model.confidenceScenarios);
+      const spendSection = model.spend && model.spend.hasSpend ? `
+    <h3>Spend and reach efficiency from ${escapeHtml(model.first.shortLabel)} to ${escapeHtml(model.last.shortLabel)}</h3>
+    <div class="table-wrap"><table><thead><tr><th>Arm</th><th class="num">Avg daily spend growth</th><th class="num">Avg new reach/day</th><th class="num">Approx reach per $1</th></tr></thead><tbody>${renderForecastedSpendRows(model.spend.rows)}</tbody></table></div>` : '';
+      const powerRows = renderForecastedPowerRows(model.powerRows, model.latestDateMs);
+      const conservativeText = Number.isFinite(conservativeDays)
+        ? `Using the full observed window, the conservative helper logic estimates roughly ${formatNumber(conservativeDays)} more days, or ${formatDurationFromDays(conservativeDays)}, from ${model.last.label}. That lands around ${formatDateFromBaseDays(model.latestDateMs, conservativeDays)}. The limiting arm is ${limitingArm}, and the required n/arm target is about ${formatNumber(required)}.`
+        : 'Power timing cannot be forecast from the trend data until required n/arm and positive reach growth are available.';
+      const lessText = Number.isFinite(lessDays)
+        ? ` The less-conservative projection reaches ${formatPct(model.targetPower, 0)} observed power in about ${formatDurationFromDays(lessDays)}, around ${formatDateFromBaseDays(model.latestDateMs, lessDays)}.`
+        : '';
+      const conservativeConfidenceTiming = selectedConfidence ? formatForecastObjectTiming(selectedConfidence.conservative, model.latestDateMs) : '--';
+      const lessConfidenceTiming = selectedConfidence ? formatForecastObjectTiming(selectedConfidence.less, model.latestDateMs) : '--';
+      const conservativeFullTiming = Number.isFinite(conservativeDays) ? formatForecastTiming(conservativeDays, model.latestDateMs) : '--';
+      const lessFullTiming = Number.isFinite(lessDays) ? formatForecastTiming(lessDays, model.latestDateMs) : '--';
+      const conservativeBothTiming = model.conservativeBoth && model.conservativeBoth.finite ? formatForecastTiming(model.conservativeBoth.days, model.latestDateMs) : (model.conservativeBoth ? model.conservativeBoth.reason : '--');
+      const lessBothTiming = model.lessBoth && model.lessBoth.finite ? formatForecastTiming(model.lessBoth.days, model.latestDateMs) : (model.lessBoth ? model.lessBoth.reason : '--');
+      const shortestBothTiming = model.shortestBoth ? formatForecastTiming(model.shortestBoth.days, model.latestDateMs) : 'No finite combined ETA';
+      const longestBothTiming = model.longestBoth ? formatForecastTiming(model.longestBoth.days, model.latestDateMs) : 'No finite combined ETA';
+      const comparisonRows = renderRows([
+        ['Conservative selected-tail confidence estimate', conservativeConfidenceTiming, `Solves the equal n/arm reach needed for ${formatPct(model.targetConfidence, 0)} confidence under the selected tail (${selectedTailText}), then waits until both arms reach that same threshold.`],
+        ['Less-conservative selected-tail confidence estimate', lessConfidenceTiming, `Projects actual future control and experiment reach, keeps latest observed rates fixed, and checks when the selected-tail p-value clears ${formatPct(model.targetConfidence, 0)} confidence.`],
+        ['Conservative current-helper power estimate', conservativeFullTiming, `Calculates required n/arm at ${formatPct(model.targetPower, 0)} power, then waits until both arms individually reach that same Audience Reach threshold. The slower arm determines the date.`],
+        ['Less-conservative unequal-growth power estimate', lessFullTiming, `Projects actual future control and experiment reach using observed reach-growth rates, keeps latest observed conversion rates fixed, and checks when projected observed power reaches ${formatPct(model.targetPower, 0)}.`],
+        ['Conservative ETA to reach both targets', conservativeBothTiming, 'Takes the later of the conservative confidence ETA and conservative power ETA.'],
+        ['Less-conservative ETA to reach both targets', lessBothTiming, 'Takes the later of the less-conservative confidence ETA and less-conservative power ETA.'],
+        ['Shortest ETA to reach both targets', shortestBothTiming, 'Earliest finite combined ETA across the conservative and less-conservative methods.'],
+        ['Longest ETA to reach both targets', longestBothTiming, 'Latest finite combined ETA across the conservative and less-conservative methods.']
+      ]);
+      return `
+    <section class="card">
+      <h2>Forecasted Time to reach Confidence and Power</h2>
+      <div class="note">These estimates are based on current observed control and experiment reach-growth and conversion-rate data. Increases in campaign spend that lead to faster incremental unique reach will change the forecasts; spend that mostly increases frequency or reaches the same users may not shorten the ETA. Changes in conversion rates or conversion lag will also change confidence timing and power requirements.</div>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">Latest trend date</div><div class="v">${escapeHtml(model.last.label)}</div><div class="s">Forecast anchor date.</div></div>
+        <div class="metric"><div class="k">Latest calculated confidence</div><div class="v">${formatPct(model.latestOut.statisticalConfidence, d)}</div><div class="s">1 - decision p-value.</div></div>
+        <div class="metric"><div class="k">Latest observed power</div><div class="v">${Number.isFinite(model.latestPower.observedPower) ? formatPct(model.latestPower.observedPower, 1) : '--'}</div><div class="s">Observed effect, current settings.</div></div>
+        <div class="metric"><div class="k">Conservative ETA @ ${formatPct(model.targetConfidence, 0)} confidence</div><div class="v">${escapeHtml(formatEtaMetricValue(conservativeConfidenceDays))}</div><div class="s">${escapeHtml(formatEtaMetricSmall(conservativeConfidenceDays, model.latestDateMs, selectedConfidence && selectedConfidence.conservative && selectedConfidence.conservative.reason ? selectedConfidence.conservative.reason : `Selected tail: ${selectedTailText}.`))}</div></div>
+        <div class="metric"><div class="k">Less-conservative ETA @ ${formatPct(model.targetConfidence, 0)} confidence</div><div class="v">${escapeHtml(formatEtaMetricValue(lessConfidenceDays))}</div><div class="s">${escapeHtml(formatEtaMetricSmall(lessConfidenceDays, model.latestDateMs, selectedConfidence && selectedConfidence.less && selectedConfidence.less.reason ? selectedConfidence.less.reason : `Selected tail: ${selectedTailText}.`))}</div></div>
+        <div class="metric"><div class="k">Conservative ETA @ ${formatPct(model.targetPower, 0)} power</div><div class="v">${Number.isFinite(conservativeDays) ? formatNumber(conservativeDays) + ' days' : '--'}</div><div class="s">${Number.isFinite(conservativeDays) ? escapeHtml(formatDateFromBaseDays(model.latestDateMs, conservativeDays)) : 'Equal n/arm helper logic.'}</div></div>
+        <div class="metric"><div class="k">Less-conservative ETA @ ${formatPct(model.targetPower, 0)} power</div><div class="v">${Number.isFinite(lessDays) ? formatNumber(lessDays) + ' days' : '--'}</div><div class="s">${Number.isFinite(lessDays) ? escapeHtml(formatDateFromBaseDays(model.latestDateMs, lessDays)) : 'Actual projected arm sizes.'}</div></div>
+        <div class="metric"><div class="k">Shortest ETA to reach both</div><div class="v">${escapeHtml(model.shortestBoth ? formatEtaMetricValue(model.shortestBoth.days) : 'No finite ETA')}</div><div class="s">${escapeHtml(model.shortestBoth ? `${model.shortestBoth.methodLabel}; limited by ${model.shortestBoth.limitingTarget}; ${formatEtaMetricSmall(model.shortestBoth.days, model.latestDateMs, '')}` : `Selected tail: ${selectedTailText}.`)}</div></div>
+        <div class="metric"><div class="k">Longest ETA to reach both</div><div class="v">${escapeHtml(model.longestBoth ? formatEtaMetricValue(model.longestBoth.days) : 'No finite ETA')}</div><div class="s">${escapeHtml(model.longestBoth ? `${model.longestBoth.methodLabel}; limited by ${model.longestBoth.limitingTarget}; ${formatEtaMetricSmall(model.longestBoth.days, model.latestDateMs, '')}` : `Selected tail: ${selectedTailText}.`)}</div></div>
+      </div>
+      <div class="note">Using the latest observed rates as the forward assumption, confidence timing depends on the future p-value. The top confidence ETA cards use the selected hypothesis/tail (${escapeHtml(selectedTailText)}) and selected confidence level (${formatPct(model.targetConfidence, 0)}). If the current observed direction is opposite a confidence scenario, that scenario has no finite estimate unless future rates change.</div>
+      <div class="table-wrap"><table><thead><tr><th>Confidence forecast scenario</th><th class="num">Conservative equal n/arm estimate</th><th class="num">Less-conservative projected estimate</th><th>Commentary</th></tr></thead><tbody>${confidenceRows}</tbody></table></div>
+      ${spendSection}
+      <div class="note">${escapeHtml(conservativeText + lessText)} Conservative method: calculate required n/arm for the observed absolute effect, then wait until both arms individually reach that same n/arm target. Less-conservative method: project actual unequal arm sizes forward using observed reach-growth rates and latest observed conversion rates, then check when observed power reaches the selected target. Combined ETA to reach both targets takes the later of the confidence ETA and power ETA within each method.</div>
+      <div class="table-wrap"><table><thead><tr><th>Reach-growth window</th><th class="num">Control avg new reach/day</th><th class="num">Experiment avg new reach/day</th><th class="num">Conservative helper estimate to ${formatPct(model.targetPower, 0)} power</th><th class="num">Less-conservative estimate to ${formatPct(model.targetPower, 0)} power</th></tr></thead><tbody>${powerRows}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Estimate type</th><th>Full-window timing</th><th>How it is calculated</th></tr></thead><tbody>${comparisonRows}</tbody></table></div>
+    </section>`;
+    }
+
     function buildReportTableRows(rows) {
       return rows.map(row => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td><td>${escapeHtml(row[2] || '')}</td></tr>`).join('');
     }
@@ -3595,6 +4405,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const uaEventTrendRows = hasUaEventTrend ? formatTrendRows(trend.event.points, currentInput) : '';
       const uaEventErrorNote = currentInput.experimentType === 'UA' && currentInput.showUaEventChart && trend && trend.event && !trend.event.valid && trend.event.errors.length ? `<div class="note">${escapeHtml(trend.event.errors.join(' '))}</div>` : '';
       const uaEventLiftNote = 'For UA incrementality experiments, Liftoff defines A-event lift as tied to install lift: if the install is incremental, downstream A-event activity from that install is also considered incremental. This optional chart shows a diagnostic event-rate view by comparing A-event counts against reach for control vs experiment. The event-rate view of conversion rate differences can reflect "quality" differences between organic driven behavior post install vs paid media driven behavior post install. For UA lift experiments, A-event lift should still be interpreted as anchored to install lift. IE if install lift was X% then A event lift is also X%.';
+      const forecastedTimeReportSection = currentInput.includeForecastTimingReport ? buildForecastedTimeReportSection(currentInput, trend) : '';
       const uaEventReportSection = currentInput.experimentType === 'UA' && currentInput.showUaEventChart ? `
     <section class="card">
       <h2>A Event Trend Chart</h2>
@@ -3617,6 +4428,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Use case', currentInput.experimentType, currentInput.experimentType === 'RE' ? 'RE uses event conversions.' : 'UA uses install conversions.'],
         ['Event counts are unique?', currentInput.eventCountsUnique ? 'Yes' : 'No', `Event charts use ${eventMeta.controlRequiredLabel} and ${eventMeta.experimentRequiredLabel}. Install counts for UA are always treated as unique.`],
         ['Show A event chart?', currentInput.experimentType === 'UA' ? (currentInput.showUaEventChart ? 'Yes' : 'No') : 'Not applicable', 'When enabled for UA, the report includes a second A-event trend chart.'],
+        ['Include Forecast ETA timing in static HTML report output?', currentInput.includeForecastTimingReport ? 'Yes' : 'No', 'When enabled, the report includes the Forecasted Time to reach Confidence and Power section.'],
         ['Current calculator control input', `${formatNumber(currentInput.controlConversions)} conversions / ${formatNumber(currentInput.controlTrials)} reach`, 'Manual calculator input at report download time.'],
         ['Current calculator experiment input', `${formatNumber(currentInput.experimentConversions)} conversions / ${formatNumber(currentInput.experimentTrials)} reach`, 'Manual calculator input at report download time.'],
         ['Confidence level', formatPct(currentInput.confidenceLevel, 0), 'Used for p-value decisioning and confidence intervals.'],
@@ -3726,6 +4538,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       <div class="note">Left-axis bars show ${escapeHtml(meta.liftLabel)} and ${escapeHtml(meta.incrementalLabel)}. Right-axis lines show calculated confidence % and observed power %. Hover over any bar or line point to see its value.</div>
       <div class="trend-chart-wrap"><div class="trend-chart">${chartMarkup}</div></div>
     </section>
+
+    ${forecastedTimeReportSection}
 
     <section class="card">
       <h2>${escapeHtml(primaryTrendDataTitle)}</h2>
@@ -3899,6 +4713,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       ]);
 
       renderTrend(input);
+      renderForecastedTimeSection(input);
 
       const isExperimentHigher = out.diff > 0;
       if (input.tail === 'greater') {
@@ -3931,6 +4746,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       params.set('experiment', `${input.experimentConversions},${input.experimentTrials}`);
       params.set('eventCountsUnique', input.eventCountsUnique ? '1' : '0');
       params.set('showUaEventChart', input.showUaEventChart ? '1' : '0');
+      params.set('includeForecastTimingReport', input.includeForecastTimingReport ? '1' : '0');
       params.set('controlLabel', input.controlLabel);
       params.set('experimentLabel', input.experimentLabel);
       if (input.experimentType === 'RE') {
@@ -3942,7 +4758,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       params.set('confidence', input.confidenceLevel);
       params.set('tail', input.tail);
       params.set('powerTarget', input.powerTarget);
-      params.set('forecastPowerTarget', input.forecastPowerTarget);
+      params.set('forecastPowerTarget', input.powerTarget);
       params.set('plannerPower', els.plannerPower.value);
       params.set('plannerControlAllocation', els.plannerControlAllocation.value);
       params.set('plannerDurationDays', els.plannerDurationDays.value);
@@ -3987,7 +4803,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         `Observed power: ${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'}`,
         `Required n / arm @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--'}`,
         `Additional n needed for smaller arm: ${Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--'}`,
-        `Estimated time until both arms are powered @ ${formatPct(forecastPower.targetPower, 0)} power: ${Number.isFinite(daysToReady) ? formatDurationFromDays(daysToReady) : '--'}`,
+        `Estimated time until both arms are powered @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(daysToReady) ? formatDurationFromDays(daysToReady) : '--'}`,
         `Confidence interval for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`
       ].join('\n');
     }
@@ -3997,6 +4813,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.experimentType.value = 'UA';
       if (els.eventCountsUnique) els.eventCountsUnique.checked = true;
       if (els.showUaEventChart) els.showUaEventChart.checked = false;
+      if (els.includeForecastTimingReport) els.includeForecastTimingReport.checked = true;
       els.controlLabel.value = 'control';
       els.experimentLabel.value = 'experiment';
       els.controlConversionName.value = 'A - Event';
@@ -4043,7 +4860,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     }
 
     for (const el of [
-      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.controlLabel, els.experimentLabel, els.controlConversionName,
+      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.includeForecastTimingReport, els.controlLabel, els.experimentLabel, els.controlConversionName,
       els.experimentConversionName, els.controlConversions, els.controlTrials,
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
       els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
