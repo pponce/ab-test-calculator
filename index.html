@@ -1371,17 +1371,17 @@
             </div>
             <div class="metric-grid">
               <div class="metric">
-                <div class="k">Difference CI</div>
+                <div class="k">Difference confidence interval</div>
                 <div class="v" id="differenceCiMetric">--</div>
                 <div class="s" id="differenceCiSmall">Experiment - control</div>
               </div>
               <div class="metric">
-                <div class="k">Control CI</div>
+                <div class="k">Control confidence interval</div>
                 <div class="v" id="controlCiMetric">--</div>
                 <div class="s" id="controlCiSmall">Control rate interval</div>
               </div>
               <div class="metric">
-                <div class="k">Experiment CI</div>
+                <div class="k">Experiment confidence interval</div>
                 <div class="v" id="experimentCiMetric">--</div>
                 <div class="s" id="experimentCiSmall">Experiment rate interval</div>
               </div>
@@ -1664,8 +1664,8 @@ J2 = experiment reach growth per selected period; leave blank to reuse control g
 K2 = p-value output
 L2 = required n / arm output
 M2 = observed power output
-N2 = CI lower-bound output
-O2 = CI upper-bound output
+N2 = confidence interval lower-bound output
+O2 = confidence interval upper-bound output
 P2 = required control N from planning helper
 Q2 = required experiment N from planning helper
 R2 = planned test length in days
@@ -1696,13 +1696,13 @@ False-positive risk:
 Z-score:
 =LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,pooledrate,(controlconv+experimentconv)/(controlreach+experimentreach),standarderror,SQRT(pooledrate*(1-pooledrate)*(1/controlreach+1/experimentreach)),(experimentrate-controlrate)/standarderror)</div>
 
-            <div class="code-block">Difference CI lower bound:
+            <div class="code-block">Difference confidence interval lower bound:
 =LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,difference,experimentrate-controlrate,standarderror,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),zcrit,NORM.S.INV(1-(1-confidence)/2),difference-zcrit*standarderror)
 
-Difference CI upper bound:
+Difference confidence interval upper bound:
 =LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,difference,experimentrate-controlrate,standarderror,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),zcrit,NORM.S.INV(1-(1-confidence)/2),difference+zcrit*standarderror)
 
-CI crosses zero? TRUE/FALSE:
+Confidence interval crosses zero? TRUE/FALSE:
 =AND(N2<=0,O2>=0)</div>
 
             <div class="code-block">Observed power for the current effect:
@@ -2244,18 +2244,18 @@ Total planned spend:
       const width = Math.max(0.5, Math.abs(highPos - lowPos));
 
       els.ciVisual.className = 'ci-visual ' + (crossesZero ? 'ci-crosses' : out.ciLow > 0 ? 'ci-positive' : 'ci-negative');
-      const zeroStatus = crossesZero ? '0 lift is plausible' : '0 lift is outside the CI';
-      els.ciVisualLabel.textContent = `${zeroStatus}; observed ${formatPctPoint(out.diff, d)}; CI ${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`;
+      const zeroStatus = crossesZero ? '0 lift is plausible' : '0 lift is outside the confidence interval';
+      els.ciVisualLabel.textContent = `${zeroStatus}; observed ${formatPctPoint(out.diff, d)}; confidence interval ${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`;
       if (crossesZero) {
-        els.ciVisualTitle.textContent = 'The CI crosses the 0-lift line';
+        els.ciVisualTitle.textContent = 'The confidence interval crosses the 0-lift line';
         els.ciVisualStatus.textContent = '0 lift plausible';
         els.ciVisualNote.textContent = `Because the interval touches the 0-lift line, use the callout below for the significance interpretation.`;
       } else if (out.ciLow > 0) {
-        els.ciVisualTitle.textContent = 'The CI is fully above 0 lift';
+        els.ciVisualTitle.textContent = 'The confidence interval is fully above 0 lift';
         els.ciVisualStatus.textContent = 'Positive lift supported';
         els.ciVisualNote.textContent = `The whole interval is above 0, so the data support positive lift at ${formatPct(1 - out.alphaAdjusted, 0)} confidence.`;
       } else {
-        els.ciVisualTitle.textContent = 'The CI is fully below 0 lift';
+        els.ciVisualTitle.textContent = 'The confidence interval is fully below 0 lift';
         els.ciVisualStatus.textContent = 'Negative lift supported';
         els.ciVisualNote.textContent = `The whole interval is below 0, so the data support negative lift at ${formatPct(1 - out.alphaAdjusted, 0)} confidence.`;
       }
@@ -2283,14 +2283,14 @@ Total planned spend:
       const controlRange = `[${formatPct(controlCi.low, d)}, ${formatPct(controlCi.high, d)}]`;
       const experimentRange = `[${formatPct(experimentCi.low, d)}, ${formatPct(experimentCi.high, d)}]`;
 
-      els.ciPanelSubtitle.textContent = `${formatPct(ciConfidence, 0)} CI for (${input.experimentLabel} rate - ${input.controlLabel} rate).`;
+      els.ciPanelSubtitle.textContent = `${formatPct(ciConfidence, 0)} confidence interval for (${input.experimentLabel} rate - ${input.controlLabel} rate).`;
       els.ciPill.textContent = crossesZero ? 'Crosses zero' : 'Does not cross zero';
       els.differenceCiMetric.textContent = diffRange;
-      els.differenceCiSmall.textContent = `${formatPct(ciConfidence, 0)} CI for experiment - control`;
+      els.differenceCiSmall.textContent = `${formatPct(ciConfidence, 0)} confidence interval for experiment - control`;
       els.controlCiMetric.textContent = controlRange;
-      els.controlCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} CI for ${input.controlLabel} rate`;
+      els.controlCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} confidence interval for ${input.controlLabel} rate`;
       els.experimentCiMetric.textContent = experimentRange;
-      els.experimentCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} CI for ${input.experimentLabel} rate`;
+      els.experimentCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} confidence interval for ${input.experimentLabel} rate`;
       renderCiVisual(input, out, crossesZero);
 
       if (crossesZero) {
@@ -2434,12 +2434,12 @@ Total planned spend:
       const desiredDirectionMet = input.tail === 'greater' ? positiveLift : input.tail === 'less' ? negativeLift : true;
       const directionText = positiveLift ? 'experiment is currently above control' : negativeLift ? 'experiment is currently below control' : 'experiment and control are tied';
       const ciText = ciCrossesZero
-        ? 'CI status: crosses 0.'
+        ? 'Confidence interval status: crosses 0.'
         : positiveLift && out.ciLow > 0
-          ? 'CI status: fully above 0.'
+          ? 'Confidence interval status: fully above 0.'
           : negativeLift && out.ciHigh < 0
-            ? 'CI status: fully below 0.'
-            : 'CI status: does not cross 0.';
+            ? 'Confidence interval status: fully below 0.'
+            : 'Confidence interval status: does not cross 0.';
       let title;
       let body;
       let cls = 'warn';
@@ -2466,7 +2466,7 @@ Total planned spend:
         cls = 'warn';
       }
 
-      const ciStatus = ciCrossesZero ? 'CI crosses 0' : 'CI does not cross 0';
+      const ciStatus = ciCrossesZero ? 'confidence interval crosses 0' : 'confidence interval does not cross 0';
       body += `<br><br><strong>Decision check:</strong> calculated confidence ${formatPct(out.statisticalConfidence, 1)} vs target ${formatPct(targetConfidence, 0)}; observed power ${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'} vs target ${formatPct(targetPower, 0)}; ${ciStatus}.`;
       els.interpretationCard.className = `interpretation-card ${cls}`;
       els.interpretationTitle.textContent = title;
@@ -2580,7 +2580,7 @@ Total planned spend:
       const forecast = reachForecastCalc(input, out, input.forecastPowerTarget);
       const planner = getPlannerEstimate(input);
       const alphaText = input.comparisons > 1
-        ? `${formatFlexible(out.alpha, dMore)} / ${input.comparisons} = ${formatFlexible(out.alphaAdjusted, dMore)} for the adjusted CI; p-value shown with Bonferroni adjustment for decision.`
+        ? `${formatFlexible(out.alpha, dMore)} / ${input.comparisons} = ${formatFlexible(out.alphaAdjusted, dMore)} for the adjusted confidence interval; p-value shown with Bonferroni adjustment for decision.`
         : `${formatFlexible(out.alpha, dMore)}.`;
       let pFormula;
       if (input.tail === 'greater') {
@@ -2633,16 +2633,16 @@ ${out.significant ? 'Reject H0: statistically significant.' : 'Fail to reject H0
         {
           title: 'Confidence interval on the difference',
           body: `Unpooled SE = sqrt[p1(1-p1)/n1 + p2(1-p2)/n2] = ${formatFlexible(out.unpooledSe, dMore)}.
-CI z = ${formatNumber(out.ciZ, 4)}.
-CI margin = z x unpooled SE = ${formatPctPoint(out.ciMargin, d)}.
-${formatPct(1 - out.alphaAdjusted, d)} CI for (p2 - p1) = ${formatPctPoint(out.diff, d)} +/- ${formatPctPoint(out.ciMargin, d)} = [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}].`
+Confidence interval z = ${formatNumber(out.ciZ, 4)}.
+Confidence interval margin = z x unpooled SE = ${formatPctPoint(out.ciMargin, d)}.
+${formatPct(1 - out.alphaAdjusted, d)} confidence interval for (p2 - p1) = ${formatPctPoint(out.diff, d)} +/- ${formatPctPoint(out.ciMargin, d)} = [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}].`
         },
         {
           title: 'Control and experiment rate intervals',
-          body: `Each arm CI uses rate +/- z x sqrt[p(1-p)/n].
+          body: `Each arm confidence interval uses rate +/- z x sqrt[p(1-p)/n].
 Control SE = sqrt[${formatFlexible(out.p1, dMore)} x ${formatFlexible(1 - out.p1, dMore)} / ${formatNumber(input.controlTrials)}].
 Experiment SE = sqrt[${formatFlexible(out.p2, dMore)} x ${formatFlexible(1 - out.p2, dMore)} / ${formatNumber(input.experimentTrials)}].
-These produce the Control CI and Experiment CI shown above.`
+These produce the control confidence interval and experiment confidence interval shown above.`
         },
         {
           title: 'Statistical power for this observed effect',
@@ -3319,7 +3319,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Calculated confidence %', formatPct(reportOut.statisticalConfidence, d), '1 - decision p-value.'],
         ['Observed power', Number.isFinite(reportPower.observedPower) ? formatPct(reportPower.observedPower, 1) : '--', 'Post-hoc view based on the observed absolute effect size.'],
         ['False-negative risk', Number.isFinite(reportPower.observedPower) ? formatPct(1 - reportPower.observedPower, 1) : '--', 'Approximate risk of missing an effect this large.'],
-        ['Difference CI', `${formatPctPoint(reportOut.ciLow, d)} to ${formatPctPoint(reportOut.ciHigh, d)}`, 'Confidence interval for experiment - control.'],
+        ['Difference confidence interval', `${formatPctPoint(reportOut.ciLow, d)} to ${formatPctPoint(reportOut.ciHigh, d)}`, 'Confidence interval for experiment - control.'],
         [meta.incrementalLabel, lastPoint && Number.isFinite(lastPoint.incrementalPct) ? formatPct(lastPoint.incrementalPct, d) : '--', lastPoint ? `${formatNumber(lastPoint.incremental, 1)} incremental ${meta.plural} versus expected at control rate.` : 'Available when trend data is loaded.']
       ]);
       return `<!doctype html>
@@ -3571,7 +3571,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Decision p-value', formatFlexible(out.pForDecision, dMore), input.comparisons > 1 ? `Bonferroni adjusted for ${input.comparisons} comparisons.` : 'Same as raw p-value because comparisons = 1.'],
         ['Calculated confidence %', formatPct(out.statisticalConfidence, d), 'Displayed as 1 - decision p-value.'],
         ['Decision alpha', formatFlexible(out.alpha, dMore), `Equivalent to ${formatPct(input.confidenceLevel, d)} confidence.`],
-        ['Confidence interval', ciLabel, `${formatPct(1 - out.alphaAdjusted, d)} CI for experiment - control, using unpooled SE.`],
+        ['Confidence interval', ciLabel, `${formatPct(1 - out.alphaAdjusted, d)} confidence interval for experiment - control, using unpooled SE.`],
         ['Observed power', Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--', 'Post-hoc estimate using the absolute observed effect and current sample sizes.'],
         [`Required n / arm @ ${formatPct(input.powerTarget, 0)} power`, Number.isFinite(powerForRows.requiredPerArm) ? formatNumber(powerForRows.requiredPerArm) : '--', 'Equal-sized arms required to confirm the observed absolute lift under the selected test direction.']
       ]);
@@ -3661,7 +3661,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         `Required n / arm @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--'}`,
         `Additional n needed for smaller arm: ${Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--'}`,
         `Estimated time until both arms are powered @ ${formatPct(forecastPower.targetPower, 0)} power: ${Number.isFinite(daysToReady) ? formatDurationFromDays(daysToReady) : '--'}`,
-        `CI for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`
+        `Confidence interval for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`
       ].join('\n');
     }
 
