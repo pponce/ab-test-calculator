@@ -1193,7 +1193,7 @@
               <input id="showUaEventChart" type="checkbox" />
               <span class="checkbox-copy">
                 <span>Show A event chart?</span>
-                <span class="hint">When UA is selected, keep the install trend chart and add a second A-event trend chart using the selected event-count setting above.</span>
+                <span class="hint">When UA is selected, keep the install trend chart and add a second A-event trend chart using the selected event-count setting above.<br><br>For UA incrementality experiments, Liftoff defines A-event lift as tied to install lift: if the install is incremental, downstream A-event activity from that install is also considered incremental. This optional chart shows a diagnostic event-rate view by comparing A-event counts against reach for control vs experiment. The event-rate view of conversion rate differences can reflect &quot;quality&quot; differences between organic driven behavior post install vs paid media driven behavior post install. For UA lift experiments, A-event lift should still be interpreted as anchored to install lift. IE if install lift was X% then A event lift is also X%.</span>
               </span>
             </label>
 
@@ -3591,12 +3591,14 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const uaEventChartMarkup = hasUaEventTrend ? buildTrendSvg(trend.event.points, currentInput, eventMeta) : '<div class="empty">No valid A-event trend data was loaded when this report was generated.</div>';
       const uaEventTrendRows = hasUaEventTrend ? formatTrendRows(trend.event.points, currentInput) : '';
       const uaEventErrorNote = currentInput.experimentType === 'UA' && currentInput.showUaEventChart && trend && trend.event && !trend.event.valid && trend.event.errors.length ? `<div class="note">${escapeHtml(trend.event.errors.join(' '))}</div>` : '';
+      const uaEventLiftNote = 'For UA incrementality experiments, Liftoff defines A-event lift as tied to install lift: if the install is incremental, downstream A-event activity from that install is also considered incremental. This optional chart shows a diagnostic event-rate view by comparing A-event counts against reach for control vs experiment. The event-rate view of conversion rate differences can reflect "quality" differences between organic driven behavior post install vs paid media driven behavior post install. For UA lift experiments, A-event lift should still be interpreted as anchored to install lift. IE if install lift was X% then A event lift is also X%.';
       const uaEventReportSection = currentInput.experimentType === 'UA' && currentInput.showUaEventChart ? `
     <section class="card">
       <h2>A Event Trend Chart</h2>
       <div class="note">Left-axis bars show ${escapeHtml(eventMeta.liftLabel)} and ${escapeHtml(eventMeta.incrementalLabel)}. Right-axis lines show calculated confidence % and observed power %. This chart uses ${escapeHtml(eventMeta.controlRequiredLabel)} and ${escapeHtml(eventMeta.experimentRequiredLabel)}.</div>
       ${uaEventErrorNote}
       <div class="trend-chart-wrap"><div class="trend-chart">${uaEventChartMarkup}</div></div>
+      <div class="note">${escapeHtml(uaEventLiftNote)}</div>
     </section>
 
     <section class="card">
