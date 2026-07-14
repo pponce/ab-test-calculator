@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Local A/B Test Significance Calculator</title>
+  <!-- v17: live/static outputs include treatment counts, incremental/decremental percentages, and signed denominator details for iCPI/iCPA. -->
   <style>
     :root {
       --bg: #f6f8fb;
@@ -1562,6 +1563,13 @@
                   <span class="hint">Checked = the downloaded static HTML report includes observed power, power trend lines, power columns, and power ETA timing. Unchecked = the live calculator still calculates power, but the customer report omits those power-specific outputs.</span>
                 </span>
               </label>
+              <label id="uaReportUseInstallLiftForIcpaRow" class="checkbox-label">
+                <input id="uaReportUseInstallLiftForIcpa" type="checkbox" checked />
+                <span class="checkbox-copy">
+                  <span>For UA static report, use Install Lift % for iCPA?</span>
+                  <span class="hint">Checked = the downloaded static HTML report calculates UA iCPA(u) and iCPA(r) using incremental install %. Unchecked = the static report uses event-rate differences based on reach. The live calculator results show both UA iCPA methods either way.</span>
+                </span>
+              </label>
               <div class="button-row">
                 <button id="loadTrendBtn" type="button">Load trend chart</button>
                 <button id="clearTrendBtn" class="secondary" type="button">Clear trend data</button>
@@ -1648,7 +1656,29 @@
             </table>
           </div>
 
-
+          <div class="panel" id="incrementalCostPanel">
+            <div class="panel-head">
+              <div>
+                <h3>Incremental Cost Metrics</h3>
+                <div class="muted small" id="incrementalCostSubtitle">Requires pasted cumulative trend data with Cumulative Experiment Spend.</div>
+              </div>
+              <span class="pill" id="incrementalCostPill">Trend + spend required</span>
+            </div>
+            <div class="metric-grid" id="incrementalCostMetricGrid"></div>
+            <div class="note" id="incrementalCostNote">Enter trend data with media spend to calculate iCPI and iCPA.</div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Incremental cost metric</th>
+                    <th class="num">Value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="incrementalCostRows"></tbody>
+              </table>
+            </div>
+          </div>
 
           <div class="panel trend-panel" id="trendPanel">
             <div class="panel-head">
@@ -2326,6 +2356,8 @@ Total planned spend:
       showUaEventChart: document.getElementById('showUaEventChart'),
       includeForecastTimingReport: document.getElementById('includeForecastTimingReport'),
       includePowerReport: document.getElementById('includePowerReport'),
+      uaReportUseInstallLiftForIcpaRow: document.getElementById('uaReportUseInstallLiftForIcpaRow'),
+      uaReportUseInstallLiftForIcpa: document.getElementById('uaReportUseInstallLiftForIcpa'),
       controlLabel: document.getElementById('controlLabel'),
       experimentLabel: document.getElementById('experimentLabel'),
       reConversionNames: document.getElementById('reConversionNames'),
@@ -2372,6 +2404,12 @@ Total planned spend:
       controlBarRate: document.getElementById('controlBarRate'),
       experimentBarRate: document.getElementById('experimentBarRate'),
       summaryRows: document.getElementById('summaryRows'),
+      incrementalCostPanel: document.getElementById('incrementalCostPanel'),
+      incrementalCostSubtitle: document.getElementById('incrementalCostSubtitle'),
+      incrementalCostPill: document.getElementById('incrementalCostPill'),
+      incrementalCostMetricGrid: document.getElementById('incrementalCostMetricGrid'),
+      incrementalCostNote: document.getElementById('incrementalCostNote'),
+      incrementalCostRows: document.getElementById('incrementalCostRows'),
       ciPanelSubtitle: document.getElementById('ciPanelSubtitle'),
       ciPill: document.getElementById('ciPill'),
       differenceCiMetric: document.getElementById('differenceCiMetric'),
@@ -2708,6 +2746,7 @@ Total planned spend:
       setCheckbox(els.showUaEventChart, getAny('showUaEventChart', 'showEventChart', 'showAEventChart', 'uaEventChart'), false);
       setCheckbox(els.includeForecastTimingReport, getAny('includeForecastTimingReport', 'includeForecastEtaTiming', 'includeForecastETA', 'forecastEtaReport'), true);
       setCheckbox(els.includePowerReport, getAny('includePowerReport', 'includePowerCalculationsReport', 'includePowerStaticReport', 'powerReport'), true);
+      setCheckbox(els.uaReportUseInstallLiftForIcpa, getAny('uaReportUseInstallLiftForIcpa', 'uaStaticReportUseInstallLiftForICPA', 'useInstallLiftForIcpa', 'uaIcpaInstallLiftReport'), true);
       setValue(els.controlLabel, getAny('controlLabel', 'control_label', 'clabel'));
       setValue(els.experimentLabel, getAny('experimentLabel', 'experiment_label', 'elabel', 'variantLabel', 'variant_label', 'vlabel'));
       setValue(els.controlConversionName, getAny('controlConversionName', 'control_conversion_name', 'controlMetric'));
@@ -2785,6 +2824,7 @@ Total planned spend:
       const showUaEventChart = experimentType === 'UA' && els.showUaEventChart ? els.showUaEventChart.checked : false;
       const includeForecastTimingReport = els.includeForecastTimingReport ? els.includeForecastTimingReport.checked : true;
       const includePowerReport = els.includePowerReport ? els.includePowerReport.checked : true;
+      const uaReportUseInstallLiftForIcpa = els.uaReportUseInstallLiftForIcpa ? els.uaReportUseInstallLiftForIcpa.checked : true;
       const controlConversions = asInt(els.controlConversions.value);
       const controlTrials = asInt(els.controlTrials.value);
       const experimentConversions = asInt(els.experimentConversions.value);
@@ -2817,7 +2857,7 @@ Total planned spend:
       if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Power target must be between 0 and 1.');
       if (Number.isFinite(controlDailyReach) && controlDailyReach < 0) errors.push('Control reach growth cannot be negative.');
       if (Number.isFinite(experimentDailyReach) && experimentDailyReach < 0) errors.push('Experiment reach growth cannot be negative.');
-      return { reportName, experimentType, eventCountsUnique, showUaEventChart, includeForecastTimingReport, includePowerReport, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
+      return { reportName, experimentType, eventCountsUnique, showUaEventChart, includeForecastTimingReport, includePowerReport, uaReportUseInstallLiftForIcpa, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
     }
 
     function updateCampaignModeUI(input) {
@@ -2825,6 +2865,7 @@ Total planned spend:
       const experimentArm = displayArmLabel(input.experimentLabel);
       els.reConversionNames.classList.toggle('hidden', input.experimentType !== 'RE');
       if (els.showUaEventChartRow) els.showUaEventChartRow.classList.toggle('hidden', input.experimentType !== 'UA');
+      if (els.uaReportUseInstallLiftForIcpaRow) els.uaReportUseInstallLiftForIcpaRow.classList.toggle('hidden', input.experimentType !== 'UA');
       els.controlConversionFieldLabel.textContent = controlConversionDisplayName(input);
       els.experimentConversionFieldLabel.textContent = experimentConversionDisplayName(input);
       els.controlAudienceFieldLabel.textContent = `${controlArm} Audience Reach`;
@@ -4588,6 +4629,416 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return { hasSpend: rows.length > 0, rows, first, last, days };
     }
 
+    function formatCurrencyCost(x) {
+      return Number.isFinite(x) ? formatCurrency(x, 2) : '--';
+    }
+
+    function formatCostMetricValue(metric) {
+      return metric && Number.isFinite(metric.cost) ? formatCurrencyCost(metric.cost) : '--';
+    }
+
+    function formatIncrementalMetricCount(metric) {
+      return metric && Number.isFinite(metric.incrementalCount) ? formatNumber(metric.incrementalCount, 1) : '--';
+    }
+
+    function incrementalDirectionWord(value) {
+      if (!Number.isFinite(value)) return 'unknown';
+      if (value > 0) return 'incremental';
+      if (value < 0) return 'decremental';
+      return 'neutral';
+    }
+
+    function formatTreatmentCount(count, unitLabel) {
+      return Number.isFinite(count) ? `${formatNumber(count)} ${unitLabel}` : '--';
+    }
+
+    function formatIncrementalMetricCountDirectional(metric, unitLabel) {
+      if (!metric || !Number.isFinite(metric.incrementalCount)) return '--';
+      const signed = metric.incrementalCount;
+      const direction = incrementalDirectionWord(signed);
+      const absText = formatNumber(Math.abs(signed), 1);
+      if (direction === 'neutral') return `${absText} ${unitLabel}`;
+      return `${absText} ${direction} ${unitLabel} (signed ${formatNumber(signed, 1)})`;
+    }
+
+    function formatIncrementalShare(share, digits) {
+      return share && Number.isFinite(share.incrementalPct) ? formatPct(share.incrementalPct, digits) : '--';
+    }
+
+    function formatIncrementalShareDirectional(share, digits) {
+      if (!share || !Number.isFinite(share.incrementalPct)) return '--';
+      const signed = share.incrementalPct;
+      const direction = incrementalDirectionWord(signed);
+      if (direction === 'neutral') return `${formatPct(0, digits)} neutral`;
+      return `${formatPct(Math.abs(signed), digits)} ${direction} (${formatPct(signed, digits)} signed)`;
+    }
+
+    function incrementalShareFormulaNote(share, formulaText, digits) {
+      const base = `${formulaText} Positive values are incremental; negative values are decremental.`;
+      if (!share || !Number.isFinite(share.incrementalPct)) return base;
+      return `${base} Current signed value: ${formatPct(share.incrementalPct, digits)}.`;
+    }
+
+    function incrementalCountFormulaNote(metric, share, treatmentCount, unitLabel, shareLabel, digits) {
+      const treatmentText = Number.isFinite(treatmentCount) ? `Treatment ${unitLabel}: ${formatNumber(treatmentCount)}.` : `Treatment ${unitLabel}: --.`;
+      const shareText = share && Number.isFinite(share.incrementalPct)
+        ? `${shareLabel}: ${formatIncrementalShareDirectional(share, digits)}.`
+        : `${shareLabel}: --.`;
+      if (!metric || !Number.isFinite(metric.incrementalCount)) {
+        return `${treatmentText} ${shareText} Signed denominator = ${shareLabel} * treatment ${unitLabel}.`;
+      }
+      const direction = incrementalDirectionWord(metric.incrementalCount);
+      const interpreted = direction === 'neutral'
+        ? `interpreted as 0.0 ${unitLabel}`
+        : `interpreted as ${formatNumber(Math.abs(metric.incrementalCount), 1)} ${direction} ${unitLabel}`;
+      return `${treatmentText} ${shareText} Signed denominator = ${shareLabel} * treatment ${unitLabel} = ${formatNumber(metric.incrementalCount, 1)} signed ${unitLabel}, ${interpreted}.`;
+    }
+
+    function costMetricBreakdownNote(metric, share, treatmentCount, unitLabel, shareLabel, formulaText, digits) {
+      if (!metric || !Number.isFinite(metric.cost)) return costMetricNote(metric, formulaText);
+      const treatmentText = Number.isFinite(treatmentCount) ? `Treatment ${unitLabel}: ${formatNumber(treatmentCount)}.` : `Treatment ${unitLabel}: --.`;
+      const shareText = share && Number.isFinite(share.incrementalPct)
+        ? `${shareLabel}: ${formatIncrementalShareDirectional(share, digits)}.`
+        : `${shareLabel}: --.`;
+      const denominatorText = Number.isFinite(metric.incrementalCount)
+        ? `Denominator: ${formatNumber(metric.incrementalCount, 1)} signed ${unitLabel}.`
+        : 'Denominator: --.';
+      return `${formulaText} ${treatmentText} ${shareText} ${denominatorText}`;
+    }
+
+    function costCardVolumeSub(treatmentCount, treatmentUnitLabel, metric, metricUnitLabel) {
+      const treatmentText = Number.isFinite(treatmentCount) ? `${formatNumber(treatmentCount)} treatment ${treatmentUnitLabel}` : `Treatment ${treatmentUnitLabel}: --`;
+      const volumeText = formatIncrementalMetricCountDirectional(metric, metricUnitLabel);
+      return `${treatmentText}; ${volumeText}.`;
+    }
+
+    function missingMetricReason(label) {
+      return `${label} is missing or invalid on the latest cumulative trend row.`;
+    }
+
+    function incrementalShareFromCounts(controlCount, controlReach, experimentCount, experimentReach, label) {
+      if (!Number.isFinite(controlCount) || controlCount < 0) return { controlRate: NaN, experimentRate: NaN, incrementalPct: NaN, incrementalCount: NaN, reason: missingMetricReason(`Control ${label}`) };
+      if (!Number.isFinite(experimentCount) || experimentCount < 0) return { controlRate: NaN, experimentRate: NaN, incrementalPct: NaN, incrementalCount: NaN, reason: missingMetricReason(`Experiment ${label}`) };
+      if (!Number.isFinite(controlReach) || controlReach <= 0) return { controlRate: NaN, experimentRate: NaN, incrementalPct: NaN, incrementalCount: NaN, reason: 'Control Reach is missing or invalid on the latest cumulative trend row.' };
+      if (!Number.isFinite(experimentReach) || experimentReach <= 0) return { controlRate: NaN, experimentRate: NaN, incrementalPct: NaN, incrementalCount: NaN, reason: 'Experiment Reach is missing or invalid on the latest cumulative trend row.' };
+      if (!(experimentCount > 0)) return { controlRate: controlCount / controlReach, experimentRate: 0, incrementalPct: NaN, incrementalCount: NaN, reason: `Experiment ${label} must be greater than zero to calculate cost per incremental ${label.toLowerCase()}.` };
+      const controlRate = controlCount / controlReach;
+      const experimentRate = experimentCount / experimentReach;
+      if (!(experimentRate > 0)) return { controlRate, experimentRate, incrementalPct: NaN, incrementalCount: NaN, reason: `Experiment ${label} rate must be greater than zero.` };
+      const incrementalPct = 1 - (controlRate / experimentRate);
+      const incrementalCount = incrementalPct * experimentCount;
+      const relativeLift = controlRate > 0 ? (experimentRate / controlRate) - 1 : NaN;
+      return { controlRate, experimentRate, relativeLift, incrementalPct, incrementalCount, reason: '' };
+    }
+
+    function lowercaseUnitLabel(unitLabel) {
+      return String(unitLabel || '').toLowerCase();
+    }
+
+    function rateTypeFromUnitLabel(unitLabel) {
+      const unit = lowercaseUnitLabel(unitLabel);
+      if (unit.includes('install')) return 'install';
+      if (unit.includes('event')) return 'event';
+      return 'conversion';
+    }
+
+    function displayTailForCostReason(input) {
+      if (!input) return 'the selected hypothesis';
+      if (input.tail === 'greater') return `${displayArmLabel(input.experimentLabel || 'Experiment')} > ${displayArmLabel(input.controlLabel || 'Control')}`;
+      if (input.tail === 'less') return `${displayArmLabel(input.experimentLabel || 'Experiment')} < ${displayArmLabel(input.controlLabel || 'Control')}`;
+      return `${displayArmLabel(input.experimentLabel || 'Experiment')} != ${displayArmLabel(input.controlLabel || 'Control')}`;
+    }
+
+    function nonPositiveIncrementalReason(input, share, treatmentCount, unitLabel, shareLabel = null) {
+      const unit = lowercaseUnitLabel(unitLabel);
+      const shareUnitLabel = shareLabel || unitLabel;
+      const shareUnit = lowercaseUnitLabel(shareUnitLabel);
+      const rateType = rateTypeFromUnitLabel(shareUnitLabel);
+      const precision = input && Number.isFinite(input.precision) ? input.precision : 3;
+      const experimentName = displayArmLabel(input && input.experimentLabel ? input.experimentLabel : 'Experiment');
+      const controlName = displayArmLabel(input && input.controlLabel ? input.controlLabel : 'Control');
+      const rateComparison = share && Number.isFinite(share.experimentRate) && Number.isFinite(share.controlRate)
+        ? share.experimentRate < share.controlRate
+          ? 'below'
+          : share.experimentRate > share.controlRate
+            ? 'above'
+            : 'equal to'
+        : 'not above';
+      const liftText = share && Number.isFinite(share.relativeLift) ? ` (${formatPct(share.relativeLift, precision)} ${rateType} rate lift)` : '';
+      const incrementalPctText = share && Number.isFinite(share.incrementalPct) ? ` Incremental ${shareUnitLabel} % is ${formatPct(share.incrementalPct, precision)}.` : '';
+      const denominatorText = Number.isFinite(treatmentCount) && share && Number.isFinite(share.incrementalPct)
+        ? ` Treatment ${unit}: ${formatNumber(treatmentCount)}; the signed denominator would be ${formatNumber(share.incrementalPct * treatmentCount, 1)} ${unit}, interpreted as ${formatNumber(Math.abs(share.incrementalPct * treatmentCount), 1)} ${share.incrementalPct * treatmentCount < 0 ? 'decremental' : 'incremental'} ${unit}.`
+        : '';
+      if (input && input.tail === 'greater' && share && share.incrementalPct <= 0) {
+        return `Not calculated because the selected one-sided hypothesis is ${displayTailForCostReason(input)}, but the latest ${experimentName} ${rateType} rate is ${rateComparison} ${controlName}${liftText}.${incrementalPctText}${denominatorText} There is no positive incremental volume for ${unit} to divide spend by. Changing Hypothesis / tail to Two-sided recalculates the statistical result for either direction; iCPI/iCPA still require positive incremental volume.`;
+      }
+      if (input && input.tail === 'less' && share && share.incrementalPct <= 0) {
+        return `Recalculated under the selected one-sided hypothesis ${displayTailForCostReason(input)}. The latest ${experimentName} ${rateType} rate is ${rateComparison} ${controlName}${liftText}, so this is a negative/decremental outcome rather than positive incrementality.${incrementalPctText}${denominatorText} iCPI/iCPA are not calculated because the incremental denominator is zero or negative.`;
+      }
+      if (input && input.tail === 'two' && share && share.incrementalPct <= 0) {
+        return `Recalculated under the selected two-sided hypothesis ${displayTailForCostReason(input)}. The latest ${experimentName} ${rateType} rate is ${rateComparison} ${controlName}${liftText}, so this is a negative/decremental outcome rather than positive incrementality.${incrementalPctText}${denominatorText} iCPI/iCPA are not calculated because the incremental denominator is zero or negative.`;
+      }
+      return `No positive incremental ${unit} volume is available because the incremental % is zero or negative.${incrementalPctText}${denominatorText}`;
+    }
+
+
+    function signedNegativeIncrementalReason(input, share, treatmentCount, unitLabel, shareLabel = null) {
+      const unit = lowercaseUnitLabel(unitLabel);
+      const shareUnitLabel = shareLabel || unitLabel;
+      const rateType = rateTypeFromUnitLabel(shareUnitLabel);
+      const precision = input && Number.isFinite(input.precision) ? input.precision : 3;
+      const experimentName = displayArmLabel(input && input.experimentLabel ? input.experimentLabel : 'Experiment');
+      const controlName = displayArmLabel(input && input.controlLabel ? input.controlLabel : 'Control');
+      const rateComparison = share && Number.isFinite(share.experimentRate) && Number.isFinite(share.controlRate)
+        ? share.experimentRate < share.controlRate
+          ? 'below'
+          : share.experimentRate > share.controlRate
+            ? 'above'
+            : 'equal to'
+        : 'not above';
+      const liftText = share && Number.isFinite(share.relativeLift) ? ` (${formatPct(share.relativeLift, precision)} ${rateType} rate lift)` : '';
+      const incrementalPctText = share && Number.isFinite(share.incrementalPct) ? ` Incremental ${shareUnitLabel} % is ${formatPct(share.incrementalPct, precision)}.` : '';
+      const denominatorText = Number.isFinite(treatmentCount) && share && Number.isFinite(share.incrementalPct)
+        ? ` Treatment ${unit}: ${formatNumber(treatmentCount)}; the signed denominator is ${formatNumber(share.incrementalPct * treatmentCount, 1)} ${unit}, interpreted as ${formatNumber(Math.abs(share.incrementalPct * treatmentCount), 1)} ${share.incrementalPct * treatmentCount < 0 ? 'decremental' : 'incremental'} ${unit}.`
+        : '';
+      return `Signed internal calculation: the latest ${experimentName} ${rateType} rate is ${rateComparison} ${controlName}${liftText}.${incrementalPctText}${denominatorText} The live Results output shows this as a negative iCPI/iCPA value, which represents cost per decremental ${unit}; static HTML reports continue to suppress negative iCPI/iCPA values.`;
+    }
+
+    function costPerIncremental(spend, share, treatmentCount, unitLabel, input = null, shareLabel = null, options = {}) {
+      if (!Number.isFinite(spend) || spend < 0) {
+        return { cost: NaN, incrementalCount: NaN, reason: 'Cumulative Experiment Spend is required in the trend data to calculate incremental cost metrics.' };
+      }
+      if (!share || !Number.isFinite(share.incrementalPct)) {
+        return { cost: NaN, incrementalCount: NaN, reason: share && share.reason ? share.reason : `Incremental ${unitLabel} % could not be calculated.` };
+      }
+      if (!Number.isFinite(treatmentCount) || treatmentCount <= 0) {
+        return { cost: NaN, incrementalCount: NaN, reason: `Experiment ${unitLabel} count must be greater than zero.` };
+      }
+      const incrementalCount = share.incrementalPct * treatmentCount;
+      const allowSignedNegative = !!(options && options.allowSignedNegative);
+      if (incrementalCount < 0 && allowSignedNegative) {
+        return { cost: spend / incrementalCount, incrementalCount, reason: signedNegativeIncrementalReason(input, share, treatmentCount, unitLabel, shareLabel), directionalReason: true, signedNegative: true };
+      }
+      if (!(incrementalCount > 0)) {
+        return { cost: NaN, incrementalCount, reason: nonPositiveIncrementalReason(input, share, treatmentCount, unitLabel, shareLabel), directionalReason: true, signedNegative: false };
+      }
+      return { cost: spend / incrementalCount, incrementalCount, reason: '', directionalReason: false, signedNegative: false };
+    }
+
+    function readLatestIncrementalCostData(input) {
+      const parsed = parseTrendData(trendState.raw);
+      const state = { hasTrend: !!parsed.hasRaw, valid: false, errors: [], warnings: [], parsed, latestLabel: '', latestShortLabel: '', values: null };
+      if (!parsed.hasRaw) {
+        state.errors.push('Enter trend data with Cumulative Experiment Spend to calculate iCPI and iCPA.');
+        return state;
+      }
+      if (!parsed.valid || (parsed.errors && parsed.errors.length)) {
+        state.errors.push(...(parsed.errors && parsed.errors.length ? parsed.errors : ['Trend data could not be parsed.']));
+        return state;
+      }
+      const latest = latestTrendRawRow(parsed);
+      if (!latest || !latest.row) {
+        state.errors.push('No non-empty latest trend row was found.');
+        return state;
+      }
+      const row = latest.row;
+      const cm = parsed.columnMap || {};
+      const values = {
+        controlReach: readTrendInt(row, cm.controlReach),
+        experimentReach: readTrendInt(row, cm.experimentReach),
+        controlSpend: readTrendNum(row, cm.controlSpend),
+        experimentSpend: readTrendNum(row, cm.experimentSpend),
+        controlInstalls: readTrendInt(row, cm.controlInstalls),
+        experimentInstalls: readTrendInt(row, cm.experimentInstalls),
+        controlEventsUnique: readTrendInt(row, cm.controlEventsUnique),
+        experimentEventsUnique: readTrendInt(row, cm.experimentEventsUnique),
+        controlEventsRaw: readTrendInt(row, cm.controlEventsRaw),
+        experimentEventsRaw: readTrendInt(row, cm.experimentEventsRaw)
+      };
+      state.latestLabel = latest.dateInfo && latest.dateInfo.label ? latest.dateInfo.label : `row ${row.sourceRowNumber}`;
+      state.latestShortLabel = latest.dateInfo && latest.dateInfo.shortLabel ? latest.dateInfo.shortLabel : state.latestLabel;
+      state.values = values;
+      if (!Number.isFinite(values.controlReach) || values.controlReach <= 0) state.errors.push('Control Reach is required on the latest cumulative trend row.');
+      if (!Number.isFinite(values.experimentReach) || values.experimentReach <= 0) state.errors.push('Experiment Reach is required on the latest cumulative trend row.');
+      if (!Number.isFinite(values.experimentSpend) || values.experimentSpend < 0) state.errors.push('Cumulative Experiment Spend is required on the latest cumulative trend row.');
+      state.valid = state.errors.length === 0;
+      return state;
+    }
+
+    function buildIncrementalCostModel(input, options = {}) {
+      const data = readLatestIncrementalCostData(input);
+      const model = {
+        data,
+        valid: data.valid,
+        errors: data.errors ? data.errors.slice() : [],
+        latestLabel: data.latestLabel,
+        values: data.values,
+        installShare: null,
+        eventUniqueShare: null,
+        eventRawShare: null,
+        icpi: null,
+        uaIcpaInstallUnique: null,
+        uaIcpaInstallRaw: null,
+        uaIcpaEventUnique: null,
+        uaIcpaEventRaw: null,
+        reIcpaUnique: null,
+        reIcpaRaw: null
+      };
+      if (!data.valid || !data.values) return model;
+      const v = data.values;
+      model.installShare = incrementalShareFromCounts(v.controlInstalls, v.controlReach, v.experimentInstalls, v.experimentReach, 'Installs');
+      model.eventUniqueShare = incrementalShareFromCounts(v.controlEventsUnique, v.controlReach, v.experimentEventsUnique, v.experimentReach, 'Events (u)');
+      model.eventRawShare = incrementalShareFromCounts(v.controlEventsRaw, v.controlReach, v.experimentEventsRaw, v.experimentReach, 'Events (r)');
+      if (input.experimentType === 'UA') {
+        model.icpi = costPerIncremental(v.experimentSpend, model.installShare, v.experimentInstalls, 'installs', input, null, options);
+        model.uaIcpaInstallUnique = costPerIncremental(v.experimentSpend, model.installShare, v.experimentEventsUnique, 'events (u)', input, 'installs', options);
+        model.uaIcpaInstallRaw = costPerIncremental(v.experimentSpend, model.installShare, v.experimentEventsRaw, 'events (r)', input, 'installs', options);
+        model.uaIcpaEventUnique = costPerIncremental(v.experimentSpend, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', input, null, options);
+        model.uaIcpaEventRaw = costPerIncremental(v.experimentSpend, model.eventRawShare, v.experimentEventsRaw, 'events (r)', input, null, options);
+      } else {
+        model.reIcpaUnique = costPerIncremental(v.experimentSpend, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', input, null, options);
+        model.reIcpaRaw = costPerIncremental(v.experimentSpend, model.eventRawShare, v.experimentEventsRaw, 'events (r)', input, null, options);
+      }
+      return model;
+    }
+
+    function costMetricNote(metric, successNote) {
+      return metric && metric.reason ? metric.reason : successNote;
+    }
+
+    function firstCostMetricReason(metrics) {
+      const seen = new Set();
+      for (const metric of metrics || []) {
+        if (!metric || !metric.reason || Number.isFinite(metric.cost)) continue;
+        const reason = String(metric.reason).trim();
+        if (!reason || seen.has(reason)) continue;
+        return reason;
+      }
+      return '';
+    }
+
+    function incrementalCostAvailabilityNote(input, model) {
+      if (!model || !model.valid) return '';
+      const metrics = input && input.experimentType === 'UA'
+        ? [model.icpi, model.uaIcpaInstallUnique, model.uaIcpaInstallRaw, model.uaIcpaEventUnique, model.uaIcpaEventRaw]
+        : [model.reIcpaUnique, model.reIcpaRaw];
+      return firstCostMetricReason(metrics);
+    }
+
+    function firstSignedCostMetricReason(metrics) {
+      const seen = new Set();
+      for (const metric of metrics || []) {
+        if (!metric || !metric.signedNegative || !metric.reason || !Number.isFinite(metric.cost)) continue;
+        const reason = String(metric.reason).trim();
+        if (!reason || seen.has(reason)) continue;
+        return reason;
+      }
+      return '';
+    }
+
+    function incrementalCostSignedNote(input, model) {
+      if (!model || !model.valid) return '';
+      const metrics = input && input.experimentType === 'UA'
+        ? [model.icpi, model.uaIcpaInstallUnique, model.uaIcpaInstallRaw, model.uaIcpaEventUnique, model.uaIcpaEventRaw]
+        : [model.reIcpaUnique, model.reIcpaRaw];
+      return firstSignedCostMetricReason(metrics);
+    }
+
+    function costCard(label, value, sub) {
+      return `<div class="metric"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value)}</div><div class="s">${escapeHtml(sub || '')}</div></div>`;
+    }
+
+    function renderIncrementalCostMetrics(input) {
+      if (!els.incrementalCostPanel) return;
+      const d = input.precision;
+      const model = buildIncrementalCostModel(input, { allowSignedNegative: true });
+      const v = model.values || {};
+      const blankRows = [
+        ['Cumulative treatment ad spend', '--', 'Enter trend data with Cumulative Experiment Spend.'],
+        [input.experimentType === 'UA' ? 'iCPI' : 'iCPA(u)', '--', 'Requires trend data with media spend and the latest cumulative counts.'],
+        [input.experimentType === 'UA' ? 'iCPA(u)' : 'iCPA(r)', '--', 'Requires trend data with media spend and the latest cumulative counts.']
+      ];
+
+      if (!model.valid) {
+        els.incrementalCostSubtitle.textContent = 'Requires pasted cumulative trend data with Cumulative Experiment Spend.';
+        els.incrementalCostPill.textContent = 'Trend + spend required';
+        els.incrementalCostMetricGrid.innerHTML = [
+          costCard('Last trend date', '--', 'Latest cumulative row.'),
+          costCard('Treatment ad spend', '--', 'Cumulative Experiment Spend.'),
+          costCard(input.experimentType === 'UA' ? 'iCPI' : 'iCPA(u)', '--', 'Not available yet.')
+        ].join('');
+        els.incrementalCostNote.className = 'note warn-note';
+        els.incrementalCostNote.innerHTML = `${escapeHtml(model.errors.join(' ') || 'Enter trend data with media spend to calculate incremental cost metrics.')}`;
+        els.incrementalCostRows.innerHTML = renderRows(blankRows);
+        return;
+      }
+
+      els.incrementalCostPill.textContent = `Latest row: ${model.latestLabel || 'trend data'}`;
+      const spendText = formatCurrencyCost(v.experimentSpend);
+      const availabilityReason = incrementalCostAvailabilityNote(input, model);
+      const signedReason = incrementalCostSignedNote(input, model);
+      const availabilityMarkup = availabilityReason ? `<br><br><strong>Why some values are blank:</strong> ${escapeHtml(availabilityReason)}` : '';
+      const signedMarkup = signedReason ? `<br><br><strong>Signed internal calculation:</strong> ${escapeHtml(signedReason.replace(/^Signed internal calculation:\s*/, ''))}` : '';
+      if (input.experimentType === 'UA') {
+        els.incrementalCostSubtitle.textContent = 'UA iCPI and iCPA use the latest cumulative trend row and Cumulative Experiment Spend.';
+        els.incrementalCostMetricGrid.innerHTML = [
+          costCard('Last trend date', model.latestLabel || '--', 'Latest cumulative row.'),
+          costCard('Treatment ad spend', spendText, 'Cumulative Experiment Spend.'),
+          costCard('iCPI', formatCostMetricValue(model.icpi), costCardVolumeSub(v.experimentInstalls, 'installs', model.icpi, 'installs')),
+          costCard('iCPA(u)', formatCostMetricValue(model.uaIcpaInstallUnique), costCardVolumeSub(v.experimentEventsUnique, 'events (u)', model.uaIcpaInstallUnique, 'events (u)')),
+          costCard('iCPA(r)', formatCostMetricValue(model.uaIcpaInstallRaw), costCardVolumeSub(v.experimentEventsRaw, 'events (r)', model.uaIcpaInstallRaw, 'events (r)')),
+          costCard('Alt iCPA(u)', formatCostMetricValue(model.uaIcpaEventUnique), costCardVolumeSub(v.experimentEventsUnique, 'events (u)', model.uaIcpaEventUnique, 'events (u)')),
+          costCard('Alt iCPA(r)', formatCostMetricValue(model.uaIcpaEventRaw), costCardVolumeSub(v.experimentEventsRaw, 'events (r)', model.uaIcpaEventRaw, 'events (r)'))
+        ].join('');
+        els.incrementalCostNote.className = (availabilityReason || signedReason) ? 'note warn-note' : 'note';
+        els.incrementalCostNote.innerHTML = `For UA, <strong>iCPI</strong> uses incremental install % = 1 - (Install Rate(control) / Install Rate(treatment)). Primary UA <strong>iCPA(u)</strong> and <strong>iCPA(r)</strong> apply that same incremental install % to downstream A-event counts because UA media stops serving after install; events from incremental installs are treated as incremental. The alternative UA iCPA rows use actual event-rate differences based on reach. Live Results intentionally shows signed negative values when lift is negative; static HTML reports keep negative incremental cost metrics hidden.${availabilityMarkup}${signedMarkup}`;
+        els.incrementalCostRows.innerHTML = renderRows([
+          ['Selected hypothesis / tail', tailScenarioText(input.tail), 'Incremental cost availability notes use the currently selected hypothesis/tail and recalculate when this input changes.'],
+          ['Cumulative treatment ad spend', spendText, 'Uses Cumulative Experiment Spend from the latest cumulative trend row.'],
+          ['Treatment installs', formatTreatmentCount(v.experimentInstalls, 'installs'), 'Total treatment attributed installs from the latest cumulative trend row.'],
+          ['Incremental/decremental Install %', formatIncrementalShareDirectional(model.installShare, d), incrementalShareFormulaNote(model.installShare, '1 - (Install Rate(control) / Install Rate(treatment)).', d)],
+          ['Incremental/decremental installs', formatIncrementalMetricCountDirectional(model.icpi, 'installs'), incrementalCountFormulaNote(model.icpi, model.installShare, v.experimentInstalls, 'installs', 'Incremental/decremental Install %', d)],
+          ['iCPI', formatCostMetricValue(model.icpi), costMetricBreakdownNote(model.icpi, model.installShare, v.experimentInstalls, 'installs', 'Incremental/decremental Install %', 'Ad Spend / incremental/decremental installs.', d)],
+          ['Treatment events (u)', formatTreatmentCount(v.experimentEventsUnique, 'events (u)'), 'Total treatment attributed unique events from the latest cumulative trend row.'],
+          ['iCPA(u) install-lift %', formatIncrementalShareDirectional(model.installShare, d), 'Primary UA method applies the install incremental/decremental % to treatment Events (u).'],
+          ['Incremental/decremental events (u), install-lift method', formatIncrementalMetricCountDirectional(model.uaIcpaInstallUnique, 'events (u)'), incrementalCountFormulaNote(model.uaIcpaInstallUnique, model.installShare, v.experimentEventsUnique, 'events (u)', 'Incremental/decremental Install %', d)],
+          ['iCPA(u), install-lift method', formatCostMetricValue(model.uaIcpaInstallUnique), costMetricBreakdownNote(model.uaIcpaInstallUnique, model.installShare, v.experimentEventsUnique, 'events (u)', 'Incremental/decremental Install %', 'Ad Spend / (Incremental/decremental Install % * Experiment Events (u)).', d)],
+          ['Treatment events (r)', formatTreatmentCount(v.experimentEventsRaw, 'events (r)'), 'Total treatment attributed repeat/raw events from the latest cumulative trend row.'],
+          ['iCPA(r) install-lift %', formatIncrementalShareDirectional(model.installShare, d), 'Primary UA method applies the install incremental/decremental % to treatment Events (r).'],
+          ['Incremental/decremental events (r), install-lift method', formatIncrementalMetricCountDirectional(model.uaIcpaInstallRaw, 'events (r)'), incrementalCountFormulaNote(model.uaIcpaInstallRaw, model.installShare, v.experimentEventsRaw, 'events (r)', 'Incremental/decremental Install %', d)],
+          ['iCPA(r), install-lift method', formatCostMetricValue(model.uaIcpaInstallRaw), costMetricBreakdownNote(model.uaIcpaInstallRaw, model.installShare, v.experimentEventsRaw, 'events (r)', 'Incremental/decremental Install %', 'Ad Spend / (Incremental/decremental Install % * Experiment Events (r)).', d)],
+          ['Alternative Incremental/decremental Event %(u)', formatIncrementalShareDirectional(model.eventUniqueShare, d), incrementalShareFormulaNote(model.eventUniqueShare, '1 - (Event Rate(control, u) / Event Rate(treatment, u)).', d)],
+          ['Alternative incremental/decremental events (u), event-rate method', formatIncrementalMetricCountDirectional(model.uaIcpaEventUnique, 'events (u)'), incrementalCountFormulaNote(model.uaIcpaEventUnique, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', 'Alternative Incremental/decremental Event %(u)', d)],
+          ['Alternative iCPA(u), event-rate method', formatCostMetricValue(model.uaIcpaEventUnique), costMetricBreakdownNote(model.uaIcpaEventUnique, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', 'Alternative Incremental/decremental Event %(u)', 'Ad Spend / (Incremental/decremental Event %(u) * Experiment Events (u)).', d)],
+          ['Alternative Incremental/decremental Event %(r)', formatIncrementalShareDirectional(model.eventRawShare, d), incrementalShareFormulaNote(model.eventRawShare, '1 - (Event Rate(control, r) / Event Rate(treatment, r)).', d)],
+          ['Alternative incremental/decremental events (r), event-rate method', formatIncrementalMetricCountDirectional(model.uaIcpaEventRaw, 'events (r)'), incrementalCountFormulaNote(model.uaIcpaEventRaw, model.eventRawShare, v.experimentEventsRaw, 'events (r)', 'Alternative Incremental/decremental Event %(r)', d)],
+          ['Alternative iCPA(r), event-rate method', formatCostMetricValue(model.uaIcpaEventRaw), costMetricBreakdownNote(model.uaIcpaEventRaw, model.eventRawShare, v.experimentEventsRaw, 'events (r)', 'Alternative Incremental/decremental Event %(r)', 'Ad Spend / (Incremental/decremental Event %(r) * Experiment Events (r)).', d)]
+        ]);
+      } else {
+        els.incrementalCostSubtitle.textContent = 'RE iCPA uses event-rate differences based on reach and Cumulative Experiment Spend.';
+        els.incrementalCostMetricGrid.innerHTML = [
+          costCard('Last trend date', model.latestLabel || '--', 'Latest cumulative row.'),
+          costCard('Treatment ad spend', spendText, 'Cumulative Experiment Spend.'),
+          costCard('iCPA(u)', formatCostMetricValue(model.reIcpaUnique), costCardVolumeSub(v.experimentEventsUnique, 'events (u)', model.reIcpaUnique, 'events (u)')),
+          costCard('iCPA(r)', formatCostMetricValue(model.reIcpaRaw), costCardVolumeSub(v.experimentEventsRaw, 'events (r)', model.reIcpaRaw, 'events (r)'))
+        ].join('');
+        els.incrementalCostNote.className = (availabilityReason || signedReason) ? 'note warn-note' : 'note';
+        els.incrementalCostNote.innerHTML = `For RE, <strong>iCPA(u)</strong> and <strong>iCPA(r)</strong> use actual event-rate differences based on reach. Incremental Event % = 1 - (Event Rate(control) / Event Rate(treatment)), and iCPA = Ad Spend / (Incremental Event % * Experiment Events). Live Results intentionally shows signed negative values when lift is negative; static HTML reports keep negative incremental cost metrics hidden.${availabilityMarkup}${signedMarkup}`;
+        els.incrementalCostRows.innerHTML = renderRows([
+          ['Selected hypothesis / tail', tailScenarioText(input.tail), 'Incremental cost availability notes use the currently selected hypothesis/tail and recalculate when this input changes.'],
+          ['Cumulative treatment ad spend', spendText, 'Uses Cumulative Experiment Spend from the latest cumulative trend row.'],
+          ['Treatment events (u)', formatTreatmentCount(v.experimentEventsUnique, 'events (u)'), 'Total treatment attributed unique events from the latest cumulative trend row.'],
+          ['Incremental/decremental Event %(u)', formatIncrementalShareDirectional(model.eventUniqueShare, d), incrementalShareFormulaNote(model.eventUniqueShare, '1 - (Event Rate(control, u) / Event Rate(treatment, u)).', d)],
+          ['Incremental/decremental events (u)', formatIncrementalMetricCountDirectional(model.reIcpaUnique, 'events (u)'), incrementalCountFormulaNote(model.reIcpaUnique, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', 'Incremental/decremental Event %(u)', d)],
+          ['iCPA(u)', formatCostMetricValue(model.reIcpaUnique), costMetricBreakdownNote(model.reIcpaUnique, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', 'Incremental/decremental Event %(u)', 'Ad Spend / incremental/decremental unique events.', d)],
+          ['Treatment events (r)', formatTreatmentCount(v.experimentEventsRaw, 'events (r)'), 'Total treatment attributed repeat/raw events from the latest cumulative trend row.'],
+          ['Incremental/decremental Event %(r)', formatIncrementalShareDirectional(model.eventRawShare, d), incrementalShareFormulaNote(model.eventRawShare, '1 - (Event Rate(control, r) / Event Rate(treatment, r)).', d)],
+          ['Incremental/decremental events (r)', formatIncrementalMetricCountDirectional(model.reIcpaRaw, 'events (r)'), incrementalCountFormulaNote(model.reIcpaRaw, model.eventRawShare, v.experimentEventsRaw, 'events (r)', 'Incremental/decremental Event %(r)', d)],
+          ['iCPA(r)', formatCostMetricValue(model.reIcpaRaw), costMetricBreakdownNote(model.reIcpaRaw, model.eventRawShare, v.experimentEventsRaw, 'events (r)', 'Incremental/decremental Event %(r)', 'Ad Spend / incremental/decremental repeat/raw events.', d)]
+        ]);
+      }
+    }
+
     function tailScenarioText(tail) {
       if (tail === 'greater') return 'Experiment > Control';
       if (tail === 'less') return 'Experiment < Control';
@@ -5032,6 +5483,92 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     </section>`;
     }
 
+    function buildIncrementalCostReportSection(currentInput) {
+      const model = buildIncrementalCostModel(currentInput);
+      const d = currentInput.precision;
+      const v = model.values || {};
+      const noDataRows = buildReportTableRows([
+        ['Cumulative treatment ad spend', '--', 'Enter trend data with Cumulative Experiment Spend.'],
+        [currentInput.experimentType === 'UA' ? 'iCPI' : 'iCPA(u)', '--', 'Requires trend data with media spend and latest cumulative counts.'],
+        [currentInput.experimentType === 'UA' ? 'iCPA(u)' : 'iCPA(r)', '--', 'Requires trend data with media spend and latest cumulative counts.']
+      ]);
+      if (!model.valid) {
+        return `
+    <section class="card">
+      <h2>Incremental Cost Metrics</h2>
+      <div class="note">${escapeHtml(model.errors.join(' ') || 'Enter trend data with media spend to calculate iCPI and iCPA.')}</div>
+      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${noDataRows}</tbody></table></div>
+    </section>`;
+      }
+      const spendText = formatCurrencyCost(v.experimentSpend);
+      const availabilityReason = incrementalCostAvailabilityNote(currentInput, model);
+      const availabilityReportMarkup = availabilityReason ? `<br><br><strong>Why some values are blank:</strong> ${escapeHtml(availabilityReason)}` : '';
+      if (currentInput.experimentType === 'UA') {
+        const useInstallMethod = currentInput.uaReportUseInstallLiftForIcpa !== false;
+        const selectedUnique = useInstallMethod ? model.uaIcpaInstallUnique : model.uaIcpaEventUnique;
+        const selectedRaw = useInstallMethod ? model.uaIcpaInstallRaw : model.uaIcpaEventRaw;
+        const selectedUniqueShare = useInstallMethod ? model.installShare : model.eventUniqueShare;
+        const selectedRawShare = useInstallMethod ? model.installShare : model.eventRawShare;
+        const methodLabel = useInstallMethod ? 'Install Lift % method' : 'Event-rate method';
+        const methodNote = useInstallMethod
+          ? 'Static report iCPA uses incremental install % for both iCPA(u) and iCPA(r). For UA, downstream events from incremental installs are treated as incremental because UA media stops serving after install.'
+          : 'Static report iCPA uses actual event-rate differences based on reach for each event-count type.';
+        const rows = buildReportTableRows([
+          ['Latest cumulative trend row', model.latestLabel || '--', 'Cost metrics are based on this row.'],
+          ['Selected hypothesis / tail', tailScenarioText(currentInput.tail), 'Incremental cost availability notes use the currently selected hypothesis/tail and recalculate when this input changes.'],
+          ['Cumulative treatment ad spend', spendText, 'Uses Cumulative Experiment Spend.'],
+          ['Treatment installs', formatTreatmentCount(v.experimentInstalls, 'installs'), 'Total treatment attributed installs from the latest cumulative trend row.'],
+          ['Incremental/decremental Install %', formatIncrementalShareDirectional(model.installShare, d), incrementalShareFormulaNote(model.installShare, '1 - (Install Rate(control) / Install Rate(treatment)).', d)],
+          ['Incremental/decremental installs', formatIncrementalMetricCountDirectional(model.icpi, 'installs'), incrementalCountFormulaNote(model.icpi, model.installShare, v.experimentInstalls, 'installs', 'Incremental/decremental Install %', d)],
+          ['iCPI', formatCostMetricValue(model.icpi), costMetricBreakdownNote(model.icpi, model.installShare, v.experimentInstalls, 'installs', 'Incremental/decremental Install %', 'Ad Spend / incremental/decremental installs.', d)],
+          ['Treatment events (u)', formatTreatmentCount(v.experimentEventsUnique, 'events (u)'), 'Total treatment attributed unique events from the latest cumulative trend row.'],
+          [`${useInstallMethod ? 'iCPA(u) install-lift %' : 'Incremental/decremental Event %(u)'}`, formatIncrementalShareDirectional(selectedUniqueShare, d), useInstallMethod ? 'Static report selected method applies the install incremental/decremental % to treatment Events (u).' : incrementalShareFormulaNote(selectedUniqueShare, '1 - (Event Rate(control, u) / Event Rate(treatment, u)).', d)],
+          [`Incremental/decremental events (u), ${methodLabel}`, formatIncrementalMetricCountDirectional(selectedUnique, 'events (u)'), incrementalCountFormulaNote(selectedUnique, selectedUniqueShare, v.experimentEventsUnique, 'events (u)', useInstallMethod ? 'Incremental/decremental Install %' : 'Incremental/decremental Event %(u)', d)],
+          [`iCPA(u), ${methodLabel}`, formatCostMetricValue(selectedUnique), costMetricBreakdownNote(selectedUnique, selectedUniqueShare, v.experimentEventsUnique, 'events (u)', useInstallMethod ? 'Incremental/decremental Install %' : 'Incremental/decremental Event %(u)', useInstallMethod ? 'Ad Spend / (Incremental/decremental Install % * Experiment Events (u)).' : 'Ad Spend / (Incremental/decremental Event %(u) * Experiment Events (u)).', d)],
+          ['Treatment events (r)', formatTreatmentCount(v.experimentEventsRaw, 'events (r)'), 'Total treatment attributed repeat/raw events from the latest cumulative trend row.'],
+          [`${useInstallMethod ? 'iCPA(r) install-lift %' : 'Incremental/decremental Event %(r)'}`, formatIncrementalShareDirectional(selectedRawShare, d), useInstallMethod ? 'Static report selected method applies the install incremental/decremental % to treatment Events (r).' : incrementalShareFormulaNote(selectedRawShare, '1 - (Event Rate(control, r) / Event Rate(treatment, r)).', d)],
+          [`Incremental/decremental events (r), ${methodLabel}`, formatIncrementalMetricCountDirectional(selectedRaw, 'events (r)'), incrementalCountFormulaNote(selectedRaw, selectedRawShare, v.experimentEventsRaw, 'events (r)', useInstallMethod ? 'Incremental/decremental Install %' : 'Incremental/decremental Event %(r)', d)],
+          [`iCPA(r), ${methodLabel}`, formatCostMetricValue(selectedRaw), costMetricBreakdownNote(selectedRaw, selectedRawShare, v.experimentEventsRaw, 'events (r)', useInstallMethod ? 'Incremental/decremental Install %' : 'Incremental/decremental Event %(r)', useInstallMethod ? 'Ad Spend / (Incremental/decremental Install % * Experiment Events (r)).' : 'Ad Spend / (Incremental/decremental Event %(r) * Experiment Events (r)).', d)]
+        ]);
+        return `
+    <section class="card">
+      <h2>Incremental Cost Metrics</h2>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">Treatment ad spend</div><div class="v">${escapeHtml(spendText)}</div><div class="s">Cumulative Experiment Spend.</div></div>
+        <div class="metric"><div class="k">iCPI</div><div class="v">${escapeHtml(formatCostMetricValue(model.icpi))}</div><div class="s">${escapeHtml(costCardVolumeSub(v.experimentInstalls, 'installs', model.icpi, 'installs'))}</div></div>
+        <div class="metric"><div class="k">iCPA(u)</div><div class="v">${escapeHtml(formatCostMetricValue(selectedUnique))}</div><div class="s">${escapeHtml(costCardVolumeSub(v.experimentEventsUnique, 'events (u)', selectedUnique, 'events (u)'))}</div></div>
+        <div class="metric"><div class="k">iCPA(r)</div><div class="v">${escapeHtml(formatCostMetricValue(selectedRaw))}</div><div class="s">${escapeHtml(costCardVolumeSub(v.experimentEventsRaw, 'events (r)', selectedRaw, 'events (r)'))}</div></div>
+      </div>
+      <div class="note">${escapeHtml(methodNote)} Live calculator results show both UA iCPA methods; this static report includes the selected method only.${availabilityReportMarkup}</div>
+      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </section>`;
+      }
+      const rows = buildReportTableRows([
+        ['Latest cumulative trend row', model.latestLabel || '--', 'Cost metrics are based on this row.'],
+        ['Selected hypothesis / tail', tailScenarioText(currentInput.tail), 'Incremental cost availability notes use the currently selected hypothesis/tail and recalculate when this input changes.'],
+        ['Cumulative treatment ad spend', spendText, 'Uses Cumulative Experiment Spend.'],
+        ['Treatment events (u)', formatTreatmentCount(v.experimentEventsUnique, 'events (u)'), 'Total treatment attributed unique events from the latest cumulative trend row.'],
+        ['Incremental/decremental Event %(u)', formatIncrementalShareDirectional(model.eventUniqueShare, d), incrementalShareFormulaNote(model.eventUniqueShare, '1 - (Event Rate(control, u) / Event Rate(treatment, u)).', d)],
+        ['Incremental/decremental events (u)', formatIncrementalMetricCountDirectional(model.reIcpaUnique, 'events (u)'), incrementalCountFormulaNote(model.reIcpaUnique, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', 'Incremental/decremental Event %(u)', d)],
+        ['iCPA(u)', formatCostMetricValue(model.reIcpaUnique), costMetricBreakdownNote(model.reIcpaUnique, model.eventUniqueShare, v.experimentEventsUnique, 'events (u)', 'Incremental/decremental Event %(u)', 'Ad Spend / incremental/decremental unique events.', d)],
+        ['Treatment events (r)', formatTreatmentCount(v.experimentEventsRaw, 'events (r)'), 'Total treatment attributed repeat/raw events from the latest cumulative trend row.'],
+        ['Incremental/decremental Event %(r)', formatIncrementalShareDirectional(model.eventRawShare, d), incrementalShareFormulaNote(model.eventRawShare, '1 - (Event Rate(control, r) / Event Rate(treatment, r)).', d)],
+        ['Incremental/decremental events (r)', formatIncrementalMetricCountDirectional(model.reIcpaRaw, 'events (r)'), incrementalCountFormulaNote(model.reIcpaRaw, model.eventRawShare, v.experimentEventsRaw, 'events (r)', 'Incremental/decremental Event %(r)', d)],
+        ['iCPA(r)', formatCostMetricValue(model.reIcpaRaw), costMetricBreakdownNote(model.reIcpaRaw, model.eventRawShare, v.experimentEventsRaw, 'events (r)', 'Incremental/decremental Event %(r)', 'Ad Spend / incremental/decremental repeat/raw events.', d)]
+      ]);
+      return `
+    <section class="card">
+      <h2>Incremental Cost Metrics</h2>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">Treatment ad spend</div><div class="v">${escapeHtml(spendText)}</div><div class="s">Cumulative Experiment Spend.</div></div>
+        <div class="metric"><div class="k">iCPA(u)</div><div class="v">${escapeHtml(formatCostMetricValue(model.reIcpaUnique))}</div><div class="s">${escapeHtml(costCardVolumeSub(v.experimentEventsUnique, 'events (u)', model.reIcpaUnique, 'events (u)'))}</div></div>
+        <div class="metric"><div class="k">iCPA(r)</div><div class="v">${escapeHtml(formatCostMetricValue(model.reIcpaRaw))}</div><div class="s">${escapeHtml(costCardVolumeSub(v.experimentEventsRaw, 'events (r)', model.reIcpaRaw, 'events (r)'))}</div></div>
+      </div>
+      <div class="note">For RE, iCPA(u) and iCPA(r) use actual event-rate differences based on reach. Incremental Event % = 1 - (Event Rate(control) / Event Rate(treatment)), and iCPA = Ad Spend / (Incremental Event % * Experiment Events).${availabilityReportMarkup}</div>
+      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </section>`;
+    }
+
     function buildReportTableRows(rows) {
       return rows.map(row => `<tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td><td>${escapeHtml(row[2] || '')}</td></tr>`).join('');
     }
@@ -5059,6 +5596,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const uaEventTrendRows = hasUaEventTrend ? formatTrendRows(trend.event.points, currentInput, { includePower: includePowerReport }) : '';
       const uaEventErrorNote = currentInput.experimentType === 'UA' && currentInput.showUaEventChart && trend && trend.event && !trend.event.valid && trend.event.errors.length ? `<div class="note">${escapeHtml(trend.event.errors.join(' '))}</div>` : '';
       const uaEventLiftNote = 'For UA incrementality experiments, Liftoff defines A-event lift as tied to install lift: if the install is incremental, downstream A-event activity from that install is also considered incremental. This optional chart shows a diagnostic event-rate view by comparing A-event counts against reach for control vs experiment. The event-rate view of conversion rate differences can reflect "quality" differences between organic driven behavior post install vs paid media driven behavior post install. For UA lift experiments, A-event lift should still be interpreted as anchored to install lift. IE if install lift was X% then A event lift is also X%.';
+      const incrementalCostReportSection = buildIncrementalCostReportSection(currentInput);
       const forecastedTimeReportSection = currentInput.includeForecastTimingReport ? buildForecastedTimeReportSection(currentInput, trend) : '';
       const reportRightAxisText = includePowerReport ? 'calculated confidence % and observed power %' : 'calculated confidence %';
       const reportRightAxisLineWord = includePowerReport ? 'lines' : 'line';
@@ -5089,6 +5627,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Show A event chart?', currentInput.experimentType === 'UA' ? (currentInput.showUaEventChart ? 'Yes' : 'No') : 'Not applicable', 'When enabled for UA, the report includes a second A-event trend chart.'],
         ['Include Forecast ETA timing in static HTML report output?', currentInput.includeForecastTimingReport ? 'Yes' : 'No', includePowerReport ? 'When enabled, the report includes the Forecasted Time to reach Confidence and Power section.' : 'When enabled, the report includes the Forecasted Time to reach Confidence section; power ETA outputs are excluded because power report output is disabled.'],
         ['Include power % calculations in static HTML report output?', includePowerReport ? 'Yes' : 'No', 'When disabled, the report omits observed-power metrics, power trend lines, power columns, and power ETA timing.'],
+        ['UA static-report iCPA method', currentInput.experimentType === 'UA' ? (currentInput.uaReportUseInstallLiftForIcpa !== false ? 'Install Lift %' : 'Event rate based on reach') : 'Not applicable', 'For UA only. Live results show both iCPA methods; the static report includes the selected method.'],
         ['Current calculator control input', `${formatNumber(currentInput.controlConversions)} conversions / ${formatNumber(currentInput.controlTrials)} reach`, 'Manual calculator input at report download time.'],
         ['Current calculator experiment input', `${formatNumber(currentInput.experimentConversions)} conversions / ${formatNumber(currentInput.experimentTrials)} reach`, 'Manual calculator input at report download time.'],
         ['Confidence level', formatPct(currentInput.confidenceLevel, 0), 'Used for p-value decisioning and confidence intervals.'],
@@ -5209,6 +5748,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       <h2>Original Calculator Inputs and Settings</h2>
       <div class="table-wrap"><table><thead><tr><th>Input</th><th>Value</th><th>Notes</th></tr></thead><tbody>${settingsRows}</tbody></table></div>
     </section>
+
+    ${incrementalCostReportSection}
 
     <section class="card">
       <h2>Trend Chart</h2>
@@ -5422,6 +5963,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       ]);
 
       renderTrend(input);
+      renderIncrementalCostMetrics(input);
       renderForecastedTimeSection(input);
 
       const isExperimentHigher = out.diff > 0;
@@ -5458,6 +6000,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       params.set('showUaEventChart', input.showUaEventChart ? '1' : '0');
       params.set('includeForecastTimingReport', input.includeForecastTimingReport ? '1' : '0');
       params.set('includePowerReport', input.includePowerReport ? '1' : '0');
+      params.set('uaReportUseInstallLiftForIcpa', input.uaReportUseInstallLiftForIcpa ? '1' : '0');
       params.set('controlLabel', input.controlLabel);
       params.set('experimentLabel', input.experimentLabel);
       if (input.experimentType === 'RE') {
@@ -5490,6 +6033,26 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const d = input.precision;
       const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
       const forecast = reachForecastCalc(input, out, input.powerTarget);
+      const costModel = buildIncrementalCostModel(input, { allowSignedNegative: true });
+      const costAvailabilityReason = costModel.valid ? incrementalCostAvailabilityNote(input, costModel) : '';
+      const costSignedReason = costModel.valid ? incrementalCostSignedNote(input, costModel) : '';
+      const costValues = costModel.values || {};
+      const costLines = costModel.valid
+        ? (input.experimentType === 'UA'
+          ? [
+              `iCPI: ${formatCostMetricValue(costModel.icpi)}; treatment installs: ${Number.isFinite(costValues.experimentInstalls) ? formatNumber(costValues.experimentInstalls) : '--'}; install %: ${formatIncrementalShareDirectional(costModel.installShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.icpi, 'installs')}`,
+              `iCPA(u), install-lift method: ${formatCostMetricValue(costModel.uaIcpaInstallUnique)}; treatment events (u): ${Number.isFinite(costValues.experimentEventsUnique) ? formatNumber(costValues.experimentEventsUnique) : '--'}; applied install %: ${formatIncrementalShareDirectional(costModel.installShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.uaIcpaInstallUnique, 'events (u)')}`,
+              `iCPA(r), install-lift method: ${formatCostMetricValue(costModel.uaIcpaInstallRaw)}; treatment events (r): ${Number.isFinite(costValues.experimentEventsRaw) ? formatNumber(costValues.experimentEventsRaw) : '--'}; applied install %: ${formatIncrementalShareDirectional(costModel.installShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.uaIcpaInstallRaw, 'events (r)')}`,
+              `Alternative iCPA(u), event-rate method: ${formatCostMetricValue(costModel.uaIcpaEventUnique)}; treatment events (u): ${Number.isFinite(costValues.experimentEventsUnique) ? formatNumber(costValues.experimentEventsUnique) : '--'}; event %: ${formatIncrementalShareDirectional(costModel.eventUniqueShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.uaIcpaEventUnique, 'events (u)')}`,
+              `Alternative iCPA(r), event-rate method: ${formatCostMetricValue(costModel.uaIcpaEventRaw)}; treatment events (r): ${Number.isFinite(costValues.experimentEventsRaw) ? formatNumber(costValues.experimentEventsRaw) : '--'}; event %: ${formatIncrementalShareDirectional(costModel.eventRawShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.uaIcpaEventRaw, 'events (r)')}`
+            ]
+          : [
+              `iCPA(u): ${formatCostMetricValue(costModel.reIcpaUnique)}; treatment events (u): ${Number.isFinite(costValues.experimentEventsUnique) ? formatNumber(costValues.experimentEventsUnique) : '--'}; event %: ${formatIncrementalShareDirectional(costModel.eventUniqueShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.reIcpaUnique, 'events (u)')}`,
+              `iCPA(r): ${formatCostMetricValue(costModel.reIcpaRaw)}; treatment events (r): ${Number.isFinite(costValues.experimentEventsRaw) ? formatNumber(costValues.experimentEventsRaw) : '--'}; event %: ${formatIncrementalShareDirectional(costModel.eventRawShare, d)}; denominator: ${formatIncrementalMetricCountDirectional(costModel.reIcpaRaw, 'events (r)')}`
+            ])
+        : ['Incremental cost metrics: enter trend data with Cumulative Experiment Spend.'];
+      if (costSignedReason) costLines.push(`Incremental cost signed internal note: ${costSignedReason}`);
+      if (costAvailabilityReason) costLines.push(`Incremental cost note: ${costAvailabilityReason}`);
       return [
         'A/B Test Significance Result',
         `Use case: ${input.experimentType}`,
@@ -5507,7 +6070,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         `Projected actual-arm ETA to ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(forecast.daysToReady) ? formatDurationFromDays(forecast.daysToReady) : (forecast.reason || '--')}`,
         `Projected control reach at power ETA: ${Number.isFinite(forecast.projectedControlReach) ? formatNumber(forecast.projectedControlReach) : '--'}`,
         `Projected experiment reach at power ETA: ${Number.isFinite(forecast.projectedExperimentReach) ? formatNumber(forecast.projectedExperimentReach) : '--'}`,
-        `Confidence interval for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`
+        `Confidence interval for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`,
+        ...costLines
       ].join('\n');
     }
 
@@ -5518,6 +6082,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       if (els.showUaEventChart) els.showUaEventChart.checked = false;
       if (els.includeForecastTimingReport) els.includeForecastTimingReport.checked = true;
       if (els.includePowerReport) els.includePowerReport.checked = true;
+      if (els.uaReportUseInstallLiftForIcpa) els.uaReportUseInstallLiftForIcpa.checked = true;
       els.controlLabel.value = 'control';
       els.experimentLabel.value = 'experiment';
       els.controlConversionName.value = 'A - Event';
@@ -5565,7 +6130,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     }
 
     for (const el of [
-      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.includeForecastTimingReport, els.includePowerReport, els.controlLabel, els.experimentLabel, els.controlConversionName,
+      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.includeForecastTimingReport, els.includePowerReport, els.uaReportUseInstallLiftForIcpa, els.controlLabel, els.experimentLabel, els.controlConversionName,
       els.experimentConversionName, els.controlConversions, els.controlTrials,
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
       els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
