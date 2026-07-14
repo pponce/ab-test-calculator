@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Local A/B Test Significance Calculator</title>
   <!-- v17: live/static outputs include treatment counts, incremental/decremental percentages, and signed denominator details for iCPI/iCPA. -->
+  <!-- v19: the main Statistical Power panel uses actual-arm reach-needed estimates instead of equal n/arm requirements. -->
   <style>
     :root {
       --bg: #f6f8fb;
@@ -2071,7 +2072,7 @@
             <div class="power-head">
               <div>
                 <h3>Statistical Power for This Effect</h3>
-                <div class="muted small">Post-hoc view based on the observed absolute effect size.</div>
+                <div class="muted small">Observed power and reach-needed estimates use actual control and experiment arm sizes.</div>
               </div>
               <span class="pill" id="powerTargetDisplay">Target power: 80%</span>
               <div id="powerStatus" class="status warn"><span class="dot"></span><span>Underpowered</span></div>
@@ -2080,22 +2081,37 @@
               <div class="metric">
                 <div class="k">Observed power</div>
                 <div class="v" id="observedPowerMetric">--</div>
-                <div class="s">Chance to detect an effect this large with the current sample.</div>
+                <div class="s" id="observedPowerSmall">Uses actual current control and experiment reach.</div>
               </div>
               <div class="metric">
-                <div class="k" id="requiredNLabel">Required n / arm @ 80%</div>
-                <div class="v" id="requiredNMetric">--</div>
-                <div class="s" id="requiredNSmall">Equal-size arms; current confidence and tail.</div>
+                <div class="k">Power gap</div>
+                <div class="v" id="powerGapMetric">--</div>
+                <div class="s" id="powerGapSmall">Target minus observed power.</div>
               </div>
               <div class="metric">
-                <div class="k">Smaller arm today</div>
-                <div class="v" id="smallerArmMetric">--</div>
-                <div class="s">Uses the smaller of control and experiment Audience Reach.</div>
+                <div class="k" id="controlReachNeededLabel">Control reach needed @ 80%</div>
+                <div class="v" id="controlReachNeededMetric">--</div>
+                <div class="s" id="controlReachNeededSmall">Actual-arm estimate.</div>
               </div>
               <div class="metric">
-                <div class="k">Additional n / smaller arm</div>
-                <div class="v" id="remainingNMetric">--</div>
-                <div class="s">Extra Audience Reach needed in the limiting arm.</div>
+                <div class="k" id="experimentReachNeededLabel">Experiment reach needed @ 80%</div>
+                <div class="v" id="experimentReachNeededMetric">--</div>
+                <div class="s" id="experimentReachNeededSmall">Actual-arm estimate.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="controlAdditionalReachLabel">Additional control reach</div>
+                <div class="v" id="controlAdditionalReachMetric">--</div>
+                <div class="s" id="controlAdditionalReachSmall">Extra reach needed for control.</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="experimentAdditionalReachLabel">Additional experiment reach</div>
+                <div class="v" id="experimentAdditionalReachMetric">--</div>
+                <div class="s" id="experimentAdditionalReachSmall">Extra reach needed for experiment.</div>
+              </div>
+              <div class="metric">
+                <div class="k">Projected ETA to target power</div>
+                <div class="v" id="powerEtaMetric">--</div>
+                <div class="s" id="powerEtaSmall">Uses trend growth or reach-growth helper when available.</div>
               </div>
             </div>
             <div class="note" id="powerRiskNote"></div>
@@ -2312,8 +2328,8 @@ H2 = target power for statistical power panel, e.g. 0.80
 I2 = control reach growth per selected period
 J2 = experiment reach growth per selected period; leave blank to reuse control growth
 K2 = p-value output
-L2 = required n / arm output
-M2 = observed power output
+L2 = observed power output
+M2 = projected actual-arm reach-growth periods needed
 N2 = confidence interval lower-bound output
 O2 = confidence interval upper-bound output
 P2 = required control N from planning helper
@@ -2359,13 +2375,10 @@ Confidence interval crosses zero? TRUE/FALSE:
 =LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,LOWER(G2),controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,effectdiff,ABS(experimentrate-controlrate),unpooledse,SQRT(controlrate*(1-controlrate)/controlreach+experimentrate*(1-experimentrate)/experimentreach),effectz,effectdiff/unpooledse,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),(1-NORM.S.DIST(zcrit-effectz,TRUE))+NORM.S.DIST(-zcrit-effectz,TRUE))
 
 False-negative risk for the observed effect:
-=1-M2
+=1-L2
 
-Required n / arm at target power:
-=LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,LOWER(G2),targetpower,H2,controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,effectdiff,ABS(experimentrate-controlrate),averagerate,(controlrate+experimentrate)/2,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),zpower,NORM.S.INV(targetpower),IF(effectdiff=0,"",ROUNDUP(((zcrit*SQRT(2*averagerate*(1-averagerate))+zpower*SQRT(controlrate*(1-controlrate)+experimentrate*(1-experimentrate)))^2)/(effectdiff^2),0)))
-
-Additional Audience Reach needed in the smaller arm:
-=IF(L2="","",MAX(0,L2-MIN(C2,E2)))</div>
+Actual-arm power planning:
+Use the projected actual-arm reach-growth formulas below to estimate how many periods are needed to reach the selected power target. These formulas project control and experiment reach separately; they do not require equal arm sizes.</div>
 
             <div class="code-block">Projected actual-arm reach-growth periods needed:
 =LET(controlconv,B2,controlreach,C2,experimentconv,D2,experimentreach,E2,confidence,F2,tailchoice,LOWER(G2),targetpower,H2,controlgrowth,I2,experimentgrowth,IF(J2="",I2,J2),controlrate,controlconv/controlreach,experimentrate,experimentconv/experimentreach,zcrit,NORM.S.INV(1-IF(tailchoice="two",(1-confidence)/2,(1-confidence))),periods,SEQUENCE(50001,1,0,1),controln,controlreach+controlgrowth*periods,experimentn,experimentreach+experimentgrowth*periods,unpooledse,SQRT(controlrate*(1-controlrate)/controln+experimentrate*(1-experimentrate)/experimentn),effectz,ABS(experimentrate-controlrate)/unpooledse,projectedpower,(1-NORM.S.DIST(zcrit-effectz,TRUE))+NORM.S.DIST(-zcrit-effectz,TRUE),IFERROR(INDEX(periods,MATCH(TRUE,projectedpower>=targetpower,0)),""))
@@ -2503,11 +2516,23 @@ Total planned spend:
       powerTargetDisplay: document.getElementById('powerTargetDisplay'),
       powerStatus: document.getElementById('powerStatus'),
       observedPowerMetric: document.getElementById('observedPowerMetric'),
-      requiredNLabel: document.getElementById('requiredNLabel'),
-      requiredNMetric: document.getElementById('requiredNMetric'),
-      requiredNSmall: document.getElementById('requiredNSmall'),
-      smallerArmMetric: document.getElementById('smallerArmMetric'),
-      remainingNMetric: document.getElementById('remainingNMetric'),
+      observedPowerSmall: document.getElementById('observedPowerSmall'),
+      powerGapMetric: document.getElementById('powerGapMetric'),
+      powerGapSmall: document.getElementById('powerGapSmall'),
+      controlReachNeededLabel: document.getElementById('controlReachNeededLabel'),
+      controlReachNeededMetric: document.getElementById('controlReachNeededMetric'),
+      controlReachNeededSmall: document.getElementById('controlReachNeededSmall'),
+      experimentReachNeededLabel: document.getElementById('experimentReachNeededLabel'),
+      experimentReachNeededMetric: document.getElementById('experimentReachNeededMetric'),
+      experimentReachNeededSmall: document.getElementById('experimentReachNeededSmall'),
+      controlAdditionalReachLabel: document.getElementById('controlAdditionalReachLabel'),
+      controlAdditionalReachMetric: document.getElementById('controlAdditionalReachMetric'),
+      controlAdditionalReachSmall: document.getElementById('controlAdditionalReachSmall'),
+      experimentAdditionalReachLabel: document.getElementById('experimentAdditionalReachLabel'),
+      experimentAdditionalReachMetric: document.getElementById('experimentAdditionalReachMetric'),
+      experimentAdditionalReachSmall: document.getElementById('experimentAdditionalReachSmall'),
+      powerEtaMetric: document.getElementById('powerEtaMetric'),
+      powerEtaSmall: document.getElementById('powerEtaSmall'),
       powerRiskNote: document.getElementById('powerRiskNote'),
       powerCallout: document.getElementById('powerCallout'),
       powerRows: document.getElementById('powerRows'),
@@ -3336,51 +3361,309 @@ Total planned spend:
       els.interpretationBody.innerHTML = body;
     }
 
+
+    function projectedPowerAtReach(input, targetPower, controlReach, experimentReach) {
+      const controlRate = input.controlConversions / input.controlTrials;
+      const experimentRate = input.experimentConversions / input.experimentTrials;
+      if (!(Number.isFinite(controlRate) && Number.isFinite(experimentRate))) return { projectedInput: null, projectedOut: null, projectedPower: null };
+      const projectedInput = {
+        ...input,
+        controlTrials: Math.max(1, controlReach),
+        experimentTrials: Math.max(1, experimentReach),
+        controlConversions: controlRate * Math.max(1, controlReach),
+        experimentConversions: experimentRate * Math.max(1, experimentReach),
+        errors: []
+      };
+      const projectedOut = calculate(projectedInput);
+      const projectedPower = calculatePowerForObservedEffect(projectedInput, projectedOut, targetPower);
+      return { projectedInput, projectedOut, projectedPower };
+    }
+
+    function actualArmRatioPowerRequirement(input, out, targetPower, maxScale = 1000000) {
+      const currentPower = calculatePowerForObservedEffect(input, out, targetPower);
+      const p1 = input.controlConversions / input.controlTrials;
+      const p2 = input.experimentConversions / input.experimentTrials;
+      if (!(Number.isFinite(currentPower.observedPower) && Number.isFinite(p1) && Number.isFinite(p2))) {
+        return { finite: false, reason: 'Observed power cannot be projected until current rates and reach values are valid.' };
+      }
+      if (!(p1 >= 0 && p1 <= 1 && p2 >= 0 && p2 <= 1)) {
+        return { finite: false, reason: 'Actual-arm reach needed cannot be estimated because the z-test power calculation requires rates between 0% and 100%.' };
+      }
+      if (!(Math.abs(p2 - p1) > 0) || !(out.unpooledSe > 0)) {
+        return { finite: false, reason: 'Actual-arm reach needed cannot be estimated because the observed effect is zero.' };
+      }
+      if (currentPower.observedPower >= targetPower) {
+        return {
+          finite: true,
+          scale: 1,
+          projectedControlReach: Math.ceil(input.controlTrials),
+          projectedExperimentReach: Math.ceil(input.experimentTrials),
+          additionalControlReach: 0,
+          additionalExperimentReach: 0,
+          projectedPower: currentPower,
+          basisLabel: 'Current actual-arm reach',
+          basisNote: 'Current observed power already meets the selected target using the actual current arm sizes.'
+        };
+      }
+
+      const reachesTarget = (scale) => {
+        const projected = projectedPowerAtReach(input, targetPower, input.controlTrials * scale, input.experimentTrials * scale);
+        return projected.projectedPower && Number.isFinite(projected.projectedPower.observedPower) && projected.projectedPower.observedPower >= targetPower;
+      };
+
+      let lo = 1;
+      let hi = 2;
+      while (hi <= maxScale && !reachesTarget(hi)) {
+        lo = hi;
+        hi *= 2;
+      }
+      if (hi > maxScale) {
+        return { finite: false, reason: `Target power was not reached after scaling the current control/experiment reach ratio by ${formatNumber(maxScale)}x.` };
+      }
+      for (let i = 0; i < 54 && hi - lo > 0.000001; i++) {
+        const mid = (lo + hi) / 2;
+        if (reachesTarget(mid)) hi = mid;
+        else lo = mid;
+      }
+      const projectedControlReach = Math.ceil(input.controlTrials * hi);
+      const projectedExperimentReach = Math.ceil(input.experimentTrials * hi);
+      const projected = projectedPowerAtReach(input, targetPower, projectedControlReach, projectedExperimentReach);
+      return {
+        finite: true,
+        scale: hi,
+        projectedControlReach,
+        projectedExperimentReach,
+        additionalControlReach: Math.max(0, projectedControlReach - input.controlTrials),
+        additionalExperimentReach: Math.max(0, projectedExperimentReach - input.experimentTrials),
+        projectedPower: projected.projectedPower,
+        projectedInput: projected.projectedInput,
+        basisLabel: 'Current actual-arm ratio requirement',
+        basisNote: 'No equal-arm assumption: the calculator scales the current control/experiment reach ratio forward and keeps the latest observed rates fixed until the selected power target is reached.'
+      };
+    }
+
+    function getPowerReachGrowthSource(input, trendOverride = null) {
+      const trend = trendOverride || trendState.last;
+      if (trend && trend.valid && trend.points && trend.points.length >= 2) {
+        const stats = calcWindowReachStats(trend.points, null);
+        if (stats && ((stats.controlReachPerDay > 0) || (stats.experimentReachPerDay > 0))) {
+          return {
+            source: 'trend',
+            label: 'Trend-data actual-arm projection',
+            note: `Uses full-window observed reach growth from pasted trend data: ${formatNumber(stats.controlReachPerDay, 0)}/day control and ${formatNumber(stats.experimentReachPerDay, 0)}/day experiment.`,
+            controlReachPerDay: Math.max(0, stats.controlReachPerDay),
+            experimentReachPerDay: Math.max(0, stats.experimentReachPerDay)
+          };
+        }
+      }
+
+      const unit = periodInfo(input.reachGrowthUnit);
+      const controlGrowth = input.controlDailyReach;
+      const experimentGrowthRaw = input.experimentDailyReach;
+      const experimentGrowth = Number.isFinite(experimentGrowthRaw) ? experimentGrowthRaw : controlGrowth;
+      if (Number.isFinite(controlGrowth) && Number.isFinite(experimentGrowth) && controlGrowth >= 0 && experimentGrowth >= 0 && (controlGrowth > 0 || experimentGrowth > 0)) {
+        const reusedText = !Number.isFinite(experimentGrowthRaw) ? ' Experiment growth is blank, so the control growth input is reused for experiment.' : '';
+        return {
+          source: 'manual',
+          label: 'Reach-growth helper actual-arm projection',
+          note: `Uses the reach-growth helper inputs converted to daily reach: ${formatNumber(controlGrowth / unit.days, 0)}/day control and ${formatNumber(experimentGrowth / unit.days, 0)}/day experiment.${reusedText}`,
+          controlReachPerDay: controlGrowth / unit.days,
+          experimentReachPerDay: experimentGrowth / unit.days
+        };
+      }
+      return null;
+    }
+
+    function calculateActualArmPowerReachNeed(input, out, targetPowerOverride, trendOverride = null) {
+      const power = calculatePowerForObservedEffect(input, out, targetPowerOverride);
+      const targetPower = Number.isFinite(targetPowerOverride) ? targetPowerOverride : input.powerTarget;
+      const base = {
+        power,
+        targetPower,
+        finite: false,
+        projectedControlReach: NaN,
+        projectedExperimentReach: NaN,
+        additionalControlReach: NaN,
+        additionalExperimentReach: NaN,
+        projectedPower: null,
+        etaDays: NaN,
+        basisLabel: '--',
+        basisNote: '',
+        reason: ''
+      };
+
+      if (!Number.isFinite(power.observedPower)) {
+        return { ...base, reason: 'Observed power cannot be estimated until the calculator has valid rates, reach, and a non-zero observed effect.' };
+      }
+
+      if (power.observedPower >= targetPower) {
+        return {
+          ...base,
+          finite: true,
+          projectedControlReach: Math.ceil(input.controlTrials),
+          projectedExperimentReach: Math.ceil(input.experimentTrials),
+          additionalControlReach: 0,
+          additionalExperimentReach: 0,
+          projectedPower: power,
+          etaDays: 0,
+          basisLabel: 'Current actual-arm reach',
+          basisNote: 'Current observed power already meets the selected target using actual current control and experiment reach.'
+        };
+      }
+
+      const growth = getPowerReachGrowthSource(input, trendOverride);
+      let growthReason = '';
+      if (growth) {
+        const projected = actualArmPowerForecastDays(input, targetPower, growth.controlReachPerDay, growth.experimentReachPerDay);
+        if (projected && Number.isFinite(projected.days)) {
+          const etaDays = Math.max(0, Math.ceil(projected.days));
+          const p1 = input.controlConversions / input.controlTrials;
+          const p2 = input.experimentConversions / input.experimentTrials;
+          const projectedAtEta = projectedInputAtDay(input, p1, p2, Math.max(0, growth.controlReachPerDay), Math.max(0, growth.experimentReachPerDay), etaDays);
+          const projectedOut = calculate(projectedAtEta);
+          const projectedPower = calculatePowerForObservedEffect(projectedAtEta, projectedOut, targetPower);
+          const projectedControlReach = Math.ceil(projectedAtEta.controlTrials);
+          const projectedExperimentReach = Math.ceil(projectedAtEta.experimentTrials);
+          return {
+            ...base,
+            finite: true,
+            projectedControlReach,
+            projectedExperimentReach,
+            additionalControlReach: Math.max(0, projectedControlReach - input.controlTrials),
+            additionalExperimentReach: Math.max(0, projectedExperimentReach - input.experimentTrials),
+            projectedPower,
+            projectedInput: projectedAtEta,
+            etaDays,
+            basisLabel: growth.label,
+            basisNote: `${growth.note} It projects each arm separately and does not require equal control and experiment reach.`
+          };
+        }
+        growthReason = projected && projected.reason ? projected.reason : 'The available reach-growth projection did not produce a finite ETA.';
+      }
+
+      const ratioRequirement = actualArmRatioPowerRequirement(input, out, targetPower);
+      if (ratioRequirement.finite) {
+        const note = growthReason
+          ? `${ratioRequirement.basisNote} The available actual reach-growth projection did not produce a finite ETA: ${growthReason}`
+          : ratioRequirement.basisNote;
+        return {
+          ...base,
+          ...ratioRequirement,
+          basisNote: note,
+          etaDays: NaN
+        };
+      }
+      return {
+        ...base,
+        reason: growthReason || ratioRequirement.reason || 'Actual-arm reach needed could not be estimated under the current inputs.'
+      };
+    }
+
+    function formatSignedPowerGap(power) {
+      if (!power || !Number.isFinite(power.observedPower) || !Number.isFinite(power.targetPower)) return '--';
+      const gap = power.targetPower - power.observedPower;
+      if (gap <= 0) return '0.0 pp';
+      return (gap * 100).toLocaleString(undefined, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' pp';
+    }
+
     function renderPower(input, out) {
       const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const reachNeed = calculateActualArmPowerReachNeed(input, out, input.powerTarget, trendState.last);
       const d = input.precision;
       const adequatelyPowered = Number.isFinite(power.observedPower) && power.observedPower >= power.targetPower;
-      const needsMore = Number.isFinite(power.additionalNeeded) && power.additionalNeeded > 0;
       const directionMismatch = (input.tail === 'greater' && out.diff < 0) || (input.tail === 'less' && out.diff > 0);
       const caveat = directionMismatch ? ` Note: the observed effect is opposite your selected one-sided success direction, so this panel is a sample-strength diagnostic, not evidence of lift in the desired direction.` : '';
+      const controlArm = displayArmLabel(input.controlLabel);
+      const experimentArm = displayArmLabel(input.experimentLabel);
+      const etaAvailable = Number.isFinite(reachNeed.etaDays);
+      const etaLabel = etaAvailable
+        ? (reachNeed.etaDays <= 0 ? 'Already at target' : `${formatNumber(reachNeed.etaDays)} days`)
+        : 'No finite ETA';
+      const etaSmall = etaAvailable
+        ? (reachNeed.etaDays <= 0 ? 'Current actual arm sizes already meet the target.' : `${formatDurationFromDays(reachNeed.etaDays)}; ${reachNeed.basisLabel}.`)
+        : (reachNeed.finite ? `${reachNeed.basisLabel}; reach need shown without a finite growth ETA.` : (reachNeed.reason || 'Trend growth or reach-growth helper required.'));
 
       if (els.powerTargetDisplay) els.powerTargetDisplay.textContent = `Target power: ${formatPct(power.targetPower, 0)}`;
       els.powerStatus.className = 'status ' + (adequatelyPowered ? 'good' : 'warn');
       els.powerStatus.innerHTML = `<span class="dot"></span><span>${adequatelyPowered ? 'Adequately powered' : 'Underpowered'}</span>`;
       els.observedPowerMetric.textContent = Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--';
-      els.requiredNLabel.textContent = `Required n / arm @ ${formatPct(power.targetPower, 0)}`;
-      els.requiredNMetric.textContent = Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--';
-      els.requiredNSmall.textContent = `Equal-arm planning benchmark at ${formatPct(power.targetPower, 0)} power and ${formatPct(input.confidenceLevel, 0)} confidence.`;
-      els.smallerArmMetric.textContent = Number.isFinite(power.smallerArm) ? formatNumber(power.smallerArm) : '--';
-      els.remainingNMetric.textContent = Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--';
+      if (els.observedPowerSmall) els.observedPowerSmall.textContent = `Current actual arms: ${formatNumber(input.controlTrials)} ${input.controlLabel} reach; ${formatNumber(input.experimentTrials)} ${input.experimentLabel} reach.`;
+      if (els.powerGapMetric) els.powerGapMetric.textContent = formatSignedPowerGap(power);
+      if (els.powerGapSmall) {
+        if (Number.isFinite(power.observedPower)) {
+          const gap = power.targetPower - power.observedPower;
+          els.powerGapSmall.textContent = gap > 0
+            ? `${formatPctPoint(gap, 1).replace(/^\+/, '')} remaining to reach ${formatPct(power.targetPower, 0)}.`
+            : `${formatPctPoint(Math.abs(gap), 1).replace(/^\+/, '')} above the selected target.`;
+        } else {
+          els.powerGapSmall.textContent = 'Target power minus observed power.';
+        }
+      }
+
+      if (els.controlReachNeededLabel) els.controlReachNeededLabel.textContent = `${controlArm} reach needed @ ${formatPct(power.targetPower, 0)}`;
+      if (els.experimentReachNeededLabel) els.experimentReachNeededLabel.textContent = `${experimentArm} reach needed @ ${formatPct(power.targetPower, 0)}`;
+      if (els.controlAdditionalReachLabel) els.controlAdditionalReachLabel.textContent = `Additional ${controlArm} reach`;
+      if (els.experimentAdditionalReachLabel) els.experimentAdditionalReachLabel.textContent = `Additional ${experimentArm} reach`;
+      if (els.controlReachNeededMetric) els.controlReachNeededMetric.textContent = Number.isFinite(reachNeed.projectedControlReach) ? formatNumber(reachNeed.projectedControlReach) : '--';
+      if (els.experimentReachNeededMetric) els.experimentReachNeededMetric.textContent = Number.isFinite(reachNeed.projectedExperimentReach) ? formatNumber(reachNeed.projectedExperimentReach) : '--';
+      if (els.controlAdditionalReachMetric) els.controlAdditionalReachMetric.textContent = Number.isFinite(reachNeed.additionalControlReach) ? formatNumber(reachNeed.additionalControlReach) : '--';
+      if (els.experimentAdditionalReachMetric) els.experimentAdditionalReachMetric.textContent = Number.isFinite(reachNeed.additionalExperimentReach) ? formatNumber(reachNeed.additionalExperimentReach) : '--';
+      if (els.controlReachNeededSmall) els.controlReachNeededSmall.textContent = reachNeed.basisLabel || 'Actual-arm requirement.';
+      if (els.experimentReachNeededSmall) els.experimentReachNeededSmall.textContent = reachNeed.basisLabel || 'Actual-arm requirement.';
+      if (els.controlAdditionalReachSmall) els.controlAdditionalReachSmall.textContent = `Current reach: ${formatNumber(input.controlTrials)}.`;
+      if (els.experimentAdditionalReachSmall) els.experimentAdditionalReachSmall.textContent = `Current reach: ${formatNumber(input.experimentTrials)}.`;
+      if (els.powerEtaMetric) els.powerEtaMetric.textContent = etaLabel;
+      if (els.powerEtaSmall) els.powerEtaSmall.textContent = etaSmall;
 
       if (Number.isFinite(power.observedPower)) {
         els.powerRiskNote.className = adequatelyPowered ? 'note' : 'note warn-note';
         const powerStateSentence = adequatelyPowered
           ? `This test is currently adequately powered against the selected ${formatPct(power.targetPower, 0)} target.`
           : 'This test is currently underpowered.';
-        els.powerRiskNote.innerHTML = `${powerStateSentence} With ${formatPct(power.observedPower, 1)} observed power, the test has about a ${formatPct(power.observedPower, 1)} chance of detecting a true effect this large, based on the current sample size and assumptions. Equivalently, there is about a ${formatPct(1 - power.observedPower, 1)} false-negative risk, meaning the test may miss a real effect even if one exists. Observed power is a sample-strength diagnostic for the observed absolute effect; it does not mean there is a ${formatPct(power.observedPower, 1)} chance that the observed lift is real.`;
+        els.powerRiskNote.innerHTML = `${powerStateSentence} Observed power uses the actual current control reach (${formatNumber(input.controlTrials)}) and experiment reach (${formatNumber(input.experimentTrials)}); it does not assume equal arm sizes. With ${formatPct(power.observedPower, 1)} observed power, the test has about a ${formatPct(power.observedPower, 1)} chance of detecting a true effect this large, based on the current sample size and assumptions. Equivalently, there is about a ${formatPct(1 - power.observedPower, 1)} false-negative risk. Observed power is a sample-strength diagnostic for the observed absolute effect; it does not mean there is a ${formatPct(power.observedPower, 1)} chance that the observed lift is real.`;
       } else {
         els.powerRiskNote.className = 'note';
         els.powerRiskNote.innerHTML = 'Observed power cannot be estimated until the calculator has a non-zero observed effect and valid conversion rates.';
       }
 
-      if (!Number.isFinite(power.requiredPerArm) || !Number.isFinite(power.observedPower)) {
-        els.powerCallout.innerHTML = 'Power cannot be estimated because the observed effect is zero or one of the rates is outside the valid range.';
-      } else if (needsMore) {
-        els.powerCallout.innerHTML = `Your test is currently underpowered. As an equal-arm planning benchmark, confirming the observed lift at ${formatPct(power.targetPower, 0)} power and ${formatPct(input.confidenceLevel, 0)} confidence would require about ${formatNumber(power.requiredPerArm)} Audience Reach per arm - roughly ${formatNumber(power.additionalNeeded)} more than your smaller arm has today.${caveat}`;
+      if (!Number.isFinite(power.observedPower) || !reachNeed.finite) {
+        els.powerCallout.innerHTML = escapeHtml(reachNeed.reason || 'Power cannot be estimated because the observed effect is zero or one of the rates is outside the valid range.');
+      } else if (adequatelyPowered) {
+        els.powerCallout.innerHTML = `Your current actual arm sizes already meet the selected ${formatPct(power.targetPower, 0)} observed-power target. No additional reach is needed for this power target under the current observed rates. Still check confidence, test design, randomization, and conversion lag before making a spend decision.${caveat}`;
       } else {
-        els.powerCallout.innerHTML = `Your smaller arm has at least the estimated equal-arm planning benchmark of ${formatNumber(power.requiredPerArm)} Audience Reach per arm for ${formatPct(power.targetPower, 0)} power and ${formatPct(input.confidenceLevel, 0)} confidence. Still check test design, randomization, and conversion lag before making a spend decision.${caveat}`;
+        const etaSentence = etaAvailable
+          ? ` Estimated timing is about ${formatDurationFromDays(reachNeed.etaDays)}.`
+          : ' No finite ETA is available from the current reach-growth assumptions, but the reach requirement is still shown.';
+        els.powerCallout.innerHTML = `Your test is currently underpowered. To reach ${formatPct(power.targetPower, 0)} observed power without forcing equal arm sizes, the calculator estimates the needed actual-arm reach as ${formatNumber(reachNeed.projectedControlReach)} ${escapeHtml(input.controlLabel)} reach and ${formatNumber(reachNeed.projectedExperimentReach)} ${escapeHtml(input.experimentLabel)} reach. That implies about ${formatNumber(reachNeed.additionalControlReach)} additional ${escapeHtml(input.controlLabel)} reach and ${formatNumber(reachNeed.additionalExperimentReach)} additional ${escapeHtml(input.experimentLabel)} reach from the current inputs. ${escapeHtml(reachNeed.basisNote || reachNeed.basisLabel || '')}${etaSentence}${caveat}`;
       }
 
+      const projectedPowerAtNeed = reachNeed.projectedPower && Number.isFinite(reachNeed.projectedPower.observedPower)
+        ? formatPct(reachNeed.projectedPower.observedPower, 1)
+        : '--';
+      const etaValue = etaAvailable
+        ? (reachNeed.etaDays <= 0 ? 'Already at target' : formatDurationFromDays(reachNeed.etaDays))
+        : '--';
+      const etaNote = etaAvailable
+        ? `${reachNeed.basisLabel}; projects actual arm sizes and keeps latest observed rates fixed.`
+        : (reachNeed.finite ? `${reachNeed.basisLabel}; no finite growth ETA is available.` : (reachNeed.reason || 'Provide trend data or reach-growth helper inputs to estimate timing.'));
+
       els.powerRows.innerHTML = renderRows([
-        ['Observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Post-hoc estimate for detecting the absolute observed effect with the current sample sizes.'],
-        [`Required n / arm @ ${formatPct(power.targetPower, 0)}`, Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--', `Equal allocation, ${input.tail === 'two' ? 'two-sided' : 'one-sided'} threshold, current confidence setting${input.comparisons > 1 ? ' with Bonferroni correction' : ''}.`],
-        ['Additional n needed', Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--', 'Required n per arm minus the smaller current arm.'],
+        ['Observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Uses actual current control and experiment Audience Reach values.'],
+        ['Power target', formatPct(power.targetPower, 0), 'Selected in the Power % input.'],
+        ['Power gap', formatSignedPowerGap(power), Number.isFinite(power.observedPower) ? (adequatelyPowered ? 'Observed power is at or above target.' : 'Additional sample is needed to reach the selected power target.') : 'Observed power unavailable.'],
+        ['False-negative risk', Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) : '--', 'Approximate risk of missing a true effect this large under current assumptions.'],
+        [`Current ${input.controlLabel} reach`, formatNumber(input.controlTrials), 'Current control denominator used in observed power.'],
+        [`Current ${input.experimentLabel} reach`, formatNumber(input.experimentTrials), 'Current experiment denominator used in observed power.'],
+        ['Actual-arm reach basis', reachNeed.basisLabel || '--', reachNeed.basisNote || 'Uses actual current arm sizes.'],
+        [`${input.controlLabel} reach needed @ ${formatPct(power.targetPower, 0)} power`, Number.isFinite(reachNeed.projectedControlReach) ? formatNumber(reachNeed.projectedControlReach) : '--', 'Actual-arm requirement; does not force equal control and experiment reach.'],
+        [`${input.experimentLabel} reach needed @ ${formatPct(power.targetPower, 0)} power`, Number.isFinite(reachNeed.projectedExperimentReach) ? formatNumber(reachNeed.projectedExperimentReach) : '--', 'Actual-arm requirement; does not force equal control and experiment reach.'],
+        [`Additional ${input.controlLabel} reach needed`, Number.isFinite(reachNeed.additionalControlReach) ? formatNumber(reachNeed.additionalControlReach) : '--', 'Needed from the current control reach to hit the selected power target.'],
+        [`Additional ${input.experimentLabel} reach needed`, Number.isFinite(reachNeed.additionalExperimentReach) ? formatNumber(reachNeed.additionalExperimentReach) : '--', 'Needed from the current experiment reach to hit the selected power target.'],
+        ['Projected ETA to selected power', etaValue, etaNote],
+        ['Projected observed power at needed reach', projectedPowerAtNeed, 'Observed power recalculated using the needed actual arm sizes and latest observed rates.'],
         ['Observed absolute effect', formatPctPoint(Math.abs(out.diff), d), 'Absolute value of experiment rate minus control rate.'],
-        ['Effect z for power', Number.isFinite(power.effectZ) ? formatNumber(power.effectZ, 4) : '--', 'Observed absolute effect divided by the unpooled standard error.'],
-        ['Critical z', Number.isFinite(power.zCrit) ? formatNumber(power.zCrit, 4) : '--', `${input.tail === 'two' ? 'Two-sided' : 'One-sided'} threshold from selected confidence.`],
-        ['Power target', formatPct(power.targetPower, 0), 'Used for required n / arm.']
+        ['Effect z for power', Number.isFinite(power.effectZ) ? formatNumber(power.effectZ, 4) : '--', 'Observed absolute effect divided by the unpooled standard error using actual current arm sizes.'],
+        ['Critical z', Number.isFinite(power.zCrit) ? formatNumber(power.zCrit, 4) : '--', `${input.tail === 'two' ? 'Two-sided' : 'One-sided'} threshold from selected confidence.`]
       ]);
       renderReachForecast(input, out);
     }
@@ -3389,6 +3672,7 @@ Total planned spend:
       const d = input.precision;
       const dMore = Math.max(6, d + 3);
       const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const actualArmRequirement = calculateActualArmPowerReachNeed(input, out, input.powerTarget, trendState.last);
       const forecast = reachForecastCalc(input, out, input.forecastPowerTarget);
       const planner = getPlannerEstimate(input);
       const alphaText = input.comparisons > 1
@@ -3464,16 +3748,23 @@ Observed power = [1 - Phi(zcrit - effect z)] + Phi(-zcrit - effect z) = ${Number
 False-negative risk for an effect this large is approximately 1 - observed power = ${Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) : '--'}.`
         },
         {
-          title: `Required n / arm at ${formatPct(input.powerTarget, 0)} power`,
-          body: `pbar = (p1 + p2) / 2 = ${formatFlexible((out.p1 + out.p2) / 2, dMore)}.
-zpower = Phi^-1(target power) = Phi^-1(${formatFlexible(input.powerTarget, dMore)}) = ${Number.isFinite(power.zPower) ? formatNumber(power.zPower, 4) : '--'}.
-Required n per arm = [(zcrit x sqrt(2 x pbar x (1-pbar)) + zpower x sqrt(p1(1-p1)+p2(1-p2)))^2] / abs(p2-p1)^2
-= ${Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--'}.
-Additional n needed in smaller arm = required n per arm - smaller current arm = ${Number.isFinite(power.additionalNeeded) ? formatNumber(power.additionalNeeded) : '--'}.`
+          title: `Actual-arm reach needed at ${formatPct(input.powerTarget, 0)} power`,
+          body: `The main power panel no longer uses an equal n/arm requirement.
+It estimates the control and experiment reach needed under the actual-arm setup.
+Projection basis = ${actualArmRequirement.basisLabel || '--'}.
+${actualArmRequirement.basisNote || actualArmRequirement.reason || 'Actual-arm reach requirement is not available from the current inputs.'}
+Current control reach = ${formatNumber(input.controlTrials)}.
+Current experiment reach = ${formatNumber(input.experimentTrials)}.
+Projected control reach needed = ${Number.isFinite(actualArmRequirement.projectedControlReach) ? formatNumber(actualArmRequirement.projectedControlReach) : '--'}.
+Projected experiment reach needed = ${Number.isFinite(actualArmRequirement.projectedExperimentReach) ? formatNumber(actualArmRequirement.projectedExperimentReach) : '--'}.
+Additional control reach needed = ${Number.isFinite(actualArmRequirement.additionalControlReach) ? formatNumber(actualArmRequirement.additionalControlReach) : '--'}.
+Additional experiment reach needed = ${Number.isFinite(actualArmRequirement.additionalExperimentReach) ? formatNumber(actualArmRequirement.additionalExperimentReach) : '--'}.
+Projected observed power at needed reach = ${actualArmRequirement.projectedPower && Number.isFinite(actualArmRequirement.projectedPower.observedPower) ? formatPct(actualArmRequirement.projectedPower.observedPower, 1) : '--'}.
+Projected ETA = ${Number.isFinite(actualArmRequirement.etaDays) ? formatDurationFromDays(actualArmRequirement.etaDays) : '--'}.`
         },
         {
           title: `Reach growth forecast to ${formatPct(input.powerTarget, 0)} power`,
-          body: `The reach helper now projects actual arm sizes rather than waiting for equal n/arm.
+          body: `The reach helper projects actual arm sizes using the entered reach-growth assumptions.
 Current observed power = ${Number.isFinite(forecast.forecastPower.observedPower) ? formatPct(forecast.forecastPower.observedPower, 1) : '--'}.
 Control projected reach after k ${forecast.unit.plural} = current control reach + (${Number.isFinite(forecast.controlGrowth) ? formatNumber(forecast.controlGrowth) : '--'} x k).
 Experiment projected reach after k ${forecast.unit.plural} = current experiment reach + (${Number.isFinite(forecast.experimentGrowth) ? formatNumber(forecast.experimentGrowth) : '--'} x k).
@@ -6034,6 +6325,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
 
       const ciLabel = `${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`;
       const powerForRows = calculatePowerForObservedEffect(input, out, input.powerTarget);
+      const reachNeedForRows = calculateActualArmPowerReachNeed(input, out, input.powerTarget, trendPreflight);
       els.topObservedPowerMetric.textContent = Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--';
       els.topObservedPowerSmall.textContent = Number.isFinite(powerForRows.observedPower) ? `${formatPct(1 - powerForRows.observedPower, 1)} false-negative risk; target ${formatPct(input.powerTarget, 0)}` : `Target: ${formatPct(input.powerTarget, 0)}`;
       renderTopInterpretation(input, out, powerForRows);
@@ -6050,8 +6342,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Calculated confidence %', formatPct(out.statisticalConfidence, d), 'Displayed as 1 - decision p-value.'],
         ['Decision alpha', formatFlexible(out.alpha, dMore), `Equivalent to ${formatPct(input.confidenceLevel, d)} confidence.`],
         ['Confidence interval', ciLabel, `${formatPct(1 - out.alphaAdjusted, d)} confidence interval for experiment - control, using unpooled SE.`],
-        ['Observed power', Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--', 'Post-hoc estimate using the absolute observed effect and current sample sizes.'],
-        [`Required n / arm @ ${formatPct(input.powerTarget, 0)} power`, Number.isFinite(powerForRows.requiredPerArm) ? formatNumber(powerForRows.requiredPerArm) : '--', 'Equal-arm planning benchmark; forecast ETA uses actual projected arm sizes.']
+        ['Observed power', Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--', 'Post-hoc estimate using the absolute observed effect and actual current control/experiment reach.'],
+        [`Actual-arm reach needed @ ${formatPct(input.powerTarget, 0)} power`, Number.isFinite(reachNeedForRows.projectedControlReach) && Number.isFinite(reachNeedForRows.projectedExperimentReach) ? `${input.controlLabel}: ${formatNumber(reachNeedForRows.projectedControlReach)}; ${input.experimentLabel}: ${formatNumber(reachNeedForRows.projectedExperimentReach)}` : '--', reachNeedForRows.finite ? `Additional reach needed: ${input.controlLabel} ${formatNumber(reachNeedForRows.additionalControlReach)}, ${input.experimentLabel} ${formatNumber(reachNeedForRows.additionalExperimentReach)}. ${reachNeedForRows.basisLabel}.` : (reachNeedForRows.reason || 'Actual-arm reach requirement unavailable.')]
       ]);
 
       renderTrend(input);
@@ -6124,7 +6416,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     function buildSummaryText(input, out) {
       const d = input.precision;
       const power = calculatePowerForObservedEffect(input, out, input.powerTarget);
-      const forecast = reachForecastCalc(input, out, input.powerTarget);
+      const reachNeed = calculateActualArmPowerReachNeed(input, out, input.powerTarget, trendState.last);
       const costModel = buildIncrementalCostModel(input, { allowSignedNegative: true });
       const costAvailabilityReason = costModel.valid ? incrementalCostAvailabilityNote(input, costModel) : '';
       const costSignedReason = costModel.valid ? incrementalCostSignedNote(input, costModel) : '';
@@ -6158,10 +6450,12 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         `Calculated confidence %: ${formatPct(out.statisticalConfidence, d)}`,
         `Significant at ${formatPct(input.confidenceLevel, d)} confidence: ${out.significant ? 'yes' : 'no'}`,
         `Observed power: ${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'}`,
-        `Required n / arm planning benchmark @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(power.requiredPerArm) ? formatNumber(power.requiredPerArm) : '--'}`,
-        `Projected actual-arm ETA to ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(forecast.daysToReady) ? formatDurationFromDays(forecast.daysToReady) : (forecast.reason || '--')}`,
-        `Projected control reach at power ETA: ${Number.isFinite(forecast.projectedControlReach) ? formatNumber(forecast.projectedControlReach) : '--'}`,
-        `Projected experiment reach at power ETA: ${Number.isFinite(forecast.projectedExperimentReach) ? formatNumber(forecast.projectedExperimentReach) : '--'}`,
+        `Actual-arm power projection basis: ${reachNeed.basisLabel || '--'}`,
+        `Control reach needed @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(reachNeed.projectedControlReach) ? formatNumber(reachNeed.projectedControlReach) : '--'}`,
+        `Experiment reach needed @ ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(reachNeed.projectedExperimentReach) ? formatNumber(reachNeed.projectedExperimentReach) : '--'}`,
+        `Additional control reach needed: ${Number.isFinite(reachNeed.additionalControlReach) ? formatNumber(reachNeed.additionalControlReach) : '--'}`,
+        `Additional experiment reach needed: ${Number.isFinite(reachNeed.additionalExperimentReach) ? formatNumber(reachNeed.additionalExperimentReach) : '--'}`,
+        `Projected actual-arm ETA to ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(reachNeed.etaDays) ? formatDurationFromDays(reachNeed.etaDays) : (reachNeed.reason || 'No ETA; using current-ratio reach requirement or no finite reach-growth projection.')}`,
         `Confidence interval for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`,
         ...costLines
       ].join('\n');
