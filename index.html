@@ -226,6 +226,57 @@
       margin-top: -2px;
     }
 
+    .trend-lock-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid #cddaff;
+      background: linear-gradient(180deg, #f8fbff, #eef4ff);
+      color: #2443a8;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .trend-lock-notice strong {
+      color: #173a9f;
+      font-weight: 950;
+    }
+
+    .trend-lock-icon {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #dbe7ff;
+      color: #173a9f;
+      font-size: 13px;
+      line-height: 1;
+      margin-top: -1px;
+    }
+
+    input.trend-locked-input {
+      border-color: #cddaff;
+      background: #f1f5ff;
+      color: #475569;
+      cursor: not-allowed;
+      box-shadow: inset 0 0 0 1px rgba(49, 87, 213, .04);
+    }
+
+    input.trend-locked-input:focus {
+      border-color: #cddaff;
+      box-shadow: inset 0 0 0 1px rgba(49, 87, 213, .04);
+    }
+
+    .trend-lock-field-hint {
+      color: #3157d5;
+      font-weight: 700;
+    }
+
     .button-row {
       display: flex;
       flex-wrap: wrap;
@@ -1442,14 +1493,21 @@
               <input id="experimentConversionName" type="hidden" value="A - Event" />
             </div>
 
+            <div id="trendAutofillLockNotice" class="trend-lock-notice hidden">
+              <span class="trend-lock-icon" aria-hidden="true">&#128274;</span>
+              <span><strong>Trend data is controlling these fields.</strong> Values are auto-filled from the latest cumulative trend row. Clear trend data to edit them manually.</span>
+            </div>
+
             <div class="two">
               <label>
                 <span id="controlConversionFieldLabel" class="field-label-inline">Control Attributed Installs</span>
                 <input id="controlConversions" type="number" min="0" step="1" value="107" />
+                <span id="controlConversionsLockHint" class="hint trend-lock-field-hint hidden">Locked: auto-filled from trend data.</span>
               </label>
               <label>
                 <span id="controlAudienceFieldLabel" class="field-label-inline">Control Audience Reach</span>
                 <input id="controlTrials" type="number" min="1" step="1" value="126968" />
+                <span id="controlTrialsLockHint" class="hint trend-lock-field-hint hidden">Locked: auto-filled from trend data.</span>
               </label>
             </div>
 
@@ -1457,10 +1515,12 @@
               <label>
                 <span id="experimentConversionFieldLabel" class="field-label-inline">Experiment Attributed Installs</span>
                 <input id="experimentConversions" type="number" min="0" step="1" value="466" />
+                <span id="experimentConversionsLockHint" class="hint trend-lock-field-hint hidden">Locked: auto-filled from trend data.</span>
               </label>
               <label>
                 <span id="experimentAudienceFieldLabel" class="field-label-inline">Experiment Audience Reach</span>
                 <input id="experimentTrials" type="number" min="1" step="1" value="580356" />
+                <span id="experimentTrialsLockHint" class="hint trend-lock-field-hint hidden">Locked: auto-filled from trend data.</span>
               </label>
             </div>
 
@@ -2367,10 +2427,15 @@ Total planned spend:
       controlAudienceFieldLabel: document.getElementById('controlAudienceFieldLabel'),
       experimentConversionFieldLabel: document.getElementById('experimentConversionFieldLabel'),
       experimentAudienceFieldLabel: document.getElementById('experimentAudienceFieldLabel'),
+      trendAutofillLockNotice: document.getElementById('trendAutofillLockNotice'),
       controlConversions: document.getElementById('controlConversions'),
+      controlConversionsLockHint: document.getElementById('controlConversionsLockHint'),
       controlTrials: document.getElementById('controlTrials'),
+      controlTrialsLockHint: document.getElementById('controlTrialsLockHint'),
       experimentConversions: document.getElementById('experimentConversions'),
+      experimentConversionsLockHint: document.getElementById('experimentConversionsLockHint'),
       experimentTrials: document.getElementById('experimentTrials'),
+      experimentTrialsLockHint: document.getElementById('experimentTrialsLockHint'),
       confidenceLevel: document.getElementById('confidenceLevel'),
       tail: document.getElementById('tail'),
       comparisons: document.getElementById('comparisons'),
@@ -4100,6 +4165,32 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.experimentConversions.value = String(state.values.experimentConversions);
       els.experimentTrials.value = String(state.values.experimentTrials);
       return state;
+    }
+
+    function updateTrendAutofillLockUi(input) {
+      const state = trendState.autofill || emptyTrendAutofillState();
+      const locked = !!(state.applied && state.values);
+      const lockTargets = [
+        [els.controlConversions, els.controlConversionsLockHint],
+        [els.controlTrials, els.controlTrialsLockHint],
+        [els.experimentConversions, els.experimentConversionsLockHint],
+        [els.experimentTrials, els.experimentTrialsLockHint]
+      ];
+      lockTargets.forEach(([field, hint]) => {
+        if (!field) return;
+        field.readOnly = locked;
+        field.setAttribute('aria-readonly', locked ? 'true' : 'false');
+        field.classList.toggle('trend-locked-input', locked);
+        if (hint) hint.classList.toggle('hidden', !locked);
+      });
+      if (!els.trendAutofillLockNotice) return;
+      els.trendAutofillLockNotice.classList.toggle('hidden', !locked);
+      if (!locked) return;
+      const meta = state.metricMeta || getPrimaryTrendAutofillMeta(input);
+      const latestLabel = state.latestLabel || 'the latest cumulative trend row';
+      els.trendAutofillLockNotice.innerHTML = `
+        <span class="trend-lock-icon" aria-hidden="true">&#128274;</span>
+        <span><strong>Trend data is controlling these fields.</strong> Counts and reach are auto-filled from ${escapeHtml(latestLabel)} using ${escapeHtml(meta.sourceLabel)}. Clear trend data to edit them manually.</span>`;
     }
 
     function formatTrendAutofillStatusMarkup(input) {
@@ -5893,6 +5984,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       } else {
         trendState.autofill = emptyTrendAutofillState();
       }
+      updateTrendAutofillLockUi(input);
 
       if (input.errors.length) {
         window.lastSummaryText = '';
