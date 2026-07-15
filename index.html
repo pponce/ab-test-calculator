@@ -947,6 +947,43 @@
       margin-top: 0;
     }
 
+    .install-basis-block h4 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
+
+    .summary-section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+    }
+
+    .summary-section-heading h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -.01em;
+    }
+
+    .summary-section-heading .muted {
+      margin-top: 2px;
+    }
+
+    .summary-subsection-title {
+      margin: 2px 0 -2px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .055em;
+    }
+
 
     .dom-results-sink {
       position: absolute;
@@ -1743,6 +1780,14 @@
             <div id="significanceStatus" class="status warn"><span class="dot"></span><span>Not calculated</span></div>
           </div>
 
+          <div class="summary-section-heading" id="installSummaryHeading">
+            <div>
+              <h3>Install Event Calculation Summary</h3>
+              <div class="muted small">Primary UA install-based result summary.</div>
+            </div>
+            <span class="pill">Install basis</span>
+          </div>
+
           <div class="metric-grid top-metrics">
             <div class="metric">
               <div class="k">Control rate</div>
@@ -1816,6 +1861,68 @@
                 <div class="s" id="uaEventObservedPowerSmall">Target power</div>
               </div>
             </div>
+          </div>
+
+          <div class="summary-subsection-title" id="installInsightsHeading">Install-based interpretation and details</div>
+
+          <div class="interpretation-card warn" id="interpretationCard">
+            <div class="interpretation-title" id="interpretationTitle">Interpretation</div>
+            <div class="interpretation-body" id="interpretationBody">Enter inputs to calculate the result.</div>
+          </div>
+
+          <div class="summary-subsection-title" id="installCompareHeading">Install control vs experiment rate visualization</div>
+
+          <div class="compare" id="installCompareBlock">
+            <div class="bar-row">
+              <div id="controlBarLabel">Control</div>
+              <div class="bar-track"><div id="controlBar" class="bar-fill"></div></div>
+              <div class="mono" id="controlBarRate">--</div>
+            </div>
+            <div class="bar-row">
+              <div id="experimentBarLabel">Experiment</div>
+              <div class="bar-track"><div id="experimentBar" class="bar-fill"></div></div>
+              <div class="mono" id="experimentBarRate">--</div>
+            </div>
+          </div>
+
+          <div class="table-wrap" id="installSummaryTableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th class="num">Value</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="summaryRows"></tbody>
+            </table>
+          </div>
+
+          <div class="panel hidden" id="uaEventInsightsPanel">
+            <div class="panel-head">
+              <div>
+                <h3>A Event Calculation Details and Insights</h3>
+                <div class="muted small" id="uaEventInsightsSubtitle">Diagnostic A-event results based on A-event counts / reach.</div>
+              </div>
+              <span class="pill" id="uaEventInsightsPill">A-event basis</span>
+            </div>
+            <div class="interpretation-card warn" id="uaEventInterpretationCard">
+              <div class="interpretation-title" id="uaEventInterpretationTitle">A-event interpretation</div>
+              <div class="interpretation-body" id="uaEventInterpretationBody">Enable A-event calculations to view this section.</div>
+            </div>
+            <div class="summary-subsection-title">A-event control vs experiment rate visualization</div>
+            <div class="compare" id="uaEventCompareBlock">
+              <div class="bar-row">
+                <div id="uaEventControlBarLabel">Control A events</div>
+                <div class="bar-track"><div id="uaEventControlBar" class="bar-fill"></div></div>
+                <div class="mono" id="uaEventControlBarRate">--</div>
+              </div>
+              <div class="bar-row">
+                <div id="uaEventExperimentBarLabel">Experiment A events</div>
+                <div class="bar-track"><div id="uaEventExperimentBar" class="bar-fill"></div></div>
+                <div class="mono" id="uaEventExperimentBarRate">--</div>
+              </div>
+            </div>
             <div class="note" id="uaEventSummaryNote">Enable Show A event chart and provide A-event trend data to calculate this section.</div>
             <div class="table-wrap compact-table">
               <table>
@@ -1829,37 +1936,6 @@
                 <tbody id="uaEventSummaryRows"></tbody>
               </table>
             </div>
-          </div>
-
-          <div class="interpretation-card warn" id="interpretationCard">
-            <div class="interpretation-title" id="interpretationTitle">Interpretation</div>
-            <div class="interpretation-body" id="interpretationBody">Enter inputs to calculate the result.</div>
-          </div>
-
-          <div class="compare">
-            <div class="bar-row">
-              <div id="controlBarLabel">Control</div>
-              <div class="bar-track"><div id="controlBar" class="bar-fill"></div></div>
-              <div class="mono" id="controlBarRate">--</div>
-            </div>
-            <div class="bar-row">
-              <div id="experimentBarLabel">Experiment</div>
-              <div class="bar-track"><div id="experimentBar" class="bar-fill"></div></div>
-              <div class="mono" id="experimentBarRate">--</div>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th class="num">Value</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody id="summaryRows"></tbody>
-            </table>
           </div>
 
           <div class="panel" id="incrementalCostPanel">
@@ -1889,7 +1965,7 @@
           <div class="panel trend-panel" id="trendPanel">
             <div class="panel-head">
               <div>
-                <h3>Trend Chart</h3>
+                <h3 id="trendPanelTitle">Install Trend Chart</h3>
                 <div class="muted small" id="trendSubtitle">Paste cumulative Google Sheet data to chart lift, incrementality, confidence, and power over time.</div>
               </div>
               <span class="pill" id="trendPointCount">No trend data</span>
@@ -2091,19 +2167,22 @@
                 </section>
               </div>
             </details>
+            <div class="forecast-subsection install-basis-block">
+              <h4>Install Forecast Estimates</h4>
+            </div>
             <div class="metric-grid">
               <div class="metric">
-                <div class="k">Latest trend date</div>
+                <div class="k">Latest install trend date</div>
                 <div class="v" id="forecastedLatestDateMetric">--</div>
                 <div class="s">Forecasts are anchored to the latest cumulative row.</div>
               </div>
               <div class="metric">
-                <div class="k">Latest calculated confidence</div>
+                <div class="k">Install latest calculated confidence</div>
                 <div class="v" id="forecastedCurrentConfidenceMetric">--</div>
                 <div class="s" id="forecastedCurrentConfidenceSmall">1 - decision p-value.</div>
               </div>
               <div class="metric">
-                <div class="k">Latest observed power</div>
+                <div class="k">Install latest observed power</div>
                 <div class="v" id="forecastedCurrentPowerMetric">--</div>
                 <div class="s" id="forecastedCurrentPowerSmall">Observed effect, current settings.</div>
               </div>
@@ -2125,13 +2204,13 @@
             </div>
 
             <div class="forecast-subsection">
-              <h4>Confidence forecast estimates</h4>
+              <h4>Install Confidence Forecast Estimates</h4>
               <div class="note" id="forecastedConfidenceNote">--</div>
               <div class="table-wrap compact-table">
                 <table>
                   <thead>
                     <tr>
-                      <th>Confidence forecast scenario</th>
+                      <th>Install event confidence forecast scenario</th>
                       <th class="num">Projected ETA using actual arm sizes</th>
                       <th>Commentary</th>
                     </tr>
@@ -2142,7 +2221,7 @@
             </div>
 
             <div class="forecast-subsection hidden" id="forecastedSpendBlock">
-              <h4 id="forecastedSpendTitle">Spend and reach efficiency</h4>
+              <h4 id="forecastedSpendTitle">Shared spend and reach efficiency</h4>
               <div class="table-wrap compact-table">
                 <table>
                   <thead>
@@ -2160,7 +2239,7 @@
             </div>
 
             <div class="forecast-subsection">
-              <h4>Power forecast estimates</h4>
+              <h4>Install Power Forecast Estimates</h4>
               <div class="note" id="forecastedPowerNote">--</div>
               <div class="table-wrap compact-table">
                 <table>
@@ -2175,6 +2254,23 @@
                   <tbody id="forecastedPowerRows"></tbody>
                 </table>
               </div>
+            </div>
+
+            <div class="forecast-subsection install-basis-block" id="installForecastMethodBlock">
+              <h4>Install Forecast Method</h4>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Install estimate type</th>
+                      <th>Full-window timing</th>
+                      <th>How it is calculated</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastedComparisonRows"></tbody>
+                </table>
+              </div>
+              <div class="note" id="forecastedMethodNote">--</div>
             </div>
 
             <div class="forecast-subsection hidden" id="uaEventForecastedTimeBlock">
@@ -2227,22 +2323,6 @@
               </div>
             </div>
 
-            <div class="forecast-subsection">
-              <h4>Forecast method</h4>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Estimate type</th>
-                      <th>Full-window timing</th>
-                      <th>How it is calculated</th>
-                    </tr>
-                  </thead>
-                  <tbody id="forecastedComparisonRows"></tbody>
-                </table>
-              </div>
-              <div class="note" id="forecastedMethodNote">--</div>
-            </div>
           </div>
 
           <div class="panel" id="confidenceIntervalPanel">
@@ -2253,19 +2333,20 @@
               </div>
               <span class="pill" id="ciPill">--</span>
             </div>
+            <div class="forecast-subsection install-basis-block"><h4>Install Confidence Interval for the Difference</h4></div>
             <div class="metric-grid">
               <div class="metric">
-                <div class="k">Difference confidence interval</div>
+                <div class="k">Install difference confidence interval</div>
                 <div class="v" id="differenceCiMetric">--</div>
                 <div class="s" id="differenceCiSmall">Experiment - control</div>
               </div>
               <div class="metric">
-                <div class="k">Control confidence interval</div>
+                <div class="k">Install control confidence interval</div>
                 <div class="v" id="controlCiMetric">--</div>
                 <div class="s" id="controlCiSmall">Control rate interval</div>
               </div>
               <div class="metric">
-                <div class="k">Experiment confidence interval</div>
+                <div class="k">Install experiment confidence interval</div>
                 <div class="v" id="experimentCiMetric">--</div>
                 <div class="s" id="experimentCiSmall">Experiment rate interval</div>
               </div>
@@ -2273,8 +2354,8 @@
             <div class="ci-visual" id="ciVisual" aria-label="Confidence interval visual">
               <div class="ci-visual-head">
                 <div>
-                  <div class="mini-k">Visual interval check</div>
-                  <div class="ci-visual-title" id="ciVisualTitle">Does the interval include 0 lift?</div>
+                  <div class="mini-k">Install visual interval check</div>
+                  <div class="ci-visual-title" id="ciVisualTitle">Does the install interval include 0 lift?</div>
                 </div>
                 <span class="pill" id="ciVisualStatus">--</span>
               </div>
@@ -2301,6 +2382,18 @@
             </div>
             <div class="note" id="ciCallout"></div>
             <div class="note" id="confidenceMeaningNote"></div>
+            <div class="table-wrap compact-table" id="installCiTableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Install CI metric</th>
+                    <th class="num">Value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="installCiRows"></tbody>
+              </table>
+            </div>
             <div class="forecast-subsection hidden" id="uaEventCiBlock">
               <h4>A Event Confidence Interval for the Difference</h4>
               <div class="note" id="uaEventCiNote">Enable the A-event summary option to show A-event confidence interval rows.</div>
@@ -2348,14 +2441,15 @@
               <span class="pill" id="powerTargetDisplay">Target power: 80%</span>
               <div id="powerStatus" class="status warn"><span class="dot"></span><span>Underpowered</span></div>
             </div>
+            <div class="forecast-subsection install-basis-block"><h4>Install Statistical Power</h4></div>
             <div class="metric-grid">
               <div class="metric">
-                <div class="k">Observed power</div>
+                <div class="k">Install observed power</div>
                 <div class="v" id="observedPowerMetric">--</div>
                 <div class="s" id="observedPowerSmall">Uses actual current control and experiment reach.</div>
               </div>
               <div class="metric">
-                <div class="k">Power gap</div>
+                <div class="k">Install power gap</div>
                 <div class="v" id="powerGapMetric">--</div>
                 <div class="s" id="powerGapSmall">Target minus observed power.</div>
               </div>
@@ -2380,7 +2474,7 @@
                 <div class="s" id="experimentAdditionalReachSmall">Extra reach needed for experiment.</div>
               </div>
               <div class="metric">
-                <div class="k">Projected ETA to target power</div>
+                <div class="k">Install projected ETA to target power</div>
                 <div class="v" id="powerEtaMetric">--</div>
                 <div class="s" id="powerEtaSmall">Uses trend growth or reach-growth helper when available.</div>
               </div>
@@ -2403,13 +2497,30 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Power metric</th>
+                    <th>Install power metric</th>
                     <th class="num">Value</th>
                     <th>Notes</th>
                   </tr>
                 </thead>
                 <tbody id="powerRows"></tbody>
               </table>
+            </div>
+            <div class="forecast-subsection hidden" id="uaEventPowerDetailBlock">
+              <h4>A Event Statistical Power Details</h4>
+              <div class="note" id="uaEventPowerRiskNote"></div>
+              <div class="note" id="uaEventPowerCallout"></div>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>A-event power metric</th>
+                      <th class="num">Value</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody id="uaEventPowerRows"></tbody>
+                </table>
+              </div>
             </div>
 
             <details>
@@ -2784,6 +2895,22 @@ Total planned spend:
       uaEventObservedPowerSmall: document.getElementById('uaEventObservedPowerSmall'),
       uaEventSummaryNote: document.getElementById('uaEventSummaryNote'),
       uaEventSummaryRows: document.getElementById('uaEventSummaryRows'),
+      installSummaryHeading: document.getElementById('installSummaryHeading'),
+      installInsightsHeading: document.getElementById('installInsightsHeading'),
+      installCompareHeading: document.getElementById('installCompareHeading'),
+      installSummaryTableWrap: document.getElementById('installSummaryTableWrap'),
+      uaEventInsightsPanel: document.getElementById('uaEventInsightsPanel'),
+      uaEventInsightsSubtitle: document.getElementById('uaEventInsightsSubtitle'),
+      uaEventInsightsPill: document.getElementById('uaEventInsightsPill'),
+      uaEventInterpretationCard: document.getElementById('uaEventInterpretationCard'),
+      uaEventInterpretationTitle: document.getElementById('uaEventInterpretationTitle'),
+      uaEventInterpretationBody: document.getElementById('uaEventInterpretationBody'),
+      uaEventControlBarLabel: document.getElementById('uaEventControlBarLabel'),
+      uaEventExperimentBarLabel: document.getElementById('uaEventExperimentBarLabel'),
+      uaEventControlBar: document.getElementById('uaEventControlBar'),
+      uaEventExperimentBar: document.getElementById('uaEventExperimentBar'),
+      uaEventControlBarRate: document.getElementById('uaEventControlBarRate'),
+      uaEventExperimentBarRate: document.getElementById('uaEventExperimentBarRate'),
       interpretationCard: document.getElementById('interpretationCard'),
       interpretationTitle: document.getElementById('interpretationTitle'),
       interpretationBody: document.getElementById('interpretationBody'),
@@ -2823,6 +2950,7 @@ Total planned spend:
       ciAxisMax: document.getElementById('ciAxisMax'),
       ciCallout: document.getElementById('ciCallout'),
       confidenceMeaningNote: document.getElementById('confidenceMeaningNote'),
+      installCiRows: document.getElementById('installCiRows'),
       uaEventCiBlock: document.getElementById('uaEventCiBlock'),
       uaEventCiNote: document.getElementById('uaEventCiNote'),
       uaEventDifferenceCiMetric: document.getElementById('uaEventDifferenceCiMetric'),
@@ -2876,6 +3004,7 @@ Total planned spend:
       reachForecastNote: document.getElementById('reachForecastNote'),
       reachForecastRows: document.getElementById('reachForecastRows'),
       uaEventPowerCardsBlock: document.getElementById('uaEventPowerCardsBlock'),
+      uaEventPowerDetailBlock: document.getElementById('uaEventPowerDetailBlock'),
       uaEventPowerCards: document.getElementById('uaEventPowerCards'),
       uaEventPowerObservedMetric: document.getElementById('uaEventPowerObservedMetric'),
       uaEventPowerObservedSmall: document.getElementById('uaEventPowerObservedSmall'),
@@ -2895,6 +3024,9 @@ Total planned spend:
       uaEventExperimentAdditionalReachSmall: document.getElementById('uaEventExperimentAdditionalReachSmall'),
       uaEventPowerEtaMetric: document.getElementById('uaEventPowerEtaMetric'),
       uaEventPowerEtaSmall: document.getElementById('uaEventPowerEtaSmall'),
+      uaEventPowerRiskNote: document.getElementById('uaEventPowerRiskNote'),
+      uaEventPowerCallout: document.getElementById('uaEventPowerCallout'),
+      uaEventPowerRows: document.getElementById('uaEventPowerRows'),
       steps: document.getElementById('steps'),
       plannerBaseline: document.getElementById('plannerBaseline'),
       plannerLift: document.getElementById('plannerLift'),
@@ -2916,6 +3048,7 @@ Total planned spend:
       downloadTrendReportBtn: document.getElementById('downloadTrendReportBtn'),
       trendImportStatus: document.getElementById('trendImportStatus'),
       trendPanel: document.getElementById('trendPanel'),
+      trendPanelTitle: document.getElementById('trendPanelTitle'),
       trendSubtitle: document.getElementById('trendSubtitle'),
       trendPointCount: document.getElementById('trendPointCount'),
       trendLastDateMetric: document.getElementById('trendLastDateMetric'),
@@ -3478,11 +3611,11 @@ Total planned spend:
       els.ciPanelSubtitle.textContent = `${formatPct(ciConfidence, 0)} confidence interval for (${input.experimentLabel} rate - ${input.controlLabel} rate).`;
       els.ciPill.textContent = crossesZero ? 'Crosses zero' : 'Does not cross zero';
       els.differenceCiMetric.textContent = diffRange;
-      els.differenceCiSmall.textContent = `${formatPct(ciConfidence, 0)} confidence interval for experiment - control`;
+      els.differenceCiSmall.textContent = `${formatPct(ciConfidence, 0)} confidence interval for install experiment - control`;
       els.controlCiMetric.textContent = controlRange;
-      els.controlCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} confidence interval for ${input.controlLabel} rate`;
+      els.controlCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} confidence interval for ${input.controlLabel} install rate`;
       els.experimentCiMetric.textContent = experimentRange;
-      els.experimentCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} confidence interval for ${input.experimentLabel} rate`;
+      els.experimentCiSmall.textContent = `${formatPct(input.confidenceLevel, 0)} confidence interval for ${input.experimentLabel} install rate`;
       renderCiVisual(input, out, crossesZero);
 
       if (crossesZero) {
@@ -3502,6 +3635,17 @@ Total planned spend:
       }
 
       els.confidenceMeaningNote.innerHTML = `Calculated confidence % is this calculator's display convention: 1 - decision p-value. A ${formatPct(out.statisticalConfidence, 1)} calculated-confidence result means that if you called this a win at this level, you would be accepting about ${formatPct(falsePositiveRisk, 1)} false-positive risk. False positive: you think the experiment drove incrementality, but the lift was actually noise.`;
+      if (els.installCiRows) {
+        els.installCiRows.innerHTML = renderRows([
+          ['Install CI basis', 'Latest install / primary calculator inputs', 'Uses install count / Audience Reach for UA, or the primary selected conversion basis for other use cases.'],
+          ['Install difference confidence interval', `${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`, 'Confidence interval for Experiment install rate minus Control install rate.'],
+          ['Install CI status', crossesZero ? 'Crosses 0' : 'Does not cross 0', crossesZero ? 'A true install rate difference of 0 is still plausible at the selected confidence level.' : 'The install difference interval excludes 0 at the selected confidence level.'],
+          ['Control install confidence interval', `${formatPct(controlCi.low, d)} to ${formatPct(controlCi.high, d)}`, 'Control installs / Control Audience Reach.'],
+          ['Experiment install confidence interval', `${formatPct(experimentCi.low, d)} to ${formatPct(experimentCi.high, d)}`, 'Experiment installs / Experiment Audience Reach.'],
+          ['Install observed difference', formatPctPoint(out.diff, d), 'Experiment install rate minus Control install rate.'],
+          ['Install rate lift', Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--', 'Calculated from install rates: installs / reach.']
+        ]);
+      }
     }
 
     function getCriticalZForPower(input) {
@@ -4073,23 +4217,23 @@ Total planned spend:
       if (Number.isFinite(power.observedPower)) {
         els.powerRiskNote.className = adequatelyPowered ? 'note' : 'note warn-note';
         const powerStateSentence = adequatelyPowered
-          ? `This test is currently adequately powered against the selected ${formatPct(power.targetPower, 0)} target.`
-          : 'This test is currently underpowered.';
-        els.powerRiskNote.innerHTML = `${powerStateSentence} Observed power uses the actual current control reach (${formatNumber(input.controlTrials)}) and experiment reach (${formatNumber(input.experimentTrials)}); it does not assume equal arm sizes. With ${formatPct(power.observedPower, 1)} observed power, the test has about a ${formatPct(power.observedPower, 1)} chance of detecting a true effect this large, based on the current sample size and assumptions. Equivalently, there is about a ${formatPct(1 - power.observedPower, 1)} false-negative risk. Observed power is a sample-strength diagnostic for the observed absolute effect; it does not mean there is a ${formatPct(power.observedPower, 1)} chance that the observed lift is real.`;
+          ? `This install-based result is currently adequately powered against the selected ${formatPct(power.targetPower, 0)} target.`
+          : 'This install-based result is currently underpowered.';
+        els.powerRiskNote.innerHTML = `<strong>Install power interpretation:</strong> ${powerStateSentence} Observed power uses the actual current control reach (${formatNumber(input.controlTrials)}) and experiment reach (${formatNumber(input.experimentTrials)}); it does not assume equal arm sizes. With ${formatPct(power.observedPower, 1)} observed power, the test has about a ${formatPct(power.observedPower, 1)} chance of detecting a true effect this large, based on the current sample size and assumptions. Equivalently, there is about a ${formatPct(1 - power.observedPower, 1)} false-negative risk. Observed power is a sample-strength diagnostic for the observed absolute effect; it does not mean there is a ${formatPct(power.observedPower, 1)} chance that the observed lift is real.`;
       } else {
         els.powerRiskNote.className = 'note';
-        els.powerRiskNote.innerHTML = 'Observed power cannot be estimated until the calculator has a non-zero observed effect and valid conversion rates.';
+        els.powerRiskNote.innerHTML = '<strong>Install power interpretation:</strong> Observed power cannot be estimated until the calculator has a non-zero observed effect and valid conversion rates.';
       }
 
       if (!Number.isFinite(power.observedPower) || !reachNeed.finite) {
-        els.powerCallout.innerHTML = escapeHtml(reachNeed.reason || 'Power cannot be estimated because the observed effect is zero or one of the rates is outside the valid range.');
+        els.powerCallout.innerHTML = '<strong>Install reach needed:</strong> ' + escapeHtml(reachNeed.reason || 'Power cannot be estimated because the observed effect is zero or one of the rates is outside the valid range.');
       } else if (adequatelyPowered) {
-        els.powerCallout.innerHTML = `Your current actual arm sizes already meet the selected ${formatPct(power.targetPower, 0)} observed-power target. No additional reach is needed for this power target under the current observed rates. Still check confidence, test design, randomization, and conversion lag before making a spend decision.${caveat}`;
+        els.powerCallout.innerHTML = `<strong>Install reach needed:</strong> Your current actual arm sizes already meet the selected ${formatPct(power.targetPower, 0)} observed-power target. No additional reach is needed for this power target under the current observed rates. Still check confidence, test design, randomization, and conversion lag before making a spend decision.${caveat}`;
       } else {
         const etaSentence = etaAvailable
           ? ` Estimated timing is about ${formatDurationFromDays(reachNeed.etaDays)}.`
           : ' No finite ETA is available from the current reach-growth assumptions, but the reach requirement is still shown.';
-        els.powerCallout.innerHTML = `Your test is currently underpowered. To reach ${formatPct(power.targetPower, 0)} observed power without forcing equal arm sizes, the calculator estimates the needed actual-arm reach as ${formatNumber(reachNeed.projectedControlReach)} ${escapeHtml(input.controlLabel)} reach and ${formatNumber(reachNeed.projectedExperimentReach)} ${escapeHtml(input.experimentLabel)} reach. That implies about ${formatNumber(reachNeed.additionalControlReach)} additional ${escapeHtml(input.controlLabel)} reach and ${formatNumber(reachNeed.additionalExperimentReach)} additional ${escapeHtml(input.experimentLabel)} reach from the current inputs. ${escapeHtml(reachNeed.basisNote || reachNeed.basisLabel || '')}${etaSentence}${caveat}`;
+        els.powerCallout.innerHTML = `<strong>Install reach needed:</strong> Your install-based result is currently underpowered. To reach ${formatPct(power.targetPower, 0)} observed power without forcing equal arm sizes, the calculator estimates the needed actual-arm reach as ${formatNumber(reachNeed.projectedControlReach)} ${escapeHtml(input.controlLabel)} reach and ${formatNumber(reachNeed.projectedExperimentReach)} ${escapeHtml(input.experimentLabel)} reach. That implies about ${formatNumber(reachNeed.additionalControlReach)} additional ${escapeHtml(input.controlLabel)} reach and ${formatNumber(reachNeed.additionalExperimentReach)} additional ${escapeHtml(input.experimentLabel)} reach from the current inputs. ${escapeHtml(reachNeed.basisNote || reachNeed.basisLabel || '')}${etaSentence}${caveat}`;
       }
 
       const projectedPowerAtNeed = reachNeed.projectedPower && Number.isFinite(reachNeed.projectedPower.observedPower)
@@ -4103,26 +4247,64 @@ Total planned spend:
         : (reachNeed.finite ? `${reachNeed.basisLabel}; no finite growth ETA is available.` : (reachNeed.reason || 'Provide trend data or reach-growth helper inputs to estimate timing.'));
 
       const powerTableRows = [
-        ['Observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Uses actual current control and experiment Audience Reach values.'],
-        ['Power target', formatPct(power.targetPower, 0), 'Selected in the Power % input.'],
-        ['Power gap', formatSignedPowerGap(power), Number.isFinite(power.observedPower) ? (adequatelyPowered ? 'Observed power is at or above target.' : 'Additional sample is needed to reach the selected power target.') : 'Observed power unavailable.'],
-        ['False-negative risk', Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) : '--', 'Approximate risk of missing a true effect this large under current assumptions.'],
+        ['Install observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Uses actual current control and experiment Audience Reach values.'],
+        ['Install power target', formatPct(power.targetPower, 0), 'Selected in the Power % input.'],
+        ['Install power gap', formatSignedPowerGap(power), Number.isFinite(power.observedPower) ? (adequatelyPowered ? 'Install observed power is at or above target.' : 'Additional sample is needed to reach the selected power target.') : 'Observed power unavailable.'],
+        ['Install false-negative risk', Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) : '--', 'Approximate risk of missing a true install effect this large under current assumptions.'],
         [`Current ${input.controlLabel} reach`, formatNumber(input.controlTrials), 'Current control denominator used in observed power.'],
         [`Current ${input.experimentLabel} reach`, formatNumber(input.experimentTrials), 'Current experiment denominator used in observed power.'],
-        ['Actual-arm reach basis', reachNeed.basisLabel || '--', reachNeed.basisNote || 'Uses actual current arm sizes.'],
+        ['Install actual-arm reach basis', reachNeed.basisLabel || '--', reachNeed.basisNote || 'Uses actual current arm sizes.'],
         [`${input.controlLabel} reach needed @ ${formatPct(power.targetPower, 0)} power`, Number.isFinite(reachNeed.projectedControlReach) ? formatNumber(reachNeed.projectedControlReach) : '--', 'Actual-arm requirement; does not force equal control and experiment reach.'],
         [`${input.experimentLabel} reach needed @ ${formatPct(power.targetPower, 0)} power`, Number.isFinite(reachNeed.projectedExperimentReach) ? formatNumber(reachNeed.projectedExperimentReach) : '--', 'Actual-arm requirement; does not force equal control and experiment reach.'],
         [`Additional ${input.controlLabel} reach needed`, Number.isFinite(reachNeed.additionalControlReach) ? formatNumber(reachNeed.additionalControlReach) : '--', 'Needed from the current control reach to hit the selected power target.'],
         [`Additional ${input.experimentLabel} reach needed`, Number.isFinite(reachNeed.additionalExperimentReach) ? formatNumber(reachNeed.additionalExperimentReach) : '--', 'Needed from the current experiment reach to hit the selected power target.'],
-        ['Projected ETA to selected power', etaValue, etaNote],
-        ['Projected observed power at needed reach', projectedPowerAtNeed, 'Observed power recalculated using the needed actual arm sizes and latest observed rates.'],
-        ['Observed absolute effect', formatPctPoint(Math.abs(out.diff), d), 'Absolute value of experiment rate minus control rate.'],
-        ['Effect z for power', Number.isFinite(power.effectZ) ? formatNumber(power.effectZ, 4) : '--', 'Observed absolute effect divided by the unpooled standard error using actual current arm sizes.'],
-        ['Critical z', Number.isFinite(power.zCrit) ? formatNumber(power.zCrit, 4) : '--', `${input.tail === 'two' ? 'Two-sided' : 'One-sided'} threshold from selected confidence.`]
+        ['Install projected ETA to selected power', etaValue, etaNote],
+        ['Install projected observed power at needed reach', projectedPowerAtNeed, 'Observed power recalculated using the needed actual arm sizes and latest observed rates.'],
+        ['Install observed absolute effect', formatPctPoint(Math.abs(out.diff), d), 'Absolute value of experiment install rate minus control install rate.'],
+        ['Install effect z for power', Number.isFinite(power.effectZ) ? formatNumber(power.effectZ, 4) : '--', 'Observed absolute install effect divided by the unpooled standard error using actual current arm sizes.'],
+        ['Install critical z', Number.isFinite(power.zCrit) ? formatNumber(power.zCrit, 4) : '--', `${input.tail === 'two' ? 'Two-sided' : 'One-sided'} threshold from selected confidence.`]
       ];
       renderUaEventPowerCards(input, trendState.last);
       const uaEventPowerRows = buildUaEventPowerRows(input, trendState.last);
-      els.powerRows.innerHTML = renderRows(powerTableRows.concat(uaEventPowerRows));
+      els.powerRows.innerHTML = renderRows(powerTableRows);
+      if (els.uaEventPowerRows) els.uaEventPowerRows.innerHTML = renderRows(uaEventPowerRows);
+      const uaEventModel = getUaEventModelForRows(input, trendState.last);
+      const showUaEventPowerDetails = uaEventModel.enabled && uaEventModel.valid && uaEventModel.last && uaEventPowerRows.length;
+      if (els.uaEventPowerDetailBlock) els.uaEventPowerDetailBlock.classList.toggle('hidden', !showUaEventPowerDetails);
+      if (showUaEventPowerDetails) {
+        const p = uaEventModel.last;
+        const eventOut = p.out;
+        const eventPower = calculatePowerForObservedEffect(p.input, eventOut, input.powerTarget);
+        const eventReachNeed = calculateActualArmPowerReachNeed(p.input, eventOut, input.powerTarget, uaEventModel.trend);
+        const eventAdequatelyPowered = Number.isFinite(eventPower.observedPower) && eventPower.observedPower >= eventPower.targetPower;
+        const eventDirectionMismatch = (input.tail === 'greater' && eventOut.diff < 0) || (input.tail === 'less' && eventOut.diff > 0);
+        const eventCaveat = eventDirectionMismatch ? ' Note: the A-event observed effect is opposite your selected one-sided success direction, so this panel is a sample-strength diagnostic, not evidence of A-event lift in the desired direction.' : '';
+        if (els.uaEventPowerRiskNote) {
+          els.uaEventPowerRiskNote.className = eventAdequatelyPowered ? 'note' : 'note warn-note';
+          if (Number.isFinite(eventPower.observedPower)) {
+            const eventStateSentence = eventAdequatelyPowered
+              ? `This A-event result is currently adequately powered against the selected ${formatPct(eventPower.targetPower, 0)} target.`
+              : 'This A-event result is currently underpowered.';
+            els.uaEventPowerRiskNote.innerHTML = `<strong>A-event power interpretation:</strong> ${eventStateSentence} Observed power uses the actual current A-event control reach (${formatNumber(p.input.controlTrials)}) and experiment reach (${formatNumber(p.input.experimentTrials)}); it does not assume equal arm sizes. With ${formatPct(eventPower.observedPower, 1)} observed power, the A-event calculation has about a ${formatPct(eventPower.observedPower, 1)} chance of detecting a true A-event rate effect this large, based on the current sample size and assumptions. Equivalently, there is about a ${formatPct(1 - eventPower.observedPower, 1)} false-negative risk. Observed power is a sample-strength diagnostic for the observed absolute A-event effect; it does not mean there is a ${formatPct(eventPower.observedPower, 1)} chance that the observed A-event lift is real.`;
+          } else {
+            els.uaEventPowerRiskNote.innerHTML = '<strong>A-event power interpretation:</strong> A-event observed power cannot be estimated until the calculator has a non-zero A-event observed effect and valid A-event rates.';
+          }
+        }
+        if (els.uaEventPowerCallout) {
+          if (!Number.isFinite(eventPower.observedPower) || !eventReachNeed.finite) {
+            els.uaEventPowerCallout.innerHTML = '<strong>A-event reach needed:</strong> ' + escapeHtml(eventReachNeed.reason || 'A-event power cannot be estimated because the observed effect is zero or one of the rates is outside the valid range.');
+          } else if (eventAdequatelyPowered) {
+            els.uaEventPowerCallout.innerHTML = `<strong>A-event reach needed:</strong> Current actual A-event arm sizes already meet the selected ${formatPct(eventPower.targetPower, 0)} observed-power target. No additional reach is needed for this A-event power target under the current observed A-event rates. Still check confidence, test design, randomization, and conversion lag before making a spend decision.${eventCaveat}`;
+          } else {
+            const eventEtaSentence = Number.isFinite(eventReachNeed.etaDays)
+              ? ` Estimated timing is about ${formatDurationFromDays(eventReachNeed.etaDays)}.`
+              : ' No finite ETA is available from the current reach-growth assumptions, but the A-event reach requirement is still shown.';
+            els.uaEventPowerCallout.innerHTML = `<strong>A-event reach needed:</strong> Your A-event result is currently underpowered. To reach ${formatPct(eventPower.targetPower, 0)} observed power without forcing equal arm sizes, the calculator estimates the needed actual-arm reach as ${formatNumber(eventReachNeed.projectedControlReach)} ${escapeHtml(input.controlLabel)} reach and ${formatNumber(eventReachNeed.projectedExperimentReach)} ${escapeHtml(input.experimentLabel)} reach. That implies about ${formatNumber(eventReachNeed.additionalControlReach)} additional ${escapeHtml(input.controlLabel)} reach and ${formatNumber(eventReachNeed.additionalExperimentReach)} additional ${escapeHtml(input.experimentLabel)} reach from the current A-event row. ${escapeHtml(eventReachNeed.basisNote || eventReachNeed.basisLabel || '')}${eventEtaSentence}${eventCaveat}`;
+          }
+        }
+      } else {
+        if (els.uaEventPowerRows) els.uaEventPowerRows.innerHTML = '';
+      }
       renderReachForecast(input, out);
     }
 
@@ -5305,6 +5487,18 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       if (!els.uaEventSummaryPanel) return;
       const meta = model && model.meta ? model.meta : getTrendMetricMeta(getInputs(), 'event');
       els.uaEventSummaryPanel.classList.remove('hidden');
+      if (els.uaEventInsightsPanel) els.uaEventInsightsPanel.classList.remove('hidden');
+      if (els.uaEventInsightsSubtitle) els.uaEventInsightsSubtitle.textContent = `Requires trend data with ${meta.controlRequiredLabel}, ${meta.experimentRequiredLabel}, Control Reach, and Experiment Reach.`;
+      if (els.uaEventInsightsPill) els.uaEventInsightsPill.textContent = 'Trend + A events required';
+      if (els.uaEventInterpretationCard) els.uaEventInterpretationCard.className = 'interpretation-card warn';
+      if (els.uaEventInterpretationTitle) els.uaEventInterpretationTitle.textContent = 'A-event interpretation unavailable';
+      if (els.uaEventInterpretationBody) els.uaEventInterpretationBody.textContent = 'Enable Show A event chart and provide valid A-event trend data to view A-event interpretation and visualization.';
+      if (els.uaEventControlBarLabel) els.uaEventControlBarLabel.textContent = `${displayArmLabel(getInputs().controlLabel)} ${meta.properPlural}`;
+      if (els.uaEventExperimentBarLabel) els.uaEventExperimentBarLabel.textContent = `${displayArmLabel(getInputs().experimentLabel)} ${meta.properPlural}`;
+      if (els.uaEventControlBar) els.uaEventControlBar.style.width = '0%';
+      if (els.uaEventExperimentBar) els.uaEventExperimentBar.style.width = '0%';
+      if (els.uaEventControlBarRate) els.uaEventControlBarRate.textContent = '--';
+      if (els.uaEventExperimentBarRate) els.uaEventExperimentBarRate.textContent = '--';
       els.uaEventSummarySubtitle.textContent = `Requires trend data with ${meta.controlRequiredLabel}, ${meta.experimentRequiredLabel}, Control Reach, and Experiment Reach.`;
       els.uaEventSummaryPill.textContent = 'Trend + A events required';
       els.uaEventControlRateLabel.textContent = `${meta.conversionLabel} control rate`;
@@ -5335,6 +5529,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const model = getUaEventSummaryModel(input, trend);
       if (!model.enabled) {
         els.uaEventSummaryPanel.classList.add('hidden');
+        if (els.uaEventInsightsPanel) els.uaEventInsightsPanel.classList.add('hidden');
         if (els.uaEventSummaryRows) els.uaEventSummaryRows.innerHTML = '';
         return;
       }
@@ -5349,6 +5544,9 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const out = p.out;
       const power = p.power;
       els.uaEventSummaryPanel.classList.remove('hidden');
+      if (els.uaEventInsightsPanel) els.uaEventInsightsPanel.classList.remove('hidden');
+      if (els.uaEventInsightsSubtitle) els.uaEventInsightsSubtitle.textContent = `Latest cumulative A-event calculation from ${p.label} using ${meta.sourceLabel}.`;
+      if (els.uaEventInsightsPill) els.uaEventInsightsPill.textContent = `Latest row: ${p.label}`;
       els.uaEventSummarySubtitle.textContent = `Latest cumulative A-event calculation from ${p.label} using ${meta.sourceLabel}.`;
       els.uaEventSummaryPill.textContent = `Latest row: ${p.label}`;
       els.uaEventControlRateLabel.textContent = `${meta.conversionLabel} control rate`;
@@ -5365,6 +5563,46 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.uaEventConfidenceMetric.textContent = `${Number.isFinite(out.pForDecision) ? formatPct(out.pForDecision, d) : '--'} false-positive risk if declared`;
       els.uaEventObservedPowerMetric.textContent = Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--';
       els.uaEventObservedPowerSmall.textContent = Number.isFinite(power.observedPower) ? `${formatPct(1 - power.observedPower, 1)} false-negative risk; target ${formatPct(input.powerTarget, 0)}` : `Target: ${formatPct(input.powerTarget, 0)}`;
+      if (els.uaEventControlBarLabel) els.uaEventControlBarLabel.textContent = `${displayArmLabel(input.controlLabel)} ${meta.properPlural}`;
+      if (els.uaEventExperimentBarLabel) els.uaEventExperimentBarLabel.textContent = `${displayArmLabel(input.experimentLabel)} ${meta.properPlural}`;
+      if (els.uaEventControlBarRate) els.uaEventControlBarRate.textContent = formatPct(out.p1, d);
+      if (els.uaEventExperimentBarRate) els.uaEventExperimentBarRate.textContent = formatPct(out.p2, d);
+      const uaEventMaxRate = Math.max(out.p1, out.p2, 0.0000001);
+      if (els.uaEventControlBar) els.uaEventControlBar.style.width = `${Math.max(2, out.p1 / uaEventMaxRate * 100)}%`;
+      if (els.uaEventExperimentBar) els.uaEventExperimentBar.style.width = `${Math.max(2, out.p2 / uaEventMaxRate * 100)}%`;
+      if (els.uaEventInterpretationCard && els.uaEventInterpretationTitle && els.uaEventInterpretationBody) {
+        const confidenceMet = out.significant;
+        const powerMet = Number.isFinite(power.observedPower) && power.observedPower >= input.powerTarget;
+        const ciCrossesZero = out.ciLow <= 0 && out.ciHigh >= 0;
+        const positiveLift = out.diff > 0;
+        const negativeLift = out.diff < 0;
+        const desiredDirectionMet = input.tail === 'greater' ? positiveLift : input.tail === 'less' ? negativeLift : true;
+        let title = 'A-event diagnostic result';
+        let cls = 'warn';
+        let body;
+        if ((input.tail === 'greater' || input.tail === 'less') && !desiredDirectionMet) {
+          title = 'A-event result is opposite the selected direction';
+          cls = 'bad';
+          body = `The selected hypothesis is <strong>${input.tail === 'greater' ? 'Experiment > Control' : 'Experiment < Control'}</strong>, but the A-event rate is ${positiveLift ? 'above' : negativeLift ? 'below' : 'equal to'} control. Treat this as a diagnostic event-rate view, not customer-facing UA lift proof.`;
+        } else if (confidenceMet && powerMet) {
+          title = 'A-event diagnostic clears confidence and power';
+          cls = positiveLift ? 'good' : 'bad';
+          body = `The A-event rate comparison clears the selected <strong>${formatPct(input.confidenceLevel, 0)} confidence</strong> threshold and meets the <strong>${formatPct(input.powerTarget, 0)} observed-power</strong> target.`;
+        } else if (confidenceMet && !powerMet) {
+          title = 'A-event diagnostic is significant, but underpowered';
+          body = `The A-event result clears the selected <strong>${formatPct(input.confidenceLevel, 0)} confidence</strong> threshold, but observed power is below the <strong>${formatPct(input.powerTarget, 0)}</strong> target.`;
+        } else if (!confidenceMet && powerMet) {
+          title = 'A-event diagnostic is powered, but not significant';
+          body = `The A-event comparison is powered for an effect this large, but it does not clear the selected <strong>${formatPct(input.confidenceLevel, 0)} confidence</strong> threshold.`;
+        } else {
+          title = 'A-event diagnostic is inconclusive';
+          body = `The A-event comparison does not clear the selected <strong>${formatPct(input.confidenceLevel, 0)} confidence</strong> threshold and observed power is below the <strong>${formatPct(input.powerTarget, 0)}</strong> target.`;
+        }
+        body += `<br><br><strong>A-event check:</strong> lift ${Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--'}; p-value ${formatFlexible(out.pForDecision, dMore)}; calculated confidence ${Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, d) : '--'}; observed power ${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'}; ${ciCrossesZero ? 'confidence interval crosses 0' : 'confidence interval does not cross 0'}.`;
+        els.uaEventInterpretationCard.className = `interpretation-card ${cls}`;
+        els.uaEventInterpretationTitle.textContent = title;
+        els.uaEventInterpretationBody.innerHTML = body;
+      }
       els.uaEventSummaryNote.className = 'note';
       els.uaEventSummaryNote.innerHTML = `This optional UA summary uses A-event rate = A-event count / Audience Reach from the latest cumulative trend row. It is a diagnostic event-rate view and uses the selected event-count setting (${escapeHtml(meta.sourceLabel)}). UA customer-facing A-event lift should still be interpreted as anchored to install lift; the iCPA section below shows both install-lift and event-rate iCPA methods.`;
       els.uaEventSummaryRows.innerHTML = renderRows([
@@ -5861,6 +6099,9 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const trend = calculateTrendData(input);
       trendState.last = trend;
       const meta = trend.metricMeta || getTrendMetricMeta(input);
+      if (els.trendPanelTitle) {
+        els.trendPanelTitle.textContent = meta.chartKind === 'install' ? 'Install Trend Chart' : 'Event Trend Chart';
+      }
       const autofillMarkup = formatTrendAutofillStatusMarkup(input);
       const autofillHasErrors = !!(trendState.autofill && trendState.autofill.errors && trendState.autofill.errors.length);
       els.trendLiftMetricLabel.textContent = meta.liftLabel;
@@ -6869,10 +7110,10 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
 
       if (model.spend && model.spend.hasSpend) {
         els.forecastedSpendBlock.classList.remove('hidden');
-        els.forecastedSpendTitle.textContent = `Spend and reach efficiency from ${model.first.shortLabel} to ${model.last.shortLabel}`;
+        els.forecastedSpendTitle.textContent = `Shared spend and reach efficiency from ${model.first.shortLabel} to ${model.last.shortLabel}`;
         els.forecastedSpendRows.innerHTML = renderForecastedSpendRows(model.spend.rows);
         if (els.forecastedSpendNote) {
-          els.forecastedSpendNote.innerHTML = `Avg daily spend growth = (latest cumulative spend - first cumulative spend) / elapsed days. Approx reach per $1 = avg new reach/day / avg daily spend growth. Spend insights are hidden automatically when cumulative spend columns are not provided.`;
+          els.forecastedSpendNote.innerHTML = `Shared spend/reach efficiency is based on cumulative spend and reach columns, so it applies to both install-based and A-event-based forecast views. Avg daily spend growth = (latest cumulative spend - first cumulative spend) / elapsed days. Approx reach per $1 = avg new reach/day / avg daily spend growth. Spend insights are hidden automatically when cumulative spend columns are not provided.`;
         }
       } else {
         els.forecastedSpendBlock.classList.add('hidden');
@@ -7836,8 +8077,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       if (!cardPad || !cardPad.children || document.getElementById('resultsTabHost')) return;
 
       const topResultsMetrics = findDirectChild(cardPad, el => el.classList && el.classList.contains('metric-grid') && el.classList.contains('top-metrics'));
-      const compareBlock = findDirectChild(cardPad, el => el.classList && el.classList.contains('compare'));
-      const summaryTable = document.getElementById('summaryRows') ? document.getElementById('summaryRows').closest('.table-wrap') : null;
+      const compareBlock = document.getElementById('installCompareBlock') || findDirectChild(cardPad, el => el.classList && el.classList.contains('compare'));
+      const summaryTable = document.getElementById('installSummaryTableWrap') || (document.getElementById('summaryRows') ? document.getElementById('summaryRows').closest('.table-wrap') : null);
       const footNote = findDirectChild(cardPad, el => el.classList && el.classList.contains('foot'));
       const mediaPlanningDetails = findDirectDetailsBySummary(cardPad, 'Optional Media planning helper');
       const stepsDetails = findDirectDetailsBySummary(cardPad, 'Step-by-step calculation details');
@@ -7849,6 +8090,12 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         }
       });
 
+      const forecastPanel = document.getElementById('forecastedTimePanel');
+      const sharedSpendBlock = document.getElementById('forecastedSpendBlock');
+      if (forecastPanel && sharedSpendBlock) {
+        forecastPanel.appendChild(sharedSpendBlock);
+      }
+
       const tabDefinitions = [
         {
           id: 'summary',
@@ -7856,11 +8103,15 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
           emptyText: 'Enter valid calculator inputs to see the results summary.',
           nodes: [
             findDirectChild(cardPad, el => el.classList && el.classList.contains('results-top')),
+            document.getElementById('installSummaryHeading'),
             topResultsMetrics,
             document.getElementById('uaEventSummaryPanel'),
+            document.getElementById('installInsightsHeading'),
             document.getElementById('interpretationCard'),
+            document.getElementById('installCompareHeading'),
             compareBlock,
             summaryTable,
+            document.getElementById('uaEventInsightsPanel'),
             document.getElementById('directionNote'),
             footNote
           ]
