@@ -55,9 +55,9 @@
       top: 0;
       z-index: 50;
       display: grid;
-      gap: 8px;
-      margin: 0 0 22px;
-      padding: 14px 0 16px;
+      gap: 4px;
+      margin: 0 0 16px;
+      padding: 10px 0 10px;
       background: rgba(255, 255, 255, .92);
       border-bottom: 1px solid rgba(219, 227, 239, .92);
       box-shadow: 0 10px 26px rgba(24, 36, 66, .08);
@@ -79,8 +79,8 @@
 
     h1 {
       margin: 0;
-      font-size: clamp(28px, 4vw, 44px);
-      letter-spacing: -.035em;
+      font-size: clamp(20px, 2.2vw, 30px);
+      letter-spacing: -.025em;
       line-height: 1.05;
     }
 
@@ -864,6 +864,90 @@
 
 
 
+    .results-tab-host {
+      display: grid;
+      gap: 14px;
+    }
+
+    .results-tab-list {
+      position: static;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 9px;
+      margin: -2px 0 6px;
+      border: 1px solid rgba(219, 227, 239, .98);
+      border-radius: 18px;
+      background: rgba(247, 250, 255, .96);
+      box-shadow: none;
+    }
+
+    .results-tab-button {
+      flex: 0 1 auto;
+      border: 1px solid #d7e3ff;
+      border-radius: 999px;
+      padding: 9px 11px;
+      background: #ffffff;
+      color: #334155;
+      box-shadow: none;
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.15;
+      transition: background .12s ease, color .12s ease, border-color .12s ease, transform .12s ease;
+    }
+
+    .results-tab-button:hover {
+      background: #eef4ff;
+      color: #173a9f;
+      border-color: #bfd0ff;
+      transform: translateY(-1px);
+      box-shadow: none;
+    }
+
+    .results-tab-button.is-active,
+    .results-tab-button[aria-selected="true"] {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      box-shadow: 0 8px 18px rgba(49, 87, 213, .20);
+    }
+
+    .results-tab-panels {
+      min-width: 0;
+    }
+
+    .results-tab-panel {
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .results-tab-panel.is-hidden {
+      display: none !important;
+    }
+
+    .results-tab-panel > .panel,
+    .results-tab-panel > details,
+    .results-tab-panel > .interpretation-card,
+    .results-tab-panel > .compare,
+    .results-tab-panel > .table-wrap,
+    .results-tab-panel > .note,
+    .results-tab-panel > .foot,
+    .results-tab-panel > .results-top,
+    .results-tab-panel > .metric-grid {
+      margin-top: 0;
+    }
+
+    .results-tab-panel > details.tabbed-detail {
+      margin-top: 0;
+    }
+
+    .results-tab-empty {
+      margin-top: 0;
+    }
+
+
     .dom-results-sink {
       position: absolute;
       left: -10000px;
@@ -1436,9 +1520,6 @@
   <main class="wrap">
     <header>
       <h1>A/B Test Significance Calculator</h1>
-      <div class="subhead">
-        Enter conversions and Audience Reach for control and experiment. The calculator runs a pooled two-proportion z-test, supports one-sided or two-sided testing, and shows step-by-step math, confidence intervals, power, and reach-growth timing.
-      </div>
     </header>
 
     <div class="grid">
@@ -7467,6 +7548,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       renderPlanner(input);
       updateUrl(input);
       window.lastSummaryText = buildSummaryText(input, out);
+      syncResultsTabEmptyStates();
       saveLastValidUiSnapshot();
     }
 
@@ -7733,6 +7815,184 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       document.fonts.ready.then(scheduleStickyHeaderHeightUpdate).catch(() => {});
     }
 
+
+    const resultsTabState = { initialized: false, active: 'summary' };
+
+    function findDirectChild(parent, predicate) {
+      if (!parent || !parent.children) return null;
+      return Array.from(parent.children).find(predicate) || null;
+    }
+
+    function findDirectDetailsBySummary(parent, summaryText) {
+      return findDirectChild(parent, el => {
+        if (!el || String(el.tagName || '').toUpperCase() !== 'DETAILS' || !el.querySelector) return false;
+        const summary = el.querySelector('summary');
+        return summary && summary.textContent.trim() === summaryText;
+      });
+    }
+
+    function initResultsTabs() {
+      const cardPad = document.querySelector('.results-card > .card-pad');
+      if (!cardPad || !cardPad.children || document.getElementById('resultsTabHost')) return;
+
+      const topResultsMetrics = findDirectChild(cardPad, el => el.classList && el.classList.contains('metric-grid') && el.classList.contains('top-metrics'));
+      const compareBlock = findDirectChild(cardPad, el => el.classList && el.classList.contains('compare'));
+      const summaryTable = document.getElementById('summaryRows') ? document.getElementById('summaryRows').closest('.table-wrap') : null;
+      const footNote = findDirectChild(cardPad, el => el.classList && el.classList.contains('foot'));
+      const mediaPlanningDetails = findDirectDetailsBySummary(cardPad, 'Optional Media planning helper');
+      const stepsDetails = findDirectDetailsBySummary(cardPad, 'Step-by-step calculation details');
+      const sheetsDetails = findDirectDetailsBySummary(cardPad, 'Google Sheets formulas to embed');
+      [mediaPlanningDetails, stepsDetails, sheetsDetails].forEach(detail => {
+        if (detail) {
+          detail.open = false;
+          if (detail.classList) detail.classList.add('tabbed-detail');
+        }
+      });
+
+      const tabDefinitions = [
+        {
+          id: 'summary',
+          label: 'Results Summary',
+          emptyText: 'Enter valid calculator inputs to see the results summary.',
+          nodes: [
+            findDirectChild(cardPad, el => el.classList && el.classList.contains('results-top')),
+            topResultsMetrics,
+            document.getElementById('uaEventSummaryPanel'),
+            document.getElementById('interpretationCard'),
+            compareBlock,
+            summaryTable,
+            document.getElementById('directionNote'),
+            footNote
+          ]
+        },
+        {
+          id: 'cost',
+          label: 'Incremental Cost Metrics',
+          emptyText: 'Enter trend data with media spend to calculate incremental cost metrics.',
+          nodes: [document.getElementById('incrementalCostPanel')]
+        },
+        {
+          id: 'trend',
+          label: 'Trend Data and Charts',
+          emptyText: 'Paste cumulative trend data to show charts and exportable trend tables.',
+          nodes: [document.getElementById('trendPanel')]
+        },
+        {
+          id: 'forecast',
+          label: 'Time to reach Confidence and Power',
+          emptyText: 'Forecast ETA appears when valid cumulative trend data is loaded.',
+          nodes: [document.getElementById('forecastedTimePanel')]
+        },
+        {
+          id: 'ci',
+          label: 'CI for the Difference',
+          emptyText: 'Enter valid calculator inputs to see confidence intervals.',
+          nodes: [document.getElementById('confidenceIntervalPanel')]
+        },
+        {
+          id: 'power',
+          label: 'Statistical Power for This Effect',
+          emptyText: 'Enter valid calculator inputs to see power calculations.',
+          nodes: [document.getElementById('powerPanel')]
+        },
+        {
+          id: 'extras',
+          label: 'Extras',
+          emptyText: 'Optional media planning, calculation details, and Google Sheets formulas are unavailable.',
+          nodes: [mediaPlanningDetails, stepsDetails, sheetsDetails]
+        }
+      ];
+
+      const host = document.createElement('div');
+      host.id = 'resultsTabHost';
+      host.className = 'results-tab-host';
+      const tabList = document.createElement('div');
+      tabList.className = 'results-tab-list';
+      tabList.setAttribute('role', 'tablist');
+      tabList.setAttribute('aria-label', 'Live results sections');
+      const panelWrap = document.createElement('div');
+      panelWrap.className = 'results-tab-panels';
+      host.appendChild(tabList);
+      host.appendChild(panelWrap);
+      cardPad.insertBefore(host, cardPad.firstChild);
+
+      function setActiveTab(tabId, focusButton = false) {
+        resultsTabState.active = tabId;
+        tabDefinitions.forEach(def => {
+          const button = document.getElementById(`resultsTabButton_${def.id}`);
+          const panel = document.getElementById(`resultsTabPanel_${def.id}`);
+          const active = def.id === tabId;
+          if (button) {
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-selected', active ? 'true' : 'false');
+            button.tabIndex = active ? 0 : -1;
+            if (active && focusButton) button.focus();
+          }
+          if (panel) {
+            panel.classList.toggle('is-hidden', !active);
+            panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+          }
+        });
+      }
+
+      tabDefinitions.forEach(def => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = `resultsTabButton_${def.id}`;
+        button.className = 'results-tab-button';
+        button.setAttribute('role', 'tab');
+        button.setAttribute('aria-controls', `resultsTabPanel_${def.id}`);
+        button.textContent = def.label;
+        button.addEventListener('click', () => setActiveTab(def.id));
+        button.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const currentIndex = tabDefinitions.findIndex(item => item.id === resultsTabState.active);
+          let nextIndex = currentIndex;
+          if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabDefinitions.length;
+          if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabDefinitions.length) % tabDefinitions.length;
+          if (event.key === 'Home') nextIndex = 0;
+          if (event.key === 'End') nextIndex = tabDefinitions.length - 1;
+          setActiveTab(tabDefinitions[nextIndex].id, true);
+        });
+        tabList.appendChild(button);
+
+        const panel = document.createElement('div');
+        panel.id = `resultsTabPanel_${def.id}`;
+        panel.className = 'results-tab-panel';
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', button.id);
+        panel.dataset.emptyText = def.emptyText;
+        const empty = document.createElement('div');
+        empty.className = 'note results-tab-empty hidden';
+        empty.textContent = def.emptyText;
+        panel.appendChild(empty);
+        def.nodes.filter(Boolean).forEach(node => panel.appendChild(node));
+        panelWrap.appendChild(panel);
+      });
+
+      resultsTabState.initialized = true;
+      setActiveTab(resultsTabState.active || 'summary');
+      syncResultsTabEmptyStates();
+    }
+
+    function syncResultsTabEmptyStates() {
+      const host = document.getElementById('resultsTabHost');
+      if (!host || !host.querySelectorAll) return;
+      host.querySelectorAll('.results-tab-panel').forEach(panel => {
+        const empty = panel.querySelector(':scope > .results-tab-empty') || panel.querySelector('.results-tab-empty');
+        if (!empty) return;
+        const visibleContent = Array.from(panel.children).some(child => {
+          if (child === empty) return false;
+          if (child.hidden) return false;
+          if (child.classList && child.classList.contains('hidden')) return false;
+          return true;
+        });
+        empty.classList.toggle('hidden', visibleContent);
+      });
+    }
+
+    initResultsTabs();
     loadFromUrl();
     render();
     scheduleStickyHeaderHeightUpdate();
