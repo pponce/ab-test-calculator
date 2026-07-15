@@ -6,6 +6,7 @@
   <title>Local A/B Test Significance Calculator</title>
   <!-- v17: live/static outputs include treatment counts, incremental/decremental percentages, and signed denominator details for iCPI/iCPA. -->
   <!-- v19: the main Statistical Power panel uses actual-arm reach-needed estimates instead of equal n/arm requirements. -->
+  <!-- v20: UA A-event summary option adds latest A-event lift, p-value, confidence, and observed-power results from trend data. -->
   <style>
     :root {
       --bg: #f6f8fb;
@@ -1482,6 +1483,14 @@
               </span>
             </label>
 
+            <label id="includeUaEventSummaryRow" class="checkbox-label hidden">
+              <input id="includeUaEventSummary" type="checkbox" />
+              <span class="checkbox-copy">
+                <span>Include A event based Lift, P value, power % calculation summaries?</span>
+                <span class="hint">Available when Show A event chart is checked. Uses the latest cumulative trend row, A-event counts, and the selected event-count setting above to show A-event rate lift, p-value, calculated confidence %, and observed power under the current confidence, tail, and power inputs.</span>
+              </span>
+            </label>
+
             <input id="controlLabel" type="hidden" value="control" />
             <input id="experimentLabel" type="hidden" value="experiment" />
 
@@ -1683,6 +1692,61 @@
               <div class="k">Observed power</div>
               <div class="v" id="topObservedPowerMetric">--</div>
               <div class="s" id="topObservedPowerSmall">Target power</div>
+            </div>
+          </div>
+
+          <div class="panel hidden" id="uaEventSummaryPanel">
+            <div class="panel-head">
+              <div>
+                <h3>A Event Calculation Summary</h3>
+                <div class="muted small" id="uaEventSummarySubtitle">Uses the latest cumulative A-event trend row.</div>
+              </div>
+              <span class="pill" id="uaEventSummaryPill">Trend + A events required</span>
+            </div>
+            <div class="metric-grid top-metrics">
+              <div class="metric">
+                <div class="k" id="uaEventControlRateLabel">A event control rate</div>
+                <div class="v" id="uaEventControlRate">--</div>
+                <div class="s" id="uaEventControlSmall">--</div>
+              </div>
+              <div class="metric">
+                <div class="k" id="uaEventExperimentRateLabel">A event experiment rate</div>
+                <div class="v" id="uaEventExperimentRate">--</div>
+                <div class="s" id="uaEventExperimentSmall">--</div>
+              </div>
+              <div class="metric">
+                <div class="k">A event lift</div>
+                <div class="v" id="uaEventLiftMetric">--</div>
+                <div class="s" id="uaEventDiffMetric">--</div>
+              </div>
+              <div class="metric">
+                <div class="k">A event P-value</div>
+                <div class="v" id="uaEventPValueMetric">--</div>
+                <div class="s" id="uaEventPValueSmall">Decision p-value</div>
+              </div>
+              <div class="metric">
+                <div class="k">A event calculated confidence %</div>
+                <div class="v" id="uaEventCalculatedConfidenceMetric">--</div>
+                <div class="s" id="uaEventConfidenceMetric">1 - p-value</div>
+              </div>
+              <div class="metric">
+                <div class="k">A event observed power</div>
+                <div class="v" id="uaEventObservedPowerMetric">--</div>
+                <div class="s" id="uaEventObservedPowerSmall">Target power</div>
+              </div>
+            </div>
+            <div class="note" id="uaEventSummaryNote">Enable Show A event chart and provide A-event trend data to calculate this section.</div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>A-event summary metric</th>
+                    <th class="num">Value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="uaEventSummaryRows"></tbody>
+              </table>
             </div>
           </div>
 
@@ -2427,6 +2491,8 @@ Total planned spend:
       eventCountsUnique: document.getElementById('eventCountsUnique'),
       showUaEventChartRow: document.getElementById('showUaEventChartRow'),
       showUaEventChart: document.getElementById('showUaEventChart'),
+      includeUaEventSummaryRow: document.getElementById('includeUaEventSummaryRow'),
+      includeUaEventSummary: document.getElementById('includeUaEventSummary'),
       includeForecastTimingReport: document.getElementById('includeForecastTimingReport'),
       includePowerReport: document.getElementById('includePowerReport'),
       uaReportUseInstallLiftForIcpaRow: document.getElementById('uaReportUseInstallLiftForIcpaRow'),
@@ -2472,6 +2538,25 @@ Total planned spend:
       confidenceMetric: document.getElementById('confidenceMetric'),
       topObservedPowerMetric: document.getElementById('topObservedPowerMetric'),
       topObservedPowerSmall: document.getElementById('topObservedPowerSmall'),
+      uaEventSummaryPanel: document.getElementById('uaEventSummaryPanel'),
+      uaEventSummarySubtitle: document.getElementById('uaEventSummarySubtitle'),
+      uaEventSummaryPill: document.getElementById('uaEventSummaryPill'),
+      uaEventControlRateLabel: document.getElementById('uaEventControlRateLabel'),
+      uaEventControlRate: document.getElementById('uaEventControlRate'),
+      uaEventControlSmall: document.getElementById('uaEventControlSmall'),
+      uaEventExperimentRateLabel: document.getElementById('uaEventExperimentRateLabel'),
+      uaEventExperimentRate: document.getElementById('uaEventExperimentRate'),
+      uaEventExperimentSmall: document.getElementById('uaEventExperimentSmall'),
+      uaEventLiftMetric: document.getElementById('uaEventLiftMetric'),
+      uaEventDiffMetric: document.getElementById('uaEventDiffMetric'),
+      uaEventPValueMetric: document.getElementById('uaEventPValueMetric'),
+      uaEventPValueSmall: document.getElementById('uaEventPValueSmall'),
+      uaEventCalculatedConfidenceMetric: document.getElementById('uaEventCalculatedConfidenceMetric'),
+      uaEventConfidenceMetric: document.getElementById('uaEventConfidenceMetric'),
+      uaEventObservedPowerMetric: document.getElementById('uaEventObservedPowerMetric'),
+      uaEventObservedPowerSmall: document.getElementById('uaEventObservedPowerSmall'),
+      uaEventSummaryNote: document.getElementById('uaEventSummaryNote'),
+      uaEventSummaryRows: document.getElementById('uaEventSummaryRows'),
       interpretationCard: document.getElementById('interpretationCard'),
       interpretationTitle: document.getElementById('interpretationTitle'),
       interpretationBody: document.getElementById('interpretationBody'),
@@ -2834,6 +2919,7 @@ Total planned spend:
       setValue(els.reportName, getAny('reportName', 'report_name', 'rname', 'reportTitle', 'title'));
       setCheckbox(els.eventCountsUnique, getAny('eventCountsUnique', 'eventsUnique', 'uniqueEvents', 'areEventCountsUnique'), true);
       setCheckbox(els.showUaEventChart, getAny('showUaEventChart', 'showEventChart', 'showAEventChart', 'uaEventChart'), false);
+      setCheckbox(els.includeUaEventSummary, getAny('includeUaEventSummary', 'includeAEventSummary', 'includeUaAEventSummary', 'uaAEventSummary'), false);
       setCheckbox(els.includeForecastTimingReport, getAny('includeForecastTimingReport', 'includeForecastEtaTiming', 'includeForecastETA', 'forecastEtaReport'), true);
       setCheckbox(els.includePowerReport, getAny('includePowerReport', 'includePowerCalculationsReport', 'includePowerStaticReport', 'powerReport'), true);
       setCheckbox(els.uaReportUseInstallLiftForIcpa, getAny('uaReportUseInstallLiftForIcpa', 'uaStaticReportUseInstallLiftForICPA', 'useInstallLiftForIcpa', 'uaIcpaInstallLiftReport'), true);
@@ -2912,6 +2998,7 @@ Total planned spend:
       const experimentType = els.experimentType.value === 'RE' ? 'RE' : 'UA';
       const eventCountsUnique = els.eventCountsUnique ? els.eventCountsUnique.checked : true;
       const showUaEventChart = experimentType === 'UA' && els.showUaEventChart ? els.showUaEventChart.checked : false;
+      const includeUaEventSummary = experimentType === 'UA' && showUaEventChart && els.includeUaEventSummary ? els.includeUaEventSummary.checked : false;
       const includeForecastTimingReport = els.includeForecastTimingReport ? els.includeForecastTimingReport.checked : true;
       const includePowerReport = els.includePowerReport ? els.includePowerReport.checked : true;
       const uaReportUseInstallLiftForIcpa = els.uaReportUseInstallLiftForIcpa ? els.uaReportUseInstallLiftForIcpa.checked : true;
@@ -2947,7 +3034,7 @@ Total planned spend:
       if (!(forecastPowerTarget > 0 && forecastPowerTarget < 1)) errors.push('Power target must be between 0 and 1.');
       if (Number.isFinite(controlDailyReach) && controlDailyReach < 0) errors.push('Control reach growth cannot be negative.');
       if (Number.isFinite(experimentDailyReach) && experimentDailyReach < 0) errors.push('Experiment reach growth cannot be negative.');
-      return { reportName, experimentType, eventCountsUnique, showUaEventChart, includeForecastTimingReport, includePowerReport, uaReportUseInstallLiftForIcpa, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
+      return { reportName, experimentType, eventCountsUnique, showUaEventChart, includeUaEventSummary, includeForecastTimingReport, includePowerReport, uaReportUseInstallLiftForIcpa, controlConversions, controlTrials, experimentConversions, experimentTrials, confidenceLevel, tail, comparisons, precision, powerTarget, forecastPowerTarget, reachGrowthUnit, controlLabel, experimentLabel, controlConversionName, experimentConversionName, controlDailyReach, experimentDailyReach, errors };
     }
 
     function updateCampaignModeUI(input) {
@@ -2955,6 +3042,11 @@ Total planned spend:
       const experimentArm = displayArmLabel(input.experimentLabel);
       els.reConversionNames.classList.toggle('hidden', input.experimentType !== 'RE');
       if (els.showUaEventChartRow) els.showUaEventChartRow.classList.toggle('hidden', input.experimentType !== 'UA');
+      if (els.includeUaEventSummaryRow) {
+        const canShowUaEventSummary = input.experimentType === 'UA' && !!input.showUaEventChart;
+        els.includeUaEventSummaryRow.classList.toggle('hidden', !canShowUaEventSummary);
+        if (!canShowUaEventSummary && els.includeUaEventSummary) els.includeUaEventSummary.checked = false;
+      }
       if (els.uaReportUseInstallLiftForIcpaRow) els.uaReportUseInstallLiftForIcpaRow.classList.toggle('hidden', input.experimentType !== 'UA');
       els.controlConversionFieldLabel.textContent = controlConversionDisplayName(input);
       els.experimentConversionFieldLabel.textContent = experimentConversionDisplayName(input);
@@ -4700,6 +4792,162 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return input.experimentType === 'UA' && !!input.showUaEventChart;
     }
 
+    function shouldShowUaEventSummary(input) {
+      return input && input.experimentType === 'UA' && !!input.showUaEventChart && !!input.includeUaEventSummary;
+    }
+
+    function getUaEventSummaryModel(input, trend = null) {
+      const meta = getTrendMetricMeta(input, 'event');
+      if (!shouldShowUaEventSummary(input)) {
+        return { enabled: false, valid: false, meta, errors: [] };
+      }
+      if (!String(trendState.raw || '').trim()) {
+        return { enabled: true, valid: false, meta, errors: ['Enter trend data with A-event columns to calculate the A-event summary.'] };
+      }
+      let eventTrend = trend && trend.event ? trend.event : null;
+      if (!eventTrend) {
+        const parsed = parseTrendData(trendState.raw);
+        if (!parsed.hasRaw) return { enabled: true, valid: false, meta, errors: ['Enter trend data with A-event columns to calculate the A-event summary.'] };
+        eventTrend = calculateTrendSeriesFromParsed(parsed, input, 'event');
+      }
+      const eventMeta = eventTrend.metricMeta || meta;
+      if (!eventTrend.valid || !eventTrend.points || !eventTrend.points.length) {
+        return {
+          enabled: true,
+          valid: false,
+          meta: eventMeta,
+          errors: eventTrend.errors && eventTrend.errors.length ? eventTrend.errors : ['A-event trend data could not be calculated from the pasted trend data.']
+        };
+      }
+      const last = eventTrend.points[eventTrend.points.length - 1];
+      return { enabled: true, valid: true, meta: eventMeta, trend: eventTrend, last, errors: eventTrend.warnings || [] };
+    }
+
+    function setUaEventSummaryBlank(model) {
+      if (!els.uaEventSummaryPanel) return;
+      const meta = model && model.meta ? model.meta : getTrendMetricMeta(getInputs(), 'event');
+      els.uaEventSummaryPanel.classList.remove('hidden');
+      els.uaEventSummarySubtitle.textContent = `Requires trend data with ${meta.controlRequiredLabel}, ${meta.experimentRequiredLabel}, Control Reach, and Experiment Reach.`;
+      els.uaEventSummaryPill.textContent = 'Trend + A events required';
+      els.uaEventControlRateLabel.textContent = `${meta.conversionLabel} control rate`;
+      els.uaEventExperimentRateLabel.textContent = `${meta.conversionLabel} experiment rate`;
+      els.uaEventControlRate.textContent = '--';
+      els.uaEventExperimentRate.textContent = '--';
+      els.uaEventControlSmall.textContent = '--';
+      els.uaEventExperimentSmall.textContent = '--';
+      els.uaEventLiftMetric.textContent = '--';
+      els.uaEventDiffMetric.textContent = '--';
+      els.uaEventPValueMetric.textContent = '--';
+      els.uaEventPValueSmall.textContent = 'Decision p-value';
+      els.uaEventCalculatedConfidenceMetric.textContent = '--';
+      els.uaEventConfidenceMetric.textContent = '1 - p-value';
+      els.uaEventObservedPowerMetric.textContent = '--';
+      els.uaEventObservedPowerSmall.textContent = 'Target power';
+      const errors = model && model.errors && model.errors.length ? model.errors.join(' ') : 'Enable Show A event chart and provide valid A-event trend data to calculate this section.';
+      els.uaEventSummaryNote.className = 'note warn-note';
+      els.uaEventSummaryNote.innerHTML = escapeHtml(errors);
+      els.uaEventSummaryRows.innerHTML = renderRows([
+        ['A-event summary status', '--', escapeHtml(errors)],
+        ['Required A-event columns', `${meta.controlRequiredLabel}; ${meta.experimentRequiredLabel}`, 'The summary uses the event-count type selected by the Are event counts unique? input.']
+      ]);
+    }
+
+    function renderUaEventSummary(input, trend = null) {
+      if (!els.uaEventSummaryPanel) return;
+      const model = getUaEventSummaryModel(input, trend);
+      if (!model.enabled) {
+        els.uaEventSummaryPanel.classList.add('hidden');
+        if (els.uaEventSummaryRows) els.uaEventSummaryRows.innerHTML = '';
+        return;
+      }
+      if (!model.valid || !model.last) {
+        setUaEventSummaryBlank(model);
+        return;
+      }
+      const d = input.precision;
+      const dMore = Math.max(6, d + 3);
+      const meta = model.meta;
+      const p = model.last;
+      const out = p.out;
+      const power = p.power;
+      els.uaEventSummaryPanel.classList.remove('hidden');
+      els.uaEventSummarySubtitle.textContent = `Latest cumulative A-event calculation from ${p.label} using ${meta.sourceLabel}.`;
+      els.uaEventSummaryPill.textContent = `Latest row: ${p.label}`;
+      els.uaEventControlRateLabel.textContent = `${meta.conversionLabel} control rate`;
+      els.uaEventExperimentRateLabel.textContent = `${meta.conversionLabel} experiment rate`;
+      els.uaEventControlRate.textContent = formatPct(out.p1, d);
+      els.uaEventExperimentRate.textContent = formatPct(out.p2, d);
+      els.uaEventControlSmall.textContent = `${formatNumber(p.controlConversions)} / ${formatNumber(p.controlTrials)}`;
+      els.uaEventExperimentSmall.textContent = `${formatNumber(p.experimentConversions)} / ${formatNumber(p.experimentTrials)}`;
+      els.uaEventLiftMetric.textContent = Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--';
+      els.uaEventDiffMetric.textContent = `${formatPctPoint(out.diff, d)} absolute difference`;
+      els.uaEventPValueMetric.textContent = formatFlexible(out.pForDecision, dMore);
+      els.uaEventPValueSmall.textContent = input.comparisons > 1 ? 'Bonferroni-adjusted decision p-value' : 'Decision p-value';
+      els.uaEventCalculatedConfidenceMetric.textContent = Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, d) : '--';
+      els.uaEventConfidenceMetric.textContent = `${Number.isFinite(out.pForDecision) ? formatPct(out.pForDecision, d) : '--'} false-positive risk if declared`;
+      els.uaEventObservedPowerMetric.textContent = Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--';
+      els.uaEventObservedPowerSmall.textContent = Number.isFinite(power.observedPower) ? `${formatPct(1 - power.observedPower, 1)} false-negative risk; target ${formatPct(input.powerTarget, 0)}` : `Target: ${formatPct(input.powerTarget, 0)}`;
+      els.uaEventSummaryNote.className = 'note';
+      els.uaEventSummaryNote.innerHTML = `This optional UA summary uses A-event rate = A-event count / Audience Reach from the latest cumulative trend row. It is a diagnostic event-rate view and uses the selected event-count setting (${escapeHtml(meta.sourceLabel)}). UA customer-facing A-event lift should still be interpreted as anchored to install lift; the iCPA section below shows both install-lift and event-rate iCPA methods.`;
+      els.uaEventSummaryRows.innerHTML = renderRows([
+        ['A-event summary date', p.label, 'Latest cumulative A-event trend row.'],
+        [`Control ${meta.properPlural}`, formatNumber(p.controlConversions), `${formatNumber(p.controlConversions)} / ${formatNumber(p.controlTrials)} Control Audience Reach.`],
+        [`Experiment ${meta.properPlural}`, formatNumber(p.experimentConversions), `${formatNumber(p.experimentConversions)} / ${formatNumber(p.experimentTrials)} Experiment Audience Reach.`],
+        ['Control A-event rate', formatPct(out.p1, d), 'Control A-event count divided by Control Audience Reach.'],
+        ['Experiment A-event rate', formatPct(out.p2, d), 'Experiment A-event count divided by Experiment Audience Reach.'],
+        ['A-event absolute difference', formatPctPoint(out.diff, d), 'Experiment A-event rate minus Control A-event rate.'],
+        ['A-event rate lift', Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--', 'A-event rate lift based on A-event counts / reach.'],
+        ['A-event p-value', formatFlexible(out.pForDecision, dMore), 'Decision p-value using the calculator confidence level and hypothesis/tail.'],
+        ['A-event calculated confidence %', Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, d) : '--', 'Displayed as 1 - decision p-value.'],
+        ['A-event observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Post-hoc estimate using the A-event rate difference and actual current control/experiment reach.']
+      ]);
+    }
+
+    function buildUaEventSummaryReportSection(currentInput, trend, includePowerReport = true) {
+      const model = getUaEventSummaryModel(currentInput, trend);
+      if (!model.enabled) return '';
+      const d = currentInput.precision;
+      const dMore = Math.max(6, d + 3);
+      const meta = model.meta || getTrendMetricMeta(currentInput, 'event');
+      if (!model.valid || !model.last) {
+        const errors = model.errors && model.errors.length ? model.errors.join(' ') : 'A-event summary was selected but valid A-event trend data was not available.';
+        return `<section class="card"><h2>A Event Calculation Summary</h2><div class="note">${escapeHtml(errors)}</div></section>`;
+      }
+      const p = model.last;
+      const out = p.out;
+      const power = p.power;
+      const powerCard = includePowerReport ? `<div class="metric"><div class="k">A event observed power</div><div class="v">${Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--'}</div><div class="s">${Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) + ' false-negative risk.' : 'Not available.'}</div></div>` : '';
+      const rows = [
+        ['A-event summary date', p.label, 'Latest cumulative A-event trend row.'],
+        [`Control ${meta.properPlural}`, formatNumber(p.controlConversions), `${formatNumber(p.controlConversions)} / ${formatNumber(p.controlTrials)} Control Audience Reach.`],
+        [`Experiment ${meta.properPlural}`, formatNumber(p.experimentConversions), `${formatNumber(p.experimentConversions)} / ${formatNumber(p.experimentTrials)} Experiment Audience Reach.`],
+        ['Control A-event rate', formatPct(out.p1, d), 'Control A-event count divided by Control Audience Reach.'],
+        ['Experiment A-event rate', formatPct(out.p2, d), 'Experiment A-event count divided by Experiment Audience Reach.'],
+        ['A-event absolute difference', formatPctPoint(out.diff, d), 'Experiment A-event rate minus Control A-event rate.'],
+        ['A-event rate lift', Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--', 'A-event rate lift based on A-event counts / reach.'],
+        ['A-event p-value', formatFlexible(out.pForDecision, dMore), 'Decision p-value using the calculator confidence level and hypothesis/tail.'],
+        ['A-event calculated confidence %', Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, d) : '--', 'Displayed as 1 - decision p-value.']
+      ];
+      if (includePowerReport) {
+        rows.push(['A-event observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Post-hoc estimate using the A-event rate difference and actual current control/experiment reach.']);
+      }
+      return `
+    <section class="card">
+      <h2>A Event Calculation Summary</h2>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">A event date</div><div class="v">${escapeHtml(p.label)}</div><div class="s">Latest cumulative A-event row.</div></div>
+        <div class="metric"><div class="k">Control A-event rate</div><div class="v">${formatPct(out.p1, d)}</div><div class="s">${formatNumber(p.controlConversions)} / ${formatNumber(p.controlTrials)}</div></div>
+        <div class="metric"><div class="k">Experiment A-event rate</div><div class="v">${formatPct(out.p2, d)}</div><div class="s">${formatNumber(p.experimentConversions)} / ${formatNumber(p.experimentTrials)}</div></div>
+        <div class="metric"><div class="k">A event lift</div><div class="v">${Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--'}</div><div class="s">${formatPctPoint(out.diff, d)} absolute difference.</div></div>
+        <div class="metric"><div class="k">A event p-value</div><div class="v">${formatFlexible(out.pForDecision, dMore)}</div><div class="s">Decision p-value.</div></div>
+        <div class="metric"><div class="k">A event calculated confidence %</div><div class="v">${Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, d) : '--'}</div><div class="s">1 - decision p-value.</div></div>
+        ${powerCard}
+      </div>
+      <div class="note">This optional UA summary uses A-event rate = A-event count / Audience Reach from the latest cumulative trend row, using ${escapeHtml(meta.sourceLabel)}. UA customer-facing A-event lift should still be interpreted as anchored to install lift; this is a diagnostic event-rate calculation.</div>
+      <div class="table-wrap"><table><thead><tr><th>A-event summary metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${buildReportTableRows(rows)}</tbody></table></div>
+    </section>`;
+    }
+
     function formatTrendRows(points, input, options = {}) {
       const includePower = !options || options.includePower !== false;
       return points.map(p => `
@@ -5970,6 +6218,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const reportTitle = `${reportName} - ${cumulativeDateLabel}`;
       const generatedAt = new Date().toLocaleString();
       const includePowerReport = currentInput.includePowerReport !== false;
+      const uaEventSummaryReportSection = buildUaEventSummaryReportSection(currentInput, trend, includePowerReport);
       const chartMarkup = hasTrend ? buildTrendSvg(trend.points, currentInput, meta, { includePower: includePowerReport }) : '<div class="empty">No trend data was loaded when this report was generated.</div>';
       const trendRows = hasTrend ? formatTrendRows(trend.points, currentInput, { includePower: includePowerReport }) : '';
       const primaryTrendDataTitle = meta.chartKind === 'install' ? 'Install Trend Data' : 'Event Trend Data';
@@ -6007,6 +6256,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Use case', currentInput.experimentType, currentInput.experimentType === 'RE' ? 'RE uses event conversions.' : 'UA uses install conversions.'],
         ['Event counts are unique?', currentInput.eventCountsUnique ? 'Yes' : 'No', `Event charts use ${eventMeta.controlRequiredLabel} and ${eventMeta.experimentRequiredLabel}. Install counts for UA are always treated as unique.`],
         ['Show A event chart?', currentInput.experimentType === 'UA' ? (currentInput.showUaEventChart ? 'Yes' : 'No') : 'Not applicable', 'When enabled for UA, the report includes a second A-event trend chart.'],
+        ['Include A event based Lift, P value, power % calculation summaries?', currentInput.experimentType === 'UA' && currentInput.showUaEventChart ? (currentInput.includeUaEventSummary ? 'Yes' : 'No') : 'Not applicable', 'When enabled, the report includes latest-row A-event rate lift, p-value, and calculated confidence; observed power is included when the static report power setting is also enabled.'],
         ['Include Forecast ETA timing in static HTML report output?', currentInput.includeForecastTimingReport ? 'Yes' : 'No', includePowerReport ? 'When enabled, the report includes the Forecasted Time to reach Confidence and Power section.' : 'When enabled, the report includes the Forecasted Time to reach Confidence section; power ETA outputs are excluded because power report output is disabled.'],
         ['Include power % calculations in static HTML report output?', includePowerReport ? 'Yes' : 'No', 'When disabled, the report omits observed-power metrics, power trend lines, power columns, and power ETA timing.'],
         ['UA static-report iCPA method', currentInput.experimentType === 'UA' ? (currentInput.uaReportUseInstallLiftForIcpa !== false ? 'Install Lift %' : 'Event rate based on reach') : 'Not applicable', 'For UA only. Live results show both iCPA methods; the static report includes the selected method.'],
@@ -6125,6 +6375,8 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       </div>
       <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${finalRows}</tbody></table></div>
     </section>
+
+    ${uaEventSummaryReportSection}
 
     <section class="card">
       <h2>Original Calculator Inputs and Settings</h2>
@@ -6328,6 +6580,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const reachNeedForRows = calculateActualArmPowerReachNeed(input, out, input.powerTarget, trendPreflight);
       els.topObservedPowerMetric.textContent = Number.isFinite(powerForRows.observedPower) ? formatPct(powerForRows.observedPower, 1) : '--';
       els.topObservedPowerSmall.textContent = Number.isFinite(powerForRows.observedPower) ? `${formatPct(1 - powerForRows.observedPower, 1)} false-negative risk; target ${formatPct(input.powerTarget, 0)}` : `Target: ${formatPct(input.powerTarget, 0)}`;
+      renderUaEventSummary(input, trendPreflight);
       renderTopInterpretation(input, out, powerForRows);
       els.summaryRows.innerHTML = renderRows([
         [`${input.controlLabel} rate`, formatPct(out.p1, d), `${controlConversionDisplayName(input)}: ${formatNumber(input.controlConversions)} from ${formatNumber(input.controlTrials)} Audience Reach.`],
@@ -6382,6 +6635,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       params.set('experiment', `${input.experimentConversions},${input.experimentTrials}`);
       params.set('eventCountsUnique', input.eventCountsUnique ? '1' : '0');
       params.set('showUaEventChart', input.showUaEventChart ? '1' : '0');
+      params.set('includeUaEventSummary', input.includeUaEventSummary ? '1' : '0');
       params.set('includeForecastTimingReport', input.includeForecastTimingReport ? '1' : '0');
       params.set('includePowerReport', input.includePowerReport ? '1' : '0');
       params.set('uaReportUseInstallLiftForIcpa', input.uaReportUseInstallLiftForIcpa ? '1' : '0');
@@ -6437,6 +6691,18 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         : ['Incremental cost metrics: enter trend data with Cumulative Experiment Spend.'];
       if (costSignedReason) costLines.push(`Incremental cost signed internal note: ${costSignedReason}`);
       if (costAvailabilityReason) costLines.push(`Incremental cost note: ${costAvailabilityReason}`);
+      const uaEventSummaryModel = getUaEventSummaryModel(input, trendState.last);
+      const uaEventSummaryLines = uaEventSummaryModel.enabled && uaEventSummaryModel.valid && uaEventSummaryModel.last
+        ? [
+            `A-event summary date: ${uaEventSummaryModel.last.label}`,
+            `A-event control rate: ${formatNumber(uaEventSummaryModel.last.controlConversions)} / ${formatNumber(uaEventSummaryModel.last.controlTrials)} = ${formatPct(uaEventSummaryModel.last.out.p1, d)}`,
+            `A-event experiment rate: ${formatNumber(uaEventSummaryModel.last.experimentConversions)} / ${formatNumber(uaEventSummaryModel.last.experimentTrials)} = ${formatPct(uaEventSummaryModel.last.out.p2, d)}`,
+            `A-event lift: ${Number.isFinite(uaEventSummaryModel.last.out.relativeLift) ? formatPct(uaEventSummaryModel.last.out.relativeLift, d) : '--'}`,
+            `A-event p-value: ${formatFlexible(uaEventSummaryModel.last.out.pForDecision, Math.max(6, d + 3))}`,
+            `A-event calculated confidence %: ${Number.isFinite(uaEventSummaryModel.last.out.statisticalConfidence) ? formatPct(uaEventSummaryModel.last.out.statisticalConfidence, d) : '--'}`,
+            `A-event observed power: ${Number.isFinite(uaEventSummaryModel.last.power.observedPower) ? formatPct(uaEventSummaryModel.last.power.observedPower, 1) : '--'}`
+          ]
+        : [];
       return [
         'A/B Test Significance Result',
         `Use case: ${input.experimentType}`,
@@ -6457,6 +6723,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         `Additional experiment reach needed: ${Number.isFinite(reachNeed.additionalExperimentReach) ? formatNumber(reachNeed.additionalExperimentReach) : '--'}`,
         `Projected actual-arm ETA to ${formatPct(input.powerTarget, 0)} power: ${Number.isFinite(reachNeed.etaDays) ? formatDurationFromDays(reachNeed.etaDays) : (reachNeed.reason || 'No ETA; using current-ratio reach requirement or no finite reach-growth projection.')}`,
         `Confidence interval for experiment - control: [${formatPctPoint(out.ciLow, d)}, ${formatPctPoint(out.ciHigh, d)}]`,
+        ...uaEventSummaryLines,
         ...costLines
       ].join('\n');
     }
@@ -6466,6 +6733,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.experimentType.value = 'UA';
       if (els.eventCountsUnique) els.eventCountsUnique.checked = true;
       if (els.showUaEventChart) els.showUaEventChart.checked = false;
+      if (els.includeUaEventSummary) els.includeUaEventSummary.checked = false;
       if (els.includeForecastTimingReport) els.includeForecastTimingReport.checked = true;
       if (els.includePowerReport) els.includePowerReport.checked = true;
       if (els.uaReportUseInstallLiftForIcpa) els.uaReportUseInstallLiftForIcpa.checked = true;
@@ -6516,7 +6784,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     }
 
     for (const el of [
-      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.includeForecastTimingReport, els.includePowerReport, els.uaReportUseInstallLiftForIcpa, els.controlLabel, els.experimentLabel, els.controlConversionName,
+      els.reportName, els.experimentType, els.eventCountsUnique, els.showUaEventChart, els.includeUaEventSummary, els.includeForecastTimingReport, els.includePowerReport, els.uaReportUseInstallLiftForIcpa, els.controlLabel, els.experimentLabel, els.controlConversionName,
       els.experimentConversionName, els.controlConversions, els.controlTrials,
       els.experimentConversions, els.experimentTrials, els.confidenceLevel, els.tail,
       els.comparisons, els.precision, els.powerTarget, els.forecastPowerTarget,
