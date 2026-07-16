@@ -1657,7 +1657,7 @@
             <div class="two">
               <label>
                 <span id="experimentConversionFieldLabel" class="field-label-inline">Experiment Attributed Installs</span>
-                <input id="experimentConversions" type="number" min="0" step="1" value="466" />
+                <input id="experimentConversions" type="number" min="0" step="1" value="700" />
                 <span id="experimentConversionsLockHint" class="hint trend-lock-field-hint hidden">Locked: auto-filled from trend data.</span>
               </label>
               <label>
@@ -3405,7 +3405,7 @@ Total planned spend:
 
       setValue(els.controlConversions, getAny('c', 'controlConversions', 'control_successes', 'controlSuccesses', 'control_conv'));
       setValue(els.controlTrials, getAny('n1', 'controlTrials', 'control_total', 'controlTotal', 'control_n'));
-      setValue(els.experimentConversions, getAny('e', 'v', 'experimentConversions', 'experiment_successes', 'experimentSuccesses', 'experiment_conv', 'variantConversions', 'variant_successes', 'variantSuccesses', 'variant_conv'));
+      setValue(els.experimentConversions, getAny('e', 'experimentConversions', 'experiment_successes', 'experimentSuccesses', 'experiment_conv', 'variantConversions', 'variant_successes', 'variantSuccesses', 'variant_conv'));
       setValue(els.experimentTrials, getAny('n2', 'experimentTrials', 'experiment_total', 'experimentTotal', 'experiment_n', 'variantTrials', 'variant_total', 'variantTotal', 'variant_n'));
 
       setSelectByNumber(els.confidenceLevel, getAny('confidence', 'conf', 'confidenceLevel', 'abba:intervalConfidenceLevel'));
@@ -8135,7 +8135,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       els.experimentConversionName.value = 'A - Event';
       els.controlConversions.value = '107';
       els.controlTrials.value = '126968';
-      els.experimentConversions.value = '466';
+      els.experimentConversions.value = '700';
       els.experimentTrials.value = '580356';
       els.confidenceLevel.value = '0.90';
       els.tail.value = 'greater';
