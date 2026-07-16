@@ -864,23 +864,37 @@
 
 
 
+    .results-card {
+      overflow: visible;
+    }
+
     .results-tab-host {
       display: grid;
       gap: 14px;
+      align-items: start;
     }
 
     .results-tab-list {
-      position: static;
-      z-index: 1;
+      position: sticky;
+      top: calc(var(--sticky-header-height, 72px) + 10px);
+      z-index: 35;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       padding: 9px;
-      margin: -2px 0 6px;
+      margin: -2px 0 10px;
       border: 1px solid rgba(219, 227, 239, .98);
       border-radius: 18px;
-      background: rgba(247, 250, 255, .96);
-      box-shadow: none;
+      background: rgba(247, 250, 255, .98);
+      box-shadow: 0 10px 24px rgba(24, 36, 66, .10);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    @media (max-width: 1080px) {
+      .results-tab-list {
+        top: 10px;
+      }
     }
 
     .results-tab-button {
@@ -915,6 +929,7 @@
 
     .results-tab-panels {
       min-width: 0;
+      padding-top: 2px;
     }
 
     .results-tab-panel {
@@ -2203,6 +2218,23 @@
               </div>
             </div>
 
+            <div class="forecast-subsection install-basis-block" id="installForecastMethodBlock">
+              <h4>Install Forecast Method</h4>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Install estimate type</th>
+                      <th>Full-window timing</th>
+                      <th>How it is calculated</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastedComparisonRows"></tbody>
+                </table>
+              </div>
+              <div class="note" id="forecastedMethodNote">--</div>
+            </div>
+
             <div class="forecast-subsection">
               <h4>Install Confidence Forecast Estimates</h4>
               <div class="note" id="forecastedConfidenceNote">--</div>
@@ -2256,22 +2288,6 @@
               </div>
             </div>
 
-            <div class="forecast-subsection install-basis-block" id="installForecastMethodBlock">
-              <h4>Install Forecast Method</h4>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Install estimate type</th>
-                      <th>Full-window timing</th>
-                      <th>How it is calculated</th>
-                    </tr>
-                  </thead>
-                  <tbody id="forecastedComparisonRows"></tbody>
-                </table>
-              </div>
-              <div class="note" id="forecastedMethodNote">--</div>
-            </div>
 
             <div class="forecast-subsection hidden" id="uaEventForecastedTimeBlock">
               <h4>A Event Forecast Estimates</h4>
@@ -2284,42 +2300,54 @@
                 <div class="metric"><div class="k" id="uaEventForecastedPowerEtaLabel">A-event projected ETA to power</div><div class="v" id="uaEventForecastedPowerEtaMetric">--</div><div class="s" id="uaEventForecastedPowerEtaSmall">Uses actual projected arm sizes.</div></div>
                 <div class="metric"><div class="k" id="uaEventForecastedBothEtaLabel">A-event projected ETA to reach both</div><div class="v" id="uaEventForecastedBothEtaMetric">--</div><div class="s" id="uaEventForecastedBothEtaSmall">Confidence and power targets.</div></div>
               </div>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>A-event forecast metric</th>
-                      <th class="num">Value</th>
-                      <th>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody id="uaEventForecastedTimeRows"></tbody>
-                </table>
+              <div class="forecast-subsection">
+                <h4>A Event Forecast Method</h4>
+                <div class="table-wrap compact-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>A-event estimate type</th>
+                        <th>Full-window timing</th>
+                        <th>How it is calculated</th>
+                      </tr>
+                    </thead>
+                    <tbody id="uaEventForecastedTimeRows"></tbody>
+                  </table>
+                </div>
+                <div class="note" id="uaEventForecastedMethodNote">--</div>
               </div>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>A-event confidence forecast scenario</th>
-                      <th class="num">Projected ETA using actual arm sizes</th>
-                      <th>Commentary</th>
-                    </tr>
-                  </thead>
-                  <tbody id="uaEventForecastedTimeConfidenceRows"></tbody>
-                </table>
+              <div class="forecast-subsection">
+                <h4>A Event Confidence Forecast Estimates</h4>
+                <div class="note" id="uaEventForecastedConfidenceNote">--</div>
+                <div class="table-wrap compact-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>A-event confidence forecast scenario</th>
+                        <th class="num">Projected ETA using actual arm sizes</th>
+                        <th>Commentary</th>
+                      </tr>
+                    </thead>
+                    <tbody id="uaEventForecastedTimeConfidenceRows"></tbody>
+                  </table>
+                </div>
               </div>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>A-event reach-growth window</th>
-                      <th class="num">Control avg new reach/day</th>
-                      <th class="num">Experiment avg new reach/day</th>
-                      <th class="num">Projected ETA to selected power</th>
-                    </tr>
-                  </thead>
-                  <tbody id="uaEventForecastedTimePowerRows"></tbody>
-                </table>
+              <div class="forecast-subsection">
+                <h4>A Event Power Forecast Estimates</h4>
+                <div class="note" id="uaEventForecastedPowerNote">--</div>
+                <div class="table-wrap compact-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>A-event reach-growth window</th>
+                        <th class="num">Control avg new reach/day</th>
+                        <th class="num">Experiment avg new reach/day</th>
+                        <th class="num">Projected ETA to selected power</th>
+                      </tr>
+                    </thead>
+                    <tbody id="uaEventForecastedTimePowerRows"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
@@ -3148,6 +3176,9 @@ Total planned spend:
       uaEventForecastedBothEtaMetric: document.getElementById('uaEventForecastedBothEtaMetric'),
       uaEventForecastedBothEtaSmall: document.getElementById('uaEventForecastedBothEtaSmall'),
       uaEventForecastedTimeRows: document.getElementById('uaEventForecastedTimeRows'),
+      uaEventForecastedMethodNote: document.getElementById('uaEventForecastedMethodNote'),
+      uaEventForecastedConfidenceNote: document.getElementById('uaEventForecastedConfidenceNote'),
+      uaEventForecastedPowerNote: document.getElementById('uaEventForecastedPowerNote'),
       uaEventForecastedTimeConfidenceRows: document.getElementById('uaEventForecastedTimeConfidenceRows'),
       uaEventForecastedTimePowerRows: document.getElementById('uaEventForecastedTimePowerRows')
     };
@@ -5860,6 +5891,9 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         if (els.uaEventForecastedTimeRows) els.uaEventForecastedTimeRows.innerHTML = '';
         if (els.uaEventForecastedTimeConfidenceRows) els.uaEventForecastedTimeConfidenceRows.innerHTML = '';
         if (els.uaEventForecastedTimePowerRows) els.uaEventForecastedTimePowerRows.innerHTML = '';
+        setText(els.uaEventForecastedMethodNote, '--');
+        setText(els.uaEventForecastedConfidenceNote, '--');
+        setText(els.uaEventForecastedPowerNote, '--');
         return;
       }
       els.uaEventForecastedTimeBlock.classList.remove('hidden');
@@ -5880,6 +5914,9 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ]);
         els.uaEventForecastedTimeConfidenceRows.innerHTML = '';
         els.uaEventForecastedTimePowerRows.innerHTML = '';
+        setText(els.uaEventForecastedMethodNote, escapeHtml(errors));
+        setText(els.uaEventForecastedConfidenceNote, escapeHtml(errors));
+        setText(els.uaEventForecastedPowerNote, escapeHtml(errors));
         return;
       }
       const m = eventModel.forecast;
@@ -5911,19 +5948,13 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       setText(els.uaEventForecastedBothEtaMetric, Number.isFinite(bothDays) ? formatEtaMetricValue(bothDays) : 'No finite ETA');
       setText(els.uaEventForecastedBothEtaSmall, Number.isFinite(bothDays) ? `Limited by ${m.projectedBoth.limitingTarget}; ${formatEtaMetricSmall(bothDays, m.latestDateMs, '')}` : (m.projectedBoth ? m.projectedBoth.reason : `Selected tail: ${selectedTailText}.`));
       els.uaEventForecastedTimeRows.innerHTML = renderRows([
-        ['A-event forecast basis', last.label, `Latest cumulative A-event trend row using ${meta.sourceLabel}.`],
-        ['A-event selected tail', selectedTailText, 'Used for A-event confidence timing.'],
-        ['A-event control rate', formatPct(out.p1, d), `${formatNumber(last.controlConversions)} ${meta.properPlural} / ${formatNumber(last.controlTrials)} Control Audience Reach.`],
-        ['A-event experiment rate', formatPct(out.p2, d), `${formatNumber(last.experimentConversions)} ${meta.properPlural} / ${formatNumber(last.experimentTrials)} Experiment Audience Reach.`],
-        ['A-event rate lift', Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--', 'Calculated from A-event rates.'],
-        ['A-event calculated confidence %', Number.isFinite(out.statisticalConfidence) ? formatPct(out.statisticalConfidence, d) : '--', '1 - A-event decision p-value.'],
-        ['A-event observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', `Target ${formatPct(input.powerTarget, 0)}.`],
-        ['A-event projected ETA @ selected confidence', formatEtaMetricValue(confidenceDays), formatEtaMetricSmall(confidenceDays, m.latestDateMs, selectedConfidence && selectedConfidence.projected && selectedConfidence.projected.reason ? selectedConfidence.projected.reason : `Selected tail: ${selectedTailText}.`)],
-        ['A-event projected ETA @ selected power', Number.isFinite(powerDays) ? `${formatNumber(powerDays)} days` : 'No finite ETA', Number.isFinite(powerDays) ? formatEtaMetricSmall(powerDays, m.latestDateMs, '') : (fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : 'Uses actual projected arm sizes.')],
-        ['A-event projected ETA to reach both targets', Number.isFinite(bothDays) ? formatEtaMetricValue(bothDays) : 'No finite ETA', Number.isFinite(bothDays) ? `Limited by ${m.projectedBoth.limitingTarget}; ${formatEtaMetricSmall(bothDays, m.latestDateMs, '')}` : (m.projectedBoth ? m.projectedBoth.reason : `Selected tail: ${selectedTailText}.`)],
-        ['A-event full-window control reach growth', fullStats ? `${formatNumber(fullStats.controlReachPerDay, 0)}/day` : '--', 'Observed control reach growth from the A-event trend window.'],
-        ['A-event full-window experiment reach growth', fullStats ? `${formatNumber(fullStats.experimentReachPerDay, 0)}/day` : '--', 'Observed experiment reach growth from the A-event trend window.']
+        ['A-event projected selected-tail confidence estimate', formatForecastObjectTiming(selectedConfidence && selectedConfidence.projected, m.latestDateMs), `Projects actual future control and experiment reach, keeps latest observed A-event rates fixed, and checks when the selected-tail p-value clears ${formatPct(m.targetConfidence, 0)} confidence.`],
+        ['A-event projected power estimate', Number.isFinite(powerDays) ? formatForecastTiming(powerDays, m.latestDateMs) : (fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : '--'), `Projects actual future control and experiment reach using observed reach-growth rates, keeps latest observed A-event rates fixed, and checks when projected observed power reaches ${formatPct(m.targetPower, 0)}.`],
+        ['A-event projected ETA to reach both targets', m.projectedBoth && m.projectedBoth.finite ? formatForecastTiming(m.projectedBoth.days, m.latestDateMs) : (m.projectedBoth ? m.projectedBoth.reason : '--'), 'Takes the later of the projected A-event confidence ETA and projected A-event power ETA.']
       ]);
+      setText(els.uaEventForecastedMethodNote, 'This section does not wait for both arms to reach the same audience size. It uses the actual current control and experiment reach values, projects both arms forward using observed reach-growth rates, holds the latest observed A-event rates constant, and recalculates confidence and observed power each projected day. These are forward projections, not guarantees of future A-event rate, reach growth, spend efficiency, or conversion-lag behavior.');
+      setText(els.uaEventForecastedConfidenceNote, `Using the latest observed A-event rates as the forward assumption, confidence timing depends on the future p-value. The ETA uses the selected hypothesis/tail (${selectedTailText}) and the selected confidence level (${formatPct(m.targetConfidence, 0)}). If the current observed direction is opposite a confidence scenario, that scenario has no finite estimate unless future rates change.`);
+      setText(els.uaEventForecastedPowerNote, Number.isFinite(powerDays) ? `Using the full observed window, the actual-arm A-event power projection estimates roughly ${formatNumber(powerDays)} more days, or ${formatDurationFromDays(powerDays)}, from the latest A-event trend date. Anchored to ${last.label}, that lands around ${formatDateFromBaseDays(m.latestDateMs, powerDays)}. This projection does not require equal control and experiment reach; it uses actual current arm sizes and observed reach-growth rates.` : (fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : 'A-event power timing cannot be forecast from the trend data until positive reach growth and valid observed rates are available.'));
       els.uaEventForecastedTimeConfidenceRows.innerHTML = renderForecastedConfidenceRows(m.confidenceScenarios);
       els.uaEventForecastedTimePowerRows.innerHTML = renderForecastedPowerRows(m.powerRows, m.latestDateMs);
     }
@@ -5979,9 +6010,19 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         <div class="metric"><div class="k">A-event projected ETA @ ${formatPct(m.targetConfidence, 0)} confidence</div><div class="v">${escapeHtml(formatEtaMetricValue(confidenceDays))}</div><div class="s">${escapeHtml(formatEtaMetricSmall(confidenceDays, m.latestDateMs, selectedConfidence && selectedConfidence.projected && selectedConfidence.projected.reason ? selectedConfidence.projected.reason : `Selected tail: ${selectedTailText}.`))}</div></div>
         ${powerCardsHtml}
       </div>
-      <div class="table-wrap"><table><thead><tr><th>A-event forecast metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${buildReportTableRows(rows)}</tbody></table></div>
+      <h4>A Event Forecast Method</h4>
+      <div class="table-wrap"><table><thead><tr><th>A-event estimate type</th><th>Full-window timing</th><th>How it is calculated</th></tr></thead><tbody>${renderRows([
+        ['A-event projected selected-tail confidence estimate', formatForecastObjectTiming(selectedConfidence && selectedConfidence.projected, m.latestDateMs), `Projects actual future control and experiment reach, keeps latest observed A-event rates fixed, and checks when the selected-tail p-value clears ${formatPct(m.targetConfidence, 0)} confidence.`],
+        ...(includePowerReport ? [
+          ['A-event projected power estimate', Number.isFinite(powerDays) ? formatForecastTiming(powerDays, m.latestDateMs) : (fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : '--'), `Projects actual future control and experiment reach using observed reach-growth rates, keeps latest observed A-event rates fixed, and checks when projected observed power reaches ${formatPct(m.targetPower, 0)}.`],
+          ['A-event projected ETA to reach both targets', m.projectedBoth && m.projectedBoth.finite ? formatForecastTiming(m.projectedBoth.days, m.latestDateMs) : (m.projectedBoth ? m.projectedBoth.reason : '--'), 'Takes the later of the projected A-event confidence ETA and projected A-event power ETA.']
+        ] : [])
+      ])}</tbody></table></div>
+      <div class="note">This section does not wait for both arms to reach the same audience size. It uses the actual current control and experiment reach values, projects both arms forward using observed reach-growth rates, holds the latest observed A-event rates constant, and recalculates confidence${includePowerReport ? ' and observed power' : ''} each projected day. These are forward projections, not guarantees of future A-event rate, reach growth, spend efficiency, or conversion-lag behavior.</div>
+      <h4>A Event Confidence Forecast Estimates</h4>
+      <div class="note">Using the latest observed A-event rates as the forward assumption, confidence timing depends on the future p-value. The ETA uses the selected hypothesis/tail (${escapeHtml(selectedTailText)}) and selected confidence level (${formatPct(m.targetConfidence, 0)}). If the current observed direction is opposite a confidence scenario, that scenario has no finite estimate unless future rates change.</div>
       <div class="table-wrap"><table><thead><tr><th>A-event confidence forecast scenario</th><th class="num">Projected ETA using actual arm sizes</th><th>Commentary</th></tr></thead><tbody>${renderForecastedConfidenceRows(m.confidenceScenarios)}</tbody></table></div>
-      ${powerRowsHtml}`;
+      ${includePowerReport ? `<h4>A Event Power Forecast Estimates</h4><div class="note">Using the full observed window, the actual-arm A-event power projection ${Number.isFinite(powerDays) ? `reaches ${formatPct(m.targetPower, 0)} observed power in about ${formatDurationFromDays(powerDays)}, around ${formatDateFromBaseDays(m.latestDateMs, powerDays)}.` : 'does not have a finite ETA under the current assumptions.'} This projection does not require equal control and experiment reach; it uses actual current arm sizes and observed reach-growth rates.</div>${powerRowsHtml}` : ''}`;
     }
     function trendCalculatedHeaders(meta, includePower = true) {
       const properPlural = meta && meta.properPlural ? meta.properPlural : 'Conversions';
@@ -7157,48 +7198,58 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const bothDays = model.projectedBoth && model.projectedBoth.finite ? model.projectedBoth.days : NaN;
       const selectedTailText = tailScenarioText(currentInput.tail);
       const confidenceRows = renderForecastedConfidenceRows(model.confidenceScenarios);
-      const spendSection = model.spend && model.spend.hasSpend ? `
-    <h3>Spend and reach efficiency from ${escapeHtml(model.first.shortLabel)} to ${escapeHtml(model.last.shortLabel)}</h3>
-    <div class="table-wrap"><table><thead><tr><th>Arm</th><th class="num">Avg daily spend growth</th><th class="num">Avg new reach/day</th><th class="num">Approx reach per $1</th></tr></thead><tbody>${renderForecastedSpendRows(model.spend.rows)}</tbody></table></div>` : '';
       const powerRows = includePowerReport ? renderForecastedPowerRows(model.powerRows, model.latestDateMs) : '';
       const confidenceTiming = selectedConfidence ? formatForecastObjectTiming(selectedConfidence.projected, model.latestDateMs) : '--';
       const powerTiming = Number.isFinite(powerDays) ? formatForecastTiming(powerDays, model.latestDateMs) : (fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : '--');
       const bothTiming = model.projectedBoth && model.projectedBoth.finite ? formatForecastTiming(model.projectedBoth.days, model.latestDateMs) : (model.projectedBoth ? model.projectedBoth.reason : '--');
+      const uaEventForecastReportSubsection = buildUaEventForecastedTimeReportSubsection(currentInput, trend, includePowerReport);
       const comparisonRowsData = [
-        ['Projected selected-tail confidence estimate', confidenceTiming, `Projects actual future control and experiment reach, keeps latest observed rates fixed, and checks when the selected-tail p-value clears ${formatPct(model.targetConfidence, 0)} confidence.`]
+        ['Install projected selected-tail confidence estimate', confidenceTiming, `Projects actual future control and experiment reach, keeps latest observed install rates fixed, and checks when the selected-tail p-value clears ${formatPct(model.targetConfidence, 0)} confidence.`]
       ];
       if (includePowerReport) {
         comparisonRowsData.push(
-          ['Projected power estimate', powerTiming, `Projects actual future control and experiment reach using observed reach-growth rates, keeps latest observed conversion rates fixed, and checks when projected observed power reaches ${formatPct(model.targetPower, 0)}.`],
-          ['Projected ETA to reach both targets', bothTiming, 'Takes the later of the projected confidence ETA and projected power ETA.']
+          ['Install projected power estimate', powerTiming, `Projects actual future control and experiment reach using observed reach-growth rates, keeps latest observed install rates fixed, and checks when projected observed power reaches ${formatPct(model.targetPower, 0)}.`],
+          ['Install projected ETA to reach both targets', bothTiming, 'Takes the later of the projected install confidence ETA and projected install power ETA.']
         );
       }
       const comparisonRows = renderRows(comparisonRowsData);
-      const uaEventForecastReportSubsection = buildUaEventForecastedTimeReportSubsection(currentInput, trend, includePowerReport);
-      const powerMetricCards = includePowerReport ? `
-        <div class="metric"><div class="k">Latest observed power</div><div class="v">${Number.isFinite(model.latestPower.observedPower) ? formatPct(model.latestPower.observedPower, 1) : '--'}</div><div class="s">Observed effect, current settings.</div></div>
-        <div class="metric"><div class="k">Projected ETA @ ${formatPct(model.targetPower, 0)} power</div><div class="v">${Number.isFinite(powerDays) ? formatNumber(powerDays) + ' days' : 'No finite ETA'}</div><div class="s">${Number.isFinite(powerDays) ? escapeHtml(formatDateFromBaseDays(model.latestDateMs, powerDays)) : escapeHtml(fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : 'Actual projected arm sizes.')}</div></div>
-        <div class="metric"><div class="k">Projected ETA to reach both</div><div class="v">${escapeHtml(Number.isFinite(bothDays) ? formatEtaMetricValue(bothDays) : 'No finite ETA')}</div><div class="s">${escapeHtml(Number.isFinite(bothDays) ? `Limited by ${model.projectedBoth.limitingTarget}; ${formatEtaMetricSmall(bothDays, model.latestDateMs, '')}` : (model.projectedBoth ? model.projectedBoth.reason : `Selected tail: ${selectedTailText}.`))}</div></div>` : '';
-      const powerForecastBlock = includePowerReport ? `
-      <div class="note">Using the full observed window, the actual-arm power projection ${Number.isFinite(powerDays) ? `reaches ${formatPct(model.targetPower, 0)} observed power in about ${formatDurationFromDays(powerDays)}, around ${formatDateFromBaseDays(model.latestDateMs, powerDays)}.` : 'does not have a finite ETA under the current assumptions.'} This projection does not require equal control and experiment reach; it uses actual current arm sizes and observed reach-growth rates.</div>
-      <div class="table-wrap"><table><thead><tr><th>Reach-growth window</th><th class="num">Control avg new reach/day</th><th class="num">Experiment avg new reach/day</th><th class="num">Projected ETA to ${formatPct(model.targetPower, 0)} power</th></tr></thead><tbody>${powerRows}</tbody></table></div>` : '';
+      const sharedSpendSection = model.spend && model.spend.hasSpend ? `
+      <h3>Shared spend and reach efficiency from ${escapeHtml(model.first.shortLabel)} to ${escapeHtml(model.last.shortLabel)}</h3>
+      <div class="note">Shared spend/reach efficiency is based on cumulative spend and reach columns, so it applies to both install-based and A-event-based forecast views. Avg daily spend growth = (latest cumulative spend - first cumulative spend) / elapsed days. Approx reach per $1 = avg new reach/day / avg daily spend growth.</div>
+      <div class="table-wrap"><table><thead><tr><th>Arm</th><th class="num">Avg daily spend growth</th><th class="num">Avg new reach/day</th><th class="num">Approx reach per $1</th></tr></thead><tbody>${renderForecastedSpendRows(model.spend.rows)}</tbody></table></div>` : '';
+      const installPowerMetricCards = includePowerReport ? `
+        <div class="metric"><div class="k">Install latest observed power</div><div class="v">${Number.isFinite(model.latestPower.observedPower) ? formatPct(model.latestPower.observedPower, 1) : '--'}</div><div class="s">Observed install effect, current settings.</div></div>
+        <div class="metric"><div class="k">Install projected ETA @ ${formatPct(model.targetPower, 0)} power</div><div class="v">${Number.isFinite(powerDays) ? formatNumber(powerDays) + ' days' : 'No finite ETA'}</div><div class="s">${Number.isFinite(powerDays) ? escapeHtml(formatDateFromBaseDays(model.latestDateMs, powerDays)) : escapeHtml(fullPower && fullPower.projected && fullPower.projected.reason ? fullPower.projected.reason : 'Actual projected arm sizes.')}</div></div>
+        <div class="metric"><div class="k">Install projected ETA to reach both</div><div class="v">${escapeHtml(Number.isFinite(bothDays) ? formatEtaMetricValue(bothDays) : 'No finite ETA')}</div><div class="s">${escapeHtml(Number.isFinite(bothDays) ? `Limited by ${model.projectedBoth.limitingTarget}; ${formatEtaMetricSmall(bothDays, model.latestDateMs, '')}` : (model.projectedBoth ? model.projectedBoth.reason : `Selected tail: ${selectedTailText}.`))}</div></div>` : '';
+      const installPowerForecastBlock = includePowerReport ? `
+      <h4>Install power forecast estimates</h4>
+      <div class="note">Using the full observed window, the actual-arm install power projection ${Number.isFinite(powerDays) ? `reaches ${formatPct(model.targetPower, 0)} observed power in about ${formatDurationFromDays(powerDays)}, around ${formatDateFromBaseDays(model.latestDateMs, powerDays)}.` : 'does not have a finite ETA under the current assumptions.'} This projection does not require equal control and experiment reach; it uses actual current arm sizes and observed reach-growth rates.</div>
+      <div class="table-wrap"><table><thead><tr><th>Install reach-growth window</th><th class="num">Control avg new reach/day</th><th class="num">Experiment avg new reach/day</th><th class="num">Projected ETA to ${formatPct(model.targetPower, 0)} power</th></tr></thead><tbody>${powerRows}</tbody></table></div>` : '';
       return `
     <section class="card">
-      <h2>${includePowerReport ? 'Forecasted Time to reach Confidence and Power' : 'Forecasted Time to reach Confidence'}</h2>
+      <h2>${includePowerReport ? 'Time to reach Confidence and Power' : 'Time to reach Confidence'}</h2>
       <div class="note">These estimates are based on current observed control and experiment reach-growth and conversion-rate data. Increases in campaign spend that lead to faster incremental unique reach will change the forecasts; spend that mostly increases frequency or reaches the same users may not shorten the ETA. Changes in conversion rates or conversion lag will also change confidence timing${includePowerReport ? ' and power requirements' : ''}.</div>
       ${buildForecastEducationDetailsHtml(includePowerReport)}
+
+      <h3>Install Forecast Estimates</h3>
+      <div class="note">Install forecast rows use install rate = installs / Audience Reach from the latest cumulative install trend data. Forecasts project actual control and experiment reach separately and keep latest install rates fixed; they do not require equal arm sizes.</div>
       <div class="metric-grid">
-        <div class="metric"><div class="k">Latest trend date</div><div class="v">${escapeHtml(model.last.label)}</div><div class="s">Forecast anchor date.</div></div>
-        <div class="metric"><div class="k">Latest calculated confidence</div><div class="v">${formatPct(model.latestOut.statisticalConfidence, d)}</div><div class="s">1 - decision p-value.</div></div>
-        <div class="metric"><div class="k">Projected ETA @ ${formatPct(model.targetConfidence, 0)} confidence</div><div class="v">${escapeHtml(formatEtaMetricValue(confidenceDays))}</div><div class="s">${escapeHtml(formatEtaMetricSmall(confidenceDays, model.latestDateMs, selectedConfidence && selectedConfidence.projected && selectedConfidence.projected.reason ? selectedConfidence.projected.reason : `Selected tail: ${selectedTailText}.`))}</div></div>
-        ${powerMetricCards}
+        <div class="metric"><div class="k">Install latest trend date</div><div class="v">${escapeHtml(model.last.label)}</div><div class="s">Forecast anchor date.</div></div>
+        <div class="metric"><div class="k">Install latest calculated confidence</div><div class="v">${formatPct(model.latestOut.statisticalConfidence, d)}</div><div class="s">1 - decision p-value.</div></div>
+        <div class="metric"><div class="k">Install projected ETA @ ${formatPct(model.targetConfidence, 0)} confidence</div><div class="v">${escapeHtml(formatEtaMetricValue(confidenceDays))}</div><div class="s">${escapeHtml(formatEtaMetricSmall(confidenceDays, model.latestDateMs, selectedConfidence && selectedConfidence.projected && selectedConfidence.projected.reason ? selectedConfidence.projected.reason : `Selected tail: ${selectedTailText}.`))}</div></div>
+        ${installPowerMetricCards}
       </div>
-      <div class="note">Using the latest observed rates as the forward assumption, confidence timing depends on the future p-value. The ETA uses the selected hypothesis/tail (${escapeHtml(selectedTailText)}) and selected confidence level (${formatPct(model.targetConfidence, 0)}). If the current observed direction is opposite a confidence scenario, that scenario has no finite estimate unless future rates change.</div>
-      <div class="table-wrap"><table><thead><tr><th>Confidence forecast scenario</th><th class="num">Projected ETA using actual arm sizes</th><th>Commentary</th></tr></thead><tbody>${confidenceRows}</tbody></table></div>
-      ${spendSection}
-      ${powerForecastBlock}
-      <div class="table-wrap"><table><thead><tr><th>Estimate type</th><th>Full-window timing</th><th>How it is calculated</th></tr></thead><tbody>${comparisonRows}</tbody></table></div>
+      <h4>Install Forecast Method</h4>
+      <div class="table-wrap"><table><thead><tr><th>Install estimate type</th><th>Full-window timing</th><th>How it is calculated</th></tr></thead><tbody>${comparisonRows}</tbody></table></div>
+      <div class="note">This section does not wait for both arms to reach the same audience size. It uses the actual current control and experiment reach values, projects both arms forward using observed reach-growth rates, holds the latest observed install rates constant, and recalculates confidence${includePowerReport ? ' and observed power' : ''} each projected day. These are forward projections, not guarantees of future install rate, reach growth, spend efficiency, or conversion-lag behavior.</div>
+      <h4>Install Confidence Forecast Estimates</h4>
+      <div class="note">Using the latest observed install rates as the forward assumption, confidence timing depends on the future p-value. The ETA uses the selected hypothesis/tail (${escapeHtml(selectedTailText)}) and selected confidence level (${formatPct(model.targetConfidence, 0)}). If the current observed direction is opposite a confidence scenario, that scenario has no finite estimate unless future rates change.</div>
+      <div class="table-wrap"><table><thead><tr><th>Install event confidence forecast scenario</th><th class="num">Projected ETA using actual arm sizes</th><th>Commentary</th></tr></thead><tbody>${confidenceRows}</tbody></table></div>
+      ${installPowerForecastBlock}
+
       ${uaEventForecastReportSubsection}
+
+      ${sharedSpendSection}
     </section>`;
     }
 
@@ -7359,6 +7410,93 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       return `<details class="trend-table-details"><summary>${escapeHtml(summaryText)}</summary>${buildRawTrendDataDownloadLinks(parsed, baseName, points, input, meta, includePower)}<div class="table-wrap">${buildRawTrendDataTableMarkup(parsed, points, input, meta, includePower)}</div><div class="note">This raw table includes every column from the pasted trend-data input, including spend, revenue, impressions, installs, events, reach, and any other supplied daily columns.${calculationNote}</div></details>`;
     }
 
+
+    function buildInstallCiRows(input, reportInput, out, meta) {
+      const d = input.precision;
+      const rawZ = invNorm(1 - (1 - input.confidenceLevel) / 2);
+      const controlCi = rateCiNormal(out.p1, reportInput.controlTrials, rawZ);
+      const experimentCi = rateCiNormal(out.p2, reportInput.experimentTrials, rawZ);
+      const crossesZero = out.ciLow <= 0 && out.ciHigh >= 0;
+      return [
+        ['Install CI basis', 'Latest cumulative install row', `Uses ${meta.sourceLabel}; install rate = installs / Audience Reach.`],
+        ['Install difference confidence interval', `${formatPctPoint(out.ciLow, d)} to ${formatPctPoint(out.ciHigh, d)}`, 'Confidence interval for Experiment install rate minus Control install rate.'],
+        ['Install CI status', crossesZero ? 'Crosses 0' : 'Does not cross 0', crossesZero ? 'A true install rate difference of 0 is still plausible at the selected confidence level.' : 'The install difference interval excludes 0 at the selected confidence level.'],
+        ['Control install confidence interval', `${formatPct(controlCi.low, d)} to ${formatPct(controlCi.high, d)}`, `${formatNumber(reportInput.controlConversions)} control installs / ${formatNumber(reportInput.controlTrials)} Control Audience Reach.`],
+        ['Experiment install confidence interval', `${formatPct(experimentCi.low, d)} to ${formatPct(experimentCi.high, d)}`, `${formatNumber(reportInput.experimentConversions)} experiment installs / ${formatNumber(reportInput.experimentTrials)} Experiment Audience Reach.`],
+        ['Install observed difference', formatPctPoint(out.diff, d), 'Experiment install rate minus Control install rate.'],
+        ['Install rate lift', Number.isFinite(out.relativeLift) ? formatPct(out.relativeLift, d) : '--', 'Calculated from install rates: installs / reach.']
+      ];
+    }
+
+    function buildInstallPowerRows(input, reportInput, out, power, trend) {
+      const d = input.precision;
+      const meta = getTrendMetricMeta(input, 'install');
+      const reachNeed = calculateActualArmPowerReachNeed(reportInput, out, input.powerTarget, trend && trend.primary ? trend.primary : trend);
+      const adequatelyPowered = Number.isFinite(power.observedPower) && power.observedPower >= power.targetPower;
+      const etaValue = Number.isFinite(reachNeed.etaDays)
+        ? (reachNeed.etaDays <= 0 ? 'Already at target' : formatDurationFromDays(reachNeed.etaDays))
+        : '--';
+      const projectedPowerAtNeed = reachNeed.projectedPower && Number.isFinite(reachNeed.projectedPower.observedPower)
+        ? formatPct(reachNeed.projectedPower.observedPower, 1)
+        : '--';
+      return [
+        ['Install power basis', 'Latest cumulative install row', `Primary UA install power using ${meta.sourceLabel}; rates are installs / Audience Reach.`],
+        ['Install observed power', Number.isFinite(power.observedPower) ? formatPct(power.observedPower, 1) : '--', 'Uses actual current control and experiment reach from the latest install trend row.'],
+        ['Install power target', formatPct(power.targetPower, 0), 'Selected in the Power % input.'],
+        ['Install power gap', formatSignedPowerGap(power), Number.isFinite(power.observedPower) ? (adequatelyPowered ? 'Install observed power is at or above target.' : 'Additional sample is needed to reach the selected install power target.') : 'Install observed power unavailable.'],
+        ['Install false-negative risk', Number.isFinite(power.observedPower) ? formatPct(1 - power.observedPower, 1) : '--', 'Approximate risk of missing a true install rate effect this large under current assumptions.'],
+        ['Install control rate', formatPct(out.p1, d), `${formatNumber(reportInput.controlConversions)} installs / ${formatNumber(reportInput.controlTrials)} Control Audience Reach.`],
+        ['Install experiment rate', formatPct(out.p2, d), `${formatNumber(reportInput.experimentConversions)} installs / ${formatNumber(reportInput.experimentTrials)} Experiment Audience Reach.`],
+        ['Install observed absolute effect', formatPctPoint(Math.abs(out.diff), d), 'Absolute value of Experiment install rate minus Control install rate.'],
+        ['Install actual-arm reach basis', reachNeed.basisLabel || '--', reachNeed.basisNote || 'Uses actual install trend arm sizes.'],
+        [`Install ${input.controlLabel} reach needed @ ${formatPct(power.targetPower, 0)} power`, Number.isFinite(reachNeed.projectedControlReach) ? formatNumber(reachNeed.projectedControlReach) : '--', 'Actual-arm install requirement; does not force equal control and experiment reach.'],
+        [`Install ${input.experimentLabel} reach needed @ ${formatPct(power.targetPower, 0)} power`, Number.isFinite(reachNeed.projectedExperimentReach) ? formatNumber(reachNeed.projectedExperimentReach) : '--', 'Actual-arm install requirement; does not force equal control and experiment reach.'],
+        [`Install additional ${input.controlLabel} reach needed`, Number.isFinite(reachNeed.additionalControlReach) ? formatNumber(reachNeed.additionalControlReach) : '--', 'Needed from current control reach to hit the selected install power target.'],
+        [`Install additional ${input.experimentLabel} reach needed`, Number.isFinite(reachNeed.additionalExperimentReach) ? formatNumber(reachNeed.additionalExperimentReach) : '--', 'Needed from current experiment reach to hit the selected install power target.'],
+        ['Install projected ETA to selected power', etaValue, Number.isFinite(reachNeed.etaDays) ? `${reachNeed.basisLabel}; projects actual arm sizes and keeps latest install rates fixed.` : (reachNeed.reason || 'No finite install ETA is available under the current assumptions.')],
+        ['Install projected observed power at needed reach', projectedPowerAtNeed, 'Observed power recalculated using the needed actual arm sizes and latest install rates.']
+      ];
+    }
+
+    function buildStaticCiReportSection(currentInput, reportInput, reportOut, trend) {
+      const d = currentInput.precision;
+      const meta = getTrendMetricMeta(currentInput, 'install');
+      const installRows = buildInstallCiRows(currentInput, reportInput, reportOut, meta);
+      const installVisual = buildCiVisualHtml(currentInput, reportOut, { titlePrefix: 'Install' });
+      const model = getUaEventSummaryModel(currentInput, trend);
+      let aEventBlock = '';
+      if (model.enabled) {
+        if (model.valid && model.last) {
+          const eventOut = model.last.out;
+          const eventRows = buildUaEventCiRows(currentInput, model);
+          const eventVisual = buildCiVisualHtml(currentInput, eventOut, { titlePrefix: 'A-event' });
+          aEventBlock = `
+        <h3>A Event Confidence Interval for the Difference</h3>
+        <div class="metric-grid">
+          <div class="metric"><div class="k">A-event difference confidence interval</div><div class="v">[${formatPctPoint(eventOut.ciLow, d)}, ${formatPctPoint(eventOut.ciHigh, d)}]</div><div class="s">Experiment A-event rate minus Control A-event rate.</div></div>
+          <div class="metric"><div class="k">A-event CI status</div><div class="v">${eventOut.ciLow <= 0 && eventOut.ciHigh >= 0 ? 'Crosses 0' : 'Does not cross 0'}</div><div class="s">Visual interval check below.</div></div>
+        </div>
+        ${eventVisual}
+        <div class="table-wrap"><table><thead><tr><th>A-event CI metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${buildReportTableRows(eventRows)}</tbody></table></div>`;
+        } else {
+          const errors = model.errors && model.errors.length ? model.errors.join(' ') : 'A-event CI requires valid A-event trend data.';
+          aEventBlock = `<h3>A Event Confidence Interval for the Difference</h3><div class="note">${escapeHtml(errors)}</div>`;
+        }
+      }
+      return `
+    <section class="card" id="static-ci-section">
+      <h2>CI for the Difference</h2>
+      <h3>Install Confidence Interval for the Difference</h3>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">Install difference confidence interval</div><div class="v">[${formatPctPoint(reportOut.ciLow, d)}, ${formatPctPoint(reportOut.ciHigh, d)}]</div><div class="s">Experiment install rate minus Control install rate.</div></div>
+        <div class="metric"><div class="k">Install CI status</div><div class="v">${reportOut.ciLow <= 0 && reportOut.ciHigh >= 0 ? 'Crosses 0' : 'Does not cross 0'}</div><div class="s">Visual interval check below.</div></div>
+      </div>
+      ${installVisual}
+      <div class="table-wrap"><table><thead><tr><th>Install CI metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${buildReportTableRows(installRows)}</tbody></table></div>
+      ${aEventBlock}
+    </section>`;
+    }
+
     function buildFrozenReportHtml(currentInput, currentOut, currentPower, trend) {
       const hasTrend = trend && trend.valid && trend.points && trend.points.length;
       const lastPoint = hasTrend ? trend.points[trend.points.length - 1] : null;
@@ -7396,6 +7534,11 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       const uaEventErrorNote = currentInput.experimentType === 'UA' && currentInput.showUaEventChart && trend && trend.event && !trend.event.valid && trend.event.errors.length ? `<div class="note">${escapeHtml(trend.event.errors.join(' '))}</div>` : '';
       const uaEventLiftNote = 'For UA incrementality experiments, Liftoff defines A-event lift as tied to install lift: if the install is incremental, downstream A-event activity from that install is also considered incremental. This optional chart shows a diagnostic event-rate view by comparing A-event counts against reach for control vs experiment. The event-rate view of conversion rate differences can reflect "quality" differences between organic driven behavior post install vs paid media driven behavior post install. For UA lift experiments, A-event lift should still be interpreted as anchored to install lift. IE if install lift was X% then A event lift is also X%.';
       const incrementalCostReportSection = buildIncrementalCostReportSection(currentInput);
+      const installSummaryCiVisual = buildCiVisualHtml(currentInput, reportOut, { titlePrefix: 'Install' });
+      const installSummaryRawZ = invNorm(1 - (1 - currentInput.confidenceLevel) / 2);
+      const installSummaryControlCi = rateCiNormal(reportOut.p1, reportInput.controlTrials, installSummaryRawZ);
+      const installSummaryExperimentCi = rateCiNormal(reportOut.p2, reportInput.experimentTrials, installSummaryRawZ);
+      const installSummaryCiConfidence = 1 - reportOut.alphaAdjusted;
       const forecastedTimeReportSection = currentInput.includeForecastTimingReport ? buildForecastedTimeReportSection(currentInput, trend) : '';
       const reportRightAxisText = includePowerReport ? 'calculated confidence % and observed power %' : 'calculated confidence %';
       const reportRightAxisLineWord = includePowerReport ? 'lines' : 'line';
@@ -7454,7 +7597,10 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         ['Difference confidence interval', `${formatPctPoint(reportOut.ciLow, d)} to ${formatPctPoint(reportOut.ciHigh, d)}`, 'Confidence interval for experiment - control.'],
         [meta.incrementalLabel, lastPoint && Number.isFinite(lastPoint.incrementalPct) ? formatPct(lastPoint.incrementalPct, d) : '--', lastPoint ? `${formatNumber(lastPoint.incremental, 1)} incremental ${meta.plural} versus expected at control rate.` : 'Available when trend data is loaded.']
       );
+      finalRowsData.push(...buildInstallCiRows(currentInput, reportInput, reportOut, meta));
+      if (includePowerReport) finalRowsData.push(...buildInstallPowerRows(currentInput, reportInput, reportOut, reportPower, trend));
       const finalRows = buildReportTableRows(finalRowsData);
+      const installCiReportSection = buildStaticCiReportSection(currentInput, reportInput, reportOut, trend);
       return `<!doctype html>
 <html lang="en">
 <head>
@@ -7483,6 +7629,36 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
     tr:last-child td { border-bottom:0; }
     td.num { font-family:var(--mono); text-align:right; }
     .note { border-left:4px solid var(--accent); background:#f2f6ff; padding:12px 13px; border-radius:12px; color:#26406f; font-size:13px; margin-top:12px; }
+
+    .static-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 14px; padding:10px; border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.98); position:sticky; top:0; z-index:50; box-shadow:0 10px 24px rgba(24,36,66,.10); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+    .static-tab-button { border:1px solid #d7e3ff; border-radius:999px; padding:10px 13px; background:#eff4ff; color:#2443a8; font-weight:850; cursor:pointer; }
+    .static-tab-button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .static-tab-panel { display:none; padding-top:2px; }
+    .static-tab-panel.active { display:block; }
+    .ci-visual { margin-top:12px; border:1px solid #dbe5f6; border-radius:16px; padding:14px; background:#fbfdff; }
+    .ci-visual-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; color:#334155; font-size:13px; font-weight:800; }
+    .ci-visual-title { margin-top:3px; font-weight:900; letter-spacing:-.01em; }
+    .ci-visual-summary { margin-top:8px; color:var(--muted); font-size:12px; font-weight:650; }
+    .ci-visual-note { margin-top:10px; color:#334155; font-size:12px; font-weight:650; background:#fff; border:1px solid #e5edf7; border-radius:12px; padding:9px 10px; }
+    .ci-axis { position:relative; height:74px; border-radius:16px; background:linear-gradient(90deg, rgba(100,116,139,.16) 1px, transparent 1px) 0 0 / 25% 100%, linear-gradient(180deg, #f7faff, #eef4ff); border:1px solid #d9e4f6; overflow:hidden; }
+    .ci-axis-midline { position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(100,116,139,.28); transform:translateY(-50%); }
+    .ci-zero-line { position:absolute; top:8px; bottom:8px; width:2px; background:#162033; opacity:.74; transform:translateX(-1px); z-index:3; }
+    .ci-zero-line span { position:absolute; top:-2px; left:7px; padding:3px 6px; border-radius:999px; background:rgba(22,32,51,.9); color:#fff; font-size:11px; font-weight:850; white-space:nowrap; }
+    .ci-interval { position:absolute; top:50%; height:13px; border-radius:999px; background:#3157d5; transform:translateY(-50%); box-shadow:0 6px 14px rgba(49,87,213,.18); z-index:2; }
+    .ci-dot { position:absolute; top:50%; width:22px; height:22px; border-radius:999px; border:4px solid #fff; background:#173a9f; box-shadow:0 7px 16px rgba(24,36,66,.26); transform:translate(-50%, -50%); z-index:4; }
+    .ci-bound { position:absolute; top:50%; width:2px; height:26px; background:#3157d5; transform:translate(-1px, -50%); z-index:3; }
+    .ci-scale { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; margin-top:8px; color:var(--muted); font-family:var(--mono); font-size:12px; }
+    .ci-scale span:nth-child(2) { text-align:center; color:#162033; font-weight:900; }
+    .ci-scale span:last-child { text-align:right; }
+    .ci-legend { display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:10px; color:#334155; font-size:12px; font-weight:700; }
+    .legend-item { display:inline-flex; align-items:center; gap:6px; }
+    .legend-swatch { width:18px; height:8px; border-radius:999px; background:#3157d5; }
+    .legend-dot { width:11px; height:11px; border-radius:999px; background:#173a9f; }
+    .legend-zero { width:3px; height:16px; border-radius:999px; background:#162033; }
+    .ci-visual.ci-crosses .ci-interval, .ci-visual.ci-crosses .ci-bound, .ci-visual.ci-crosses .legend-swatch { background:#d89800; }
+    .ci-visual.ci-positive .ci-interval, .ci-visual.ci-positive .ci-bound, .ci-visual.ci-positive .legend-swatch { background:#116932; }
+    .ci-visual.ci-negative .ci-interval, .ci-visual.ci-negative .ci-bound, .ci-visual.ci-negative .legend-swatch { background:#9b1c1c; }
+
     .button-row { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
     .download-link { display:inline-flex; align-items:center; justify-content:center; border-radius:999px; padding:10px 14px; background:#eff4ff; color:#2443a8; text-decoration:none; font-weight:850; border:1px solid #d7e3ff; }
     .download-link:hover { background:#e4edff; }
@@ -7533,43 +7709,90 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       <div class="subhead">Static export from the A/B Test Significance Calculator. Inputs and outputs are hard-coded in this report and are not editable.</div>
     </header>
 
-    <section class="card">
-      <h2>Last Cumulative Result</h2>
-      <div class="metric-grid">
-        <div class="metric"><div class="k">Date</div><div class="v">${escapeHtml(lastPoint ? lastPoint.label : 'Current')}</div><div class="s">${hasTrend ? 'Latest trend row.' : 'Current calculator inputs.'}</div></div>
-        <div class="metric"><div class="k">Relative lift</div><div class="v">${Number.isFinite(reportOut.relativeLift) ? formatPct(reportOut.relativeLift, d) : '--'}</div><div class="s">Experiment rate vs control rate.</div></div>
-        <div class="metric"><div class="k">Calculated confidence %</div><div class="v">${formatPct(reportOut.statisticalConfidence, d)}</div><div class="s">1 - decision p-value.</div></div>
-        ${includePowerReport ? `<div class="metric"><div class="k">Observed power</div><div class="v">${Number.isFinite(reportPower.observedPower) ? formatPct(reportPower.observedPower, 1) : '--'}</div><div class="s">${Number.isFinite(reportPower.observedPower) ? formatPct(1 - reportPower.observedPower, 1) + ' false-negative risk.' : 'Not available.'}</div></div>` : ''}
-        <div class="metric"><div class="k">${escapeHtml(meta.incrementalLabel)}</div><div class="v">${lastPoint && Number.isFinite(lastPoint.incrementalPct) ? formatPct(lastPoint.incrementalPct, d) : '--'}</div><div class="s">Share of experiment ${escapeHtml(meta.plural)} estimated incremental.</div></div>
-      </div>
-      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${finalRows}</tbody></table></div>
-    </section>
+    <nav class="static-tabs" aria-label="Static report sections">
+      <button type="button" class="static-tab-button active" data-static-tab="summary">Results Summary</button>
+      <button type="button" class="static-tab-button" data-static-tab="cost">Incremental Cost Metrics</button>
+      <button type="button" class="static-tab-button" data-static-tab="trend">Trend Data and Charts</button>
+      <button type="button" class="static-tab-button" data-static-tab="forecast">Time to reach Confidence and Power</button>
+      <button type="button" class="static-tab-button" data-static-tab="ci">CI for the Difference</button>
+    </nav>
 
-    ${uaEventSummaryReportSection}
+    <div class="static-tab-panel active" data-static-panel="summary">
+      <section class="card">
+        <h2>Install Calculation Summary</h2>
+        <div class="metric-grid">
+          <div class="metric"><div class="k">Date</div><div class="v">${escapeHtml(lastPoint ? lastPoint.label : 'Current')}</div><div class="s">${hasTrend ? 'Latest trend row.' : 'Current calculator inputs.'}</div></div>
+          <div class="metric"><div class="k">Relative lift</div><div class="v">${Number.isFinite(reportOut.relativeLift) ? formatPct(reportOut.relativeLift, d) : '--'}</div><div class="s">Experiment rate vs control rate.</div></div>
+          <div class="metric"><div class="k">Calculated confidence %</div><div class="v">${formatPct(reportOut.statisticalConfidence, d)}</div><div class="s">1 - decision p-value.</div></div>
+          ${includePowerReport ? `<div class="metric"><div class="k">Observed power</div><div class="v">${Number.isFinite(reportPower.observedPower) ? formatPct(reportPower.observedPower, 1) : '--'}</div><div class="s">${Number.isFinite(reportPower.observedPower) ? formatPct(1 - reportPower.observedPower, 1) + ' false-negative risk.' : 'Not available.'}</div></div>` : ''}
+          <div class="metric"><div class="k">${escapeHtml(meta.incrementalLabel)}</div><div class="v">${lastPoint && Number.isFinite(lastPoint.incrementalPct) ? formatPct(lastPoint.incrementalPct, d) : '--'}</div><div class="s">Share of experiment ${escapeHtml(meta.plural)} estimated incremental.</div></div>
+        </div>
+        <div class="note">This primary UA summary uses install rate = installs / Audience Reach from the latest cumulative trend row when trend data is loaded.</div>
+        <h3>Install Confidence Interval for the Difference</h3>
+        <div class="metric-grid">
+          <div class="metric"><div class="k">Install difference confidence interval</div><div class="v">[${formatPctPoint(reportOut.ciLow, d)}, ${formatPctPoint(reportOut.ciHigh, d)}]</div><div class="s">${formatPct(installSummaryCiConfidence, 0)} confidence interval for install experiment - control.</div></div>
+          <div class="metric"><div class="k">Install control confidence interval</div><div class="v">[${formatPct(installSummaryControlCi.low, d)}, ${formatPct(installSummaryControlCi.high, d)}]</div><div class="s">${formatPct(currentInput.confidenceLevel, 0)} confidence interval for control install rate.</div></div>
+          <div class="metric"><div class="k">Install experiment confidence interval</div><div class="v">[${formatPct(installSummaryExperimentCi.low, d)}, ${formatPct(installSummaryExperimentCi.high, d)}]</div><div class="s">${formatPct(currentInput.confidenceLevel, 0)} confidence interval for experiment install rate.</div></div>
+        </div>
+        ${installSummaryCiVisual}
+        <div class="table-wrap"><table><thead><tr><th>Install summary metric</th><th>Value</th><th>Notes</th></tr></thead><tbody>${finalRows}</tbody></table></div>
+      </section>
 
-    <section class="card">
-      <h2>Original Calculator Inputs and Settings</h2>
-      <div class="table-wrap"><table><thead><tr><th>Input</th><th>Value</th><th>Notes</th></tr></thead><tbody>${settingsRows}</tbody></table></div>
-    </section>
+      ${uaEventSummaryReportSection}
 
-    ${incrementalCostReportSection}
+      <section class="card">
+        <h2>Experiment Input Settings</h2>
+        <div class="table-wrap"><table><thead><tr><th>Input</th><th>Value</th><th>Notes</th></tr></thead><tbody>${settingsRows}</tbody></table></div>
+      </section>
+    </div>
 
-    <section class="card">
-      <h2>Trend Chart</h2>
-      <div class="note">Left-axis bars show ${escapeHtml(meta.liftLabel)} and ${escapeHtml(meta.incrementalLabel)}. Right-axis ${reportRightAxisLineWord} ${reportRightAxisVerb} ${reportRightAxisText}. Hover over any bar or line point to see its value.</div>
-      <div class="trend-chart-wrap"><div class="trend-chart">${chartMarkup}</div></div>
-    </section>
+    <div class="static-tab-panel" data-static-panel="cost">
+      ${incrementalCostReportSection}
+    </div>
 
-    <section class="card">
-      <h2>${escapeHtml(primaryTrendDataTitle)}</h2>
-      ${primaryRawTrendDetails}
-    </section>
+    <div class="static-tab-panel" data-static-panel="trend">
+      <section class="card">
+        <h2>${meta.chartKind === 'install' ? 'Install Trend Chart' : 'Event Trend Chart'}</h2>
+        <div class="note">Left-axis bars show ${escapeHtml(meta.liftLabel)} and ${escapeHtml(meta.incrementalLabel)}. Right-axis ${reportRightAxisLineWord} ${reportRightAxisVerb} ${reportRightAxisText}. Hover over any bar or line point to see its value.</div>
+        <div class="trend-chart-wrap"><div class="trend-chart">${chartMarkup}</div></div>
+      </section>
 
-    ${uaEventReportSection}
+      <section class="card">
+        <h2>${escapeHtml(primaryTrendDataTitle)}</h2>
+        ${primaryRawTrendDetails}
+      </section>
 
-    ${forecastedTimeReportSection}
+      ${uaEventReportSection}
+    </div>
+
+    <div class="static-tab-panel" data-static-panel="forecast">
+      ${forecastedTimeReportSection || '<section class="card"><h2>Time to reach Confidence and Power</h2><div class="note">Forecast ETA output was not included for this report.</div></section>'}
+    </div>
+
+    <div class="static-tab-panel" data-static-panel="ci">
+      ${installCiReportSection}
+    </div>
   </main>
   <script>
+    (function () {
+      var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-static-tab]'));
+      var panels = Array.prototype.slice.call(document.querySelectorAll('[data-static-panel]'));
+      function scrollStaticTabsToTop() {
+        var nav = document.querySelector('.static-tabs');
+        if (!nav) return;
+        var targetY = nav.getBoundingClientRect().top + window.pageYOffset - 8;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+      }
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          var tab = button.getAttribute('data-static-tab');
+          buttons.forEach(function (b) { b.classList.toggle('active', b === button); });
+          panels.forEach(function (panel) { panel.classList.toggle('active', panel.getAttribute('data-static-panel') === tab); });
+          scrollStaticTabsToTop();
+        });
+      });
+    })();
+
     (function () {
       function tooltipEl() {
         var tooltip = document.getElementById('trendTooltip');
@@ -8167,7 +8390,22 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
       host.appendChild(panelWrap);
       cardPad.insertBefore(host, cardPad.firstChild);
 
-      function setActiveTab(tabId, focusButton = false) {
+      function getResultsTabStickyOffset() {
+        const rootStyle = getComputedStyle(document.documentElement);
+        const cssHeaderHeight = parseFloat(rootStyle.getPropertyValue('--sticky-header-height')) || 0;
+        const headerEl = document.querySelector('header');
+        const headerHeight = headerEl ? Math.max(cssHeaderHeight, Math.ceil(headerEl.getBoundingClientRect().height)) : cssHeaderHeight;
+        return window.matchMedia && window.matchMedia('(max-width: 1080px)').matches ? 10 : headerHeight + 10;
+      }
+
+      function scrollResultsTabsToTop() {
+        const hostEl = document.getElementById('resultsTabHost');
+        if (!hostEl) return;
+        const targetY = hostEl.getBoundingClientRect().top + window.pageYOffset - getResultsTabStickyOffset();
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+      }
+
+      function setActiveTab(tabId, focusButton = false, scrollToTop = false) {
         resultsTabState.active = tabId;
         tabDefinitions.forEach(def => {
           const button = document.getElementById(`resultsTabButton_${def.id}`);
@@ -8184,6 +8422,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
             panel.setAttribute('aria-hidden', active ? 'false' : 'true');
           }
         });
+        if (scrollToTop) scrollResultsTabsToTop();
       }
 
       tabDefinitions.forEach(def => {
@@ -8194,7 +8433,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
         button.setAttribute('role', 'tab');
         button.setAttribute('aria-controls', `resultsTabPanel_${def.id}`);
         button.textContent = def.label;
-        button.addEventListener('click', () => setActiveTab(def.id));
+        button.addEventListener('click', () => setActiveTab(def.id, false, true));
         button.addEventListener('keydown', event => {
           if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
           event.preventDefault();
@@ -8204,7 +8443,7 @@ Total suggested daily spend = ${Number.isFinite(planner.totalDailySpend) ? forma
           if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabDefinitions.length) % tabDefinitions.length;
           if (event.key === 'Home') nextIndex = 0;
           if (event.key === 'End') nextIndex = tabDefinitions.length - 1;
-          setActiveTab(tabDefinitions[nextIndex].id, true);
+          setActiveTab(tabDefinitions[nextIndex].id, true, true);
         });
         tabList.appendChild(button);
 
